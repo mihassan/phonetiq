@@ -46,3 +46,8 @@
 - `DB` - D1 database `phonetiq-db`
 - `AUDIO_BUCKET` - R2 bucket `phonetiq-audio`
 - `AI` - Workers AI (requires Cloudflare auth for remote)
+- `AI_RATE_LIMITER` - Rate limit: 10 req/min per IP (protects Whisper AI endpoint)
+- `API_RATE_LIMITER` - Rate limit: 100 req/min per IP (protects all API routes)
+
+## Environment Variables
+- `VITE_API_URL` - (Frontend, production only) Base URL for the API Worker (e.g., `https://phonetiq-api.username.workers.dev/api`). Defaults to `/api` in local dev via Vite proxy.
