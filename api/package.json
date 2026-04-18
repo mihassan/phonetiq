@@ -1,0 +1,26 @@
+{
+  "name": "phonetiq-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply phonetiq-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply phonetiq-db --remote",
+    "db:seed:local": "wrangler d1 execute phonetiq-db --local --file=./src/db/seed.sql",
+    "db:seed:remote": "wrangler d1 execute phonetiq-db --local --file=./src/db/seed.sql"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.12.14"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260418.1",
+    "drizzle-kit": "^0.31.10",
+    "typescript": "^6.0.3",
+    "wrangler": "^4.83.0"
+  }
+}

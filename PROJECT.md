@@ -1,0 +1,48 @@
+# Phonetiq - Project Memory
+
+## Architecture & Stack
+- **Frontend:** React 18 (SPA), Vite, Tailwind CSS v4, Lucide React.
+- **Hosting:** Cloudflare Pages (Frontend) + Cloudflare Workers (Backend API via Hono).
+- **Database:** Cloudflare D1 (SQLite) + Drizzle ORM. Schema in `api/src/db/schema.ts`.
+- **Storage:** Cloudflare R2 (pre-generated TTS audio files, `.m4a` format).
+- **AI / Speech:** Cloudflare Workers AI (`@cf/openai/whisper`) for Speech-to-Text (STT).
+
+## Key Technical Decisions
+1. **API-Driven Data:** Word pairs are stored in D1, not hardcoded. The frontend fetches dynamically with optional category and dialect filters.
+2. **Audio Reliability (TTS):** Pre-generated `.m4a` audio files stored in R2. Generated locally using macOS `say` command via `scripts/generate-audio.sh`. Served by Worker via `GET /api/audio/:word`.
+3. **Speech Recognition (STT):** Frontend uses `MediaRecorder` API (universally supported) to capture audio blobs. Sent to Worker at `POST /api/recognize`, processed by Whisper AI.
+4. **Dialect Awareness:** Word pairs have a `dialect_filter` column (`all`, `us_only`, `uk_only`) to handle accent-dependent minimal pairs (e.g., cot-caught merger, rhoticity).
+
+## Commands Reference
+### API (`api/`)
+- `npm run dev` - Start Worker dev server (port 8787)
+- `npm run typecheck` - TypeScript check
+- `npm run db:generate` - Generate Drizzle migration SQL
+- `npm run db:migrate:local` - Apply migrations to local D1
+- `npm run db:seed:local` - Seed word pairs to local D1
+- `npx wrangler deploy` - Deploy Worker to Cloudflare
+
+### Web (`web/`)
+- `npm run dev` - Start Vite dev server (port 5173, proxies /api to 8787)
+- `npm run build` - Typecheck + production build (outputs to `web/dist/`)
+
+### Scripts
+- `./scripts/generate-audio.sh` - Generate TTS audio + upload to local R2
+- `./scripts/generate-audio.sh --force` - Regenerate all audio (overwrite)
+
+## Data Schema
+- **186 word pairs** across 9 phoneme categories
+- Categories: vowel_short, vowel_long, consonant_voicing, fricative, sibilant, affricate, liquid, nasal, approximant
+- Dialect filters: `all` (170 pairs), `uk_only` (16 pairs)
+
+## API Endpoints
+- `GET /api/health` - Health check
+- `GET /api/pairs?category=&dialect=&difficulty=&limit=&offset=` - List word pairs
+- `GET /api/pairs/categories` - List categories with counts
+- `GET /api/audio/:word` - Serve audio from R2
+- `POST /api/recognize` - Transcribe audio via Whisper AI
+
+## Wrangler Bindings (api/wrangler.toml)
+- `DB` - D1 database `phonetiq-db`
+- `AUDIO_BUCKET` - R2 bucket `phonetiq-audio`
+- `AI` - Workers AI (requires Cloudflare auth for remote)

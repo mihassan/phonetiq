@@ -1,0 +1,16 @@
+name = "phonetiq-api"
+main = "src/index.ts"
+compatibility_date = "2025-04-18"
+
+[ai]
+binding = "AI"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "phonetiq-db"
+database_id = "local"
+migrations_dir = "drizzle"
+
+[[r2_buckets]]
+binding = "AUDIO_BUCKET"
+bucket_name = "phonetiq-audio"

@@ -1,0 +1,175 @@
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { 
+  Volume2, Mic, MicOff, CheckCircle2, XCircle, 
+  ChevronRight, ChevronLeft, RefreshCcw, BookOpen, Mic2, Play
+} from 'lucide-react';
+
+const rawPairs = [
+  ["ship", "sheep"], ["bit", "beat"], ["slip", "sleep"], ["dip", "deep"], ["fill", "feel"],
+  ["pill", "peel"], ["mill", "meal"], ["still", "steal"], ["hill", "heel"], ["lick", "leak"],
+  ["pen", "pan"], ["men", "man"], ["bed", "bad"], ["head", "had"], ["said", "sad"],
+  ["lend", "land"], ["send", "sand"], ["guess", "gas"], ["peck", "pack"], ["flesh", "flash"],
+  ["pull", "pool"], ["full", "fool"], ["look", "luke"], ["wood", "wooed"], ["soot", "suit"],
+  ["stood", "stewed"], ["could", "cooed"], ["hood", "who'd"], ["should", "shooed"], ["put", "boot"],
+  ["cot", "caught"], ["don", "dawn"], ["knot", "naught"], ["stock", "stalk"], ["fond", "fawned"],
+  ["nod", "gnawed"], ["pond", "pawned"], ["tot", "taught"], ["wok", "walk"], ["box", "balks"],
+  ["hut", "heart"], ["cut", "cart"], ["duck", "dark"], ["much", "march"], ["luck", "lark"],
+  ["suck", "sark"], ["buck", "bark"], ["puck", "park"], ["chuck", "chark"], ["muck", "mark"],
+  ["pie", "buy"], ["pat", "bat"], ["pig", "big"], ["pack", "back"], ["pear", "bear"],
+  ["cap", "cab"], ["cup", "cub"], ["rope", "robe"], ["mop", "mob"], ["lap", "lab"],
+  ["tie", "die"], ["tear", "dear"], ["town", "down"], ["tank", "dank"], ["try", "dry"],
+  ["hat", "had"], ["mat", "mad"], ["set", "said"], ["hit", "hid"], ["rate", "raid"],
+  ["cap", "gap"], ["coat", "goat"], ["class", "glass"], ["curl", "girl"], ["crow", "grow"],
+  ["back", "bag"], ["lack", "lag"], ["tack", "tag"], ["pick", "pig"], ["peck", "peg"],
+  ["fan", "van"], ["fast", "vast"], ["fault", "vault"], ["ferry", "very"], ["fat", "vat"],
+  ["leaf", "leave"], ["half", "halve"], ["safe", "save"], ["proof", "prove"], ["strife", "strive"],
+  ["light", "right"], ["load", "road"], ["lock", "rock"], ["long", "wrong"], ["lead", "read"],
+  ["glass", "grass"], ["fly", "fry"], ["play", "pray"], ["climb", "crime"], ["blue", "brew"]
+];
+
+const WORD_PAIRS = rawPairs.map((p, i) => ({ id: i, word1: p[0], word2: p[1] }));
+
+export default function App() {
+  const [mode, setMode] = useState('LEARN');
+  const [index, setIndex] = useState(0);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [targetNum, setTargetNum] = useState(1);
+  const [isListening, setIsListening] = useState(false);
+  const [useFallback, setUseFallback] = useState(false);
+  
+  const audioRef = useRef(null);
+  const currentPair = WORD_PAIRS[index];
+
+  // Robust Speak function
+  const speak = useCallback((text) => {
+    if (!text) return;
+    setIsSpeaking(true);
+
+    if (window.speechSynthesis && !useFallback) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      utterance.rate = 0.8;
+      
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => {
+        setUseFallback(true);
+        playFallback(text);
+      };
+
+      window.speechSynthesis.speak(utterance);
+      
+      // Manual reset for Chrome bug
+      setTimeout(() => setIsSpeaking(false), 1500);
+    } else {
+      playFallback(text);
+    }
+  }, [useFallback]);
+
+  const playFallback = (text) => {
+    if (audioRef.current) {
+      audioRef.current.src = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=en&client=tw-ob`;
+      audioRef.current.play().catch(() => setUseFallback(true));
+      setTimeout(() => setIsSpeaking(false), 1500);
+    }
+  };
+
+  const handleSpeech = () => {
+    const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!Speech) return;
+
+    const rec = new Speech();
+    rec.lang = 'en-US';
+    rec.onstart = () => setIsListening(true);
+    rec.onend = () => setIsListening(false);
+    rec.onresult = (e) => {
+      const result = e.results[0][0].transcript.toLowerCase();
+      setTranscript(result);
+      const target = targetNum === 1 ? currentPair.word1 : currentPair.word2;
+      if (result.includes(target.toLowerCase())) {
+        setTimeout(() => {
+          if (targetNum === 1) { setTargetNum(2); setTranscript(''); }
+          else { setIndex(i => (i + 1) % WORD_PAIRS.length); setTargetNum(1); setTranscript(''); }
+        }, 1000);
+      }
+    };
+    rec.start();
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans p-6 selection:bg-indigo-100">
+      <audio ref={audioRef} className="hidden" />
+      
+      <div className="max-w-2xl mx-auto">
+        <header className="flex justify-between items-center py-6 mb-8">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+              <Mic2 size={20} />
+            </div>
+            <h1 className="text-xl font-bold tracking-tight">Phonetiq</h1>
+          </div>
+          <div className="flex bg-slate-200/50 p-1 rounded-full border border-slate-200">
+            <button onClick={() => setMode('LEARN')} className={`px-5 py-1.5 rounded-full text-xs font-bold transition-all ${mode === 'LEARN' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}>LEARN</button>
+            <button onClick={() => setMode('PRACTICE')} className={`px-5 py-1.5 rounded-full text-xs font-bold transition-all ${mode === 'PRACTICE' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}>PRACTICE</button>
+          </div>
+        </header>
+
+        <div className="mb-4 flex justify-between items-center">
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Pair {index + 1} / 100</span>
+          {useFallback && <span className="text-[10px] font-bold text-amber-600 px-2 py-0.5 bg-amber-50 rounded border border-amber-100 uppercase">External Audio Mode</span>}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+          {[currentPair.word1, currentPair.word2].map((word, i) => {
+            const isActive = mode === 'PRACTICE' ? targetNum === (i + 1) : true;
+            return (
+              <div key={i} className={`bg-white border-2 p-12 rounded-[2.5rem] transition-all duration-300 flex flex-col items-center justify-center ${isActive ? 'border-indigo-500 shadow-xl' : 'border-transparent opacity-30 grayscale'}`}>
+                <h2 className="text-4xl font-black mb-10 tracking-tight text-slate-800 capitalize">{word}</h2>
+                
+                {mode === 'LEARN' ? (
+                  <button 
+                    onClick={() => speak(word)}
+                    className="group relative w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all border border-slate-100"
+                  >
+                    <Volume2 size={24} className={isSpeaking ? 'animate-pulse text-indigo-600' : ''} />
+                  </button>
+                ) : (
+                  isActive && (
+                    <div className="flex flex-col items-center gap-4">
+                      <button 
+                        onClick={handleSpeech}
+                        className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all ${isListening ? 'bg-rose-500 text-white animate-pulse' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+                      >
+                        {isListening ? <Mic size={24} /> : <Play size={24} fill="currentColor" className="ml-1" />}
+                      </button>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tap to start</p>
+                    </div>
+                  )
+                )}
+                
+                {mode === 'PRACTICE' && isActive && transcript && (
+                  <div className="absolute bottom-6 flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-50 border border-slate-100">
+                    <span className="text-xs font-bold text-slate-600">Heard:</span>
+                    <span className="text-xs font-black text-indigo-600">"{transcript}"</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="flex items-center justify-center gap-6">
+          <button onClick={() => setIndex(i => (i - 1 + WORD_PAIRS.length) % WORD_PAIRS.length)} className="p-4 bg-white border border-slate-200 rounded-full hover:bg-slate-50 transition-all shadow-sm active:scale-90"><ChevronLeft size={20}/></button>
+          <button 
+            onClick={() => { speak(currentPair.word1); setTimeout(() => speak(currentPair.word2), 1000); }}
+            className="px-10 py-4 bg-slate-900 text-white rounded-full font-bold shadow-lg hover:shadow-xl hover:translate-y-[-2px] active:translate-y-0 transition-all flex items-center gap-3 text-sm tracking-tight"
+          >
+            <RefreshCcw size={18} /> Play Pair
+          </button>
+          <button onClick={() => setIndex(i => (i + 1) % WORD_PAIRS.length)} className="p-4 bg-white border border-slate-200 rounded-full hover:bg-slate-50 transition-all shadow-sm active:scale-90"><ChevronRight size={20}/></button>
+        </div>
+      </div>
+    </div>
+  );
+}
