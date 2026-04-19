@@ -1,17 +1,24 @@
 # Phonetiq - Project Memory
 
 ## Architecture & Stack
-- **Frontend:** React 18 (SPA), Vite, Tailwind CSS v4, Lucide React.
+- **Frontend:** React 19 (SPA), Vite, Tailwind CSS v4, Lucide React.
 - **Hosting:** Cloudflare Pages (Frontend) + Cloudflare Workers (Backend API via Hono).
 - **Database:** Cloudflare D1 (SQLite) + Drizzle ORM. Schema in `api/src/db/schema.ts`.
 - **Storage:** Cloudflare R2 (pre-generated TTS audio files, `.m4a` format).
 - **AI / Speech:** Cloudflare Workers AI (`@cf/openai/whisper`) for Speech-to-Text (STT).
+- **CI/CD:** GitHub Actions for both frontend (Pages) and API (Workers) — triggers on push to `main`.
+
+## Live URLs
+- **Frontend:** https://phonetiq.mihassan.com (also https://phonetiq.pages.dev)
+- **API:** https://api.phonetiq.mihassan.com (also https://phonetiq-api.mihassan.workers.dev)
+- **GitHub:** https://github.com/mihassan/phonetiq
 
 ## Key Technical Decisions
 1. **API-Driven Data:** Word pairs are stored in D1, not hardcoded. The frontend fetches dynamically with optional category and dialect filters.
 2. **Audio Reliability (TTS):** Pre-generated `.m4a` audio files stored in R2. Generated locally using macOS `say` command via `scripts/generate-audio.sh`. Served by Worker via `GET /api/audio/:word`.
 3. **Speech Recognition (STT):** Frontend uses `MediaRecorder` API (universally supported) to capture audio blobs. Sent to Worker at `POST /api/recognize`, processed by Whisper AI.
 4. **Dialect Awareness:** Word pairs have a `dialect_filter` column (`all`, `us_only`, `uk_only`) to handle accent-dependent minimal pairs (e.g., cot-caught merger, rhoticity).
+5. **CI/CD:** GitHub Actions for both deployments (not Cloudflare Pages Git integration, which requires Direct Upload projects to be recreated). Single `CLOUDFLARE_API_TOKEN` secret shared by both workflows.
 
 ## Commands Reference
 ### API (`api/`)
@@ -25,6 +32,7 @@
 ### Web (`web/`)
 - `npm run dev` - Start Vite dev server (port 5173, proxies /api to 8787)
 - `npm run build` - Typecheck + production build (outputs to `web/dist/`)
+- `npm test` - Run Vitest tests
 
 ### Scripts
 - `./scripts/generate-audio.sh` - Generate TTS audio + upload to local R2
@@ -49,5 +57,13 @@
 - `AI_RATE_LIMITER` - Rate limit: 10 req/min per IP (protects Whisper AI endpoint)
 - `API_RATE_LIMITER` - Rate limit: 100 req/min per IP (protects all API routes)
 
+## Custom Domains (api/wrangler.toml)
+- `api.phonetiq.mihassan.com` - Worker custom domain (auto-creates DNS record)
+- `phonetiq.mihassan.com` - Pages custom domain (CNAME to `phonetiq.pages.dev`)
+
 ## Environment Variables
-- `VITE_API_URL` - (Frontend, production only) Base URL for the API Worker (e.g., `https://phonetiq-api.username.workers.dev/api`). Defaults to `/api` in local dev via Vite proxy.
+- `VITE_API_URL` - (Frontend, production only) Base URL for the API Worker (e.g., `https://api.phonetiq.mihassan.com`). The code appends `/api` automatically. Defaults to `/api` in local dev via Vite proxy.
+
+## GitHub Secrets
+- `CLOUDFLARE_API_TOKEN` - API token with Workers Scripts Edit + Cloudflare Pages Edit permissions
+- `CLOUDFLARE_ACCOUNT_ID` - Cloudflare account ID (`3bea2e6d6f93b5cc822b36b69958d4cd`)

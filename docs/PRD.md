@@ -1,7 +1,8 @@
 # Product Requirements Document (PRD)
 
 ## Title: Phonetiq - Minimal Pair Pronunciation Practice
-**Status:** Planning
+**Status:** Live (v1)
+**Live URL:** https://phonetiq.mihassan.com
 
 ### Overview
 Phonetiq is a web application designed to help English language learners master "minimal pairs" (words that differ by only one phonological element, like "ship" vs. "sheep"). The app provides auditory examples and leverages speech recognition to validate the user's pronunciation.

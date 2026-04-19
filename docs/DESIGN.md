@@ -1,16 +1,17 @@
 # Design Document: Phonetiq
 
 ## Architecture Overview
-Phonetiq is built as a single-page application (SPA) using React (via Vite) deployed to **Cloudflare Pages**. It relies heavily on a backend API powered by **Cloudflare Workers**. 
+Phonetiq is built as a single-page application (SPA) using React 19 (via Vite) deployed to **Cloudflare Pages**. It relies on a backend API powered by **Cloudflare Workers** with the Hono framework.
 
 The initial prototype (`index.html`) relied on browser-native `SpeechSynthesis` and `SpeechRecognition` APIs, but due to browser fragmentation, poor Safari support, and dialect issues, the architecture was redesigned to rely on Cloudflare's ecosystem for 100% compatibility.
 
 ## Tech Stack
-*   **Frontend:** React 18, Vite, Tailwind CSS, Lucide React (Cloudflare Pages).
-*   **Backend:** Cloudflare Workers (Hono framework recommended for routing).
+*   **Frontend:** React 19, Vite, Tailwind CSS v4, Lucide React (Cloudflare Pages).
+*   **Backend:** Cloudflare Workers (Hono framework for routing).
 *   **Database:** Cloudflare D1 (SQLite) via Drizzle ORM.
-*   **Storage (TTS Audio):** Cloudflare R2 bucket.
+*   **Storage (TTS Audio):** Cloudflare R2 bucket (pre-generated `.m4a` files).
 *   **AI (Speech-to-Text):** Cloudflare Workers AI (`@cf/openai/whisper`).
+*   **CI/CD:** GitHub Actions with `cloudflare/wrangler-action` for both frontend and API.
 
 ## Data Model (D1 Schema - `schema.sql`)
 The word pairs are no longer a hardcoded array. They live in D1, allowing the app to filter by dialect (e.g., US vs UK) and phonetic category (e.g., vowels, fricatives, voicing).
@@ -20,8 +21,8 @@ CREATE TABLE word_pairs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   word1 TEXT NOT NULL,
   word2 TEXT NOT NULL,
-  phoneme_type TEXT NOT NULL, -- e.g., 'vowels', 'consonants', 'fricatives'
-  target_sounds TEXT,         -- e.g., '/ɪ/ vs /i:/'
+  phoneme_type TEXT NOT NULL, -- e.g., 'vowel_short', 'consonant_voicing', 'fricative'
+  target_sounds TEXT,         -- e.g., '/ɪ/ vs /iː/'
   dialect_filter TEXT,        -- e.g., 'all', 'us_only', 'uk_only'
   difficulty_level INTEGER DEFAULT 1,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -36,11 +37,26 @@ The `dialect_filter` column ensures the app only presents relevant pairs based o
 
 ## Audio Pipelines
 ### 1. Text-to-Speech (TTS) Pipeline
-*   **Problem:** Browser `speechSynthesis` voices vary in quality/accent; Google Translate URLs are undocumented and rate-limited.
-*   **Solution:** We use pre-generated high-quality audio files (.mp3) stored in a **Cloudflare R2** bucket.
-*   **Workflow:** Frontend requests `https://audio.phonetiq.app/word.mp3`. If the file is missing in R2, a Worker intercepts the request, calls a premium TTS service (e.g., OpenAI/ElevenLabs), saves the `.mp3` to R2 for future requests, and serves it back to the user.
+*   **Problem:** Browser `speechSynthesis` voices vary in quality/accent across platforms; Google Translate URLs are undocumented and rate-limited.
+*   **Solution:** Pre-generated `.m4a` audio files stored in a **Cloudflare R2** bucket. Audio is generated locally using macOS `say` command via `scripts/generate-audio.sh` and cached in `.audio-cache/`.
+*   **Workflow:** Frontend requests `GET /api/audio/:word` → Worker fetches the `.m4a` file from R2 → returns it with proper `Content-Type: audio/mp4` header. All 338 audio files (for 186 word pairs) are pre-generated and uploaded to R2 during initial setup.
 
 ### 2. Speech-to-Text (STT) Pipeline
 *   **Problem:** `SpeechRecognition` is unsupported in Firefox and buggy in Safari.
-*   **Solution:** We use the universally supported HTML5 `MediaRecorder` API on the frontend to capture a short audio blob of the user speaking.
-*   **Workflow:** The frontend sends the blob to a Cloudflare Worker via `POST /api/recognize`. The Worker passes the audio to **Cloudflare Workers AI (`@cf/openai/whisper`)**, transcribes it, and returns the recognized text to the frontend for validation.
+*   **Solution:** The universally supported HTML5 `MediaRecorder` API captures audio on the frontend.
+*   **Workflow:** User taps the mic button → 3-second recording with visual countdown (SVG progress ring) → audio blob sent to `POST /api/recognize` → Worker passes audio to **Cloudflare Workers AI (`@cf/openai/whisper`)** → transcription returned to frontend for validation against the target word.
+
+### 3. Mic Interaction Design
+*   **Option chosen:** Tap once to start, auto-stop after 3 seconds.
+*   **Visual feedback:** SVG progress ring + countdown text during recording, prominent transcript display after processing.
+*   **Architecture:** The `useAudioRecorder` hook is a "dumb" wrapper — it only starts/stops when told. `PracticeCard` orchestrates the 3s timing via `setTimeout`, avoiding race conditions from internal timers.
+
+## Rate Limiting
+Two-tier native Cloudflare rate limiting (configured in `wrangler.toml`):
+*   **AI endpoint:** 10 requests/minute per IP (protects the expensive Whisper AI call)
+*   **All API routes:** 100 requests/minute per IP (general protection)
+
+## Deployment
+*   **Frontend:** Cloudflare Pages (Direct Upload via `wrangler pages deploy`), auto-deployed by GitHub Actions on push to `web/`.
+*   **API:** Cloudflare Workers (via `wrangler deploy`), auto-deployed by GitHub Actions on push to `api/`.
+*   **Custom Domains:** `phonetiq.mihassan.com` (Pages) and `api.phonetiq.mihassan.com` (Worker custom domain).

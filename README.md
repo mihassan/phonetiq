@@ -5,6 +5,8 @@
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)](https://www.typescriptlang.org/)
 
+**Live:** [phonetiq.mihassan.com](https://phonetiq.mihassan.com) | **API:** [api.phonetiq.mihassan.com](https://api.phonetiq.mihassan.com)
+
 A web app for practicing English **minimal pair pronunciation** — words that differ by only one sound, like *ship* vs *sheep*. Built entirely on the Cloudflare stack.
 
 **Learn Mode** — hear the correct pronunciation of each word via pre-generated TTS audio.
@@ -28,7 +30,8 @@ A web app for practicing English **minimal pair pronunciation** — words that d
 | Audio Storage | Cloudflare R2 (pre-generated `.m4a` files) |
 | Speech Recognition | Cloudflare Workers AI (`@cf/openai/whisper`) |
 | Hosting | Cloudflare Pages (frontend) + Cloudflare Workers (API) |
-| CI/CD | GitHub Actions (`cloudflare/wrangler-action`) |
+| Custom Domains | `phonetiq.mihassan.com` (frontend), `api.phonetiq.mihassan.com` (API) |
+| CI/CD | GitHub Actions (`cloudflare/wrangler-action`) for both frontend and API |
 
 ## Project Structure
 
@@ -66,6 +69,7 @@ Phonetiq/
     DESIGN.md                 # Architecture & design decisions
   .github/workflows/
     deploy-api.yml            # CI/CD for Worker deployment
+    deploy-web.yml            # CI/CD for Pages deployment
 ```
 
 ## Local Development
@@ -141,27 +145,44 @@ npx wrangler d1 execute phonetiq-db --file=src/db/seed.sql --remote
 
 # Create production R2 bucket
 npx wrangler r2 bucket create phonetiq-audio
+
+# Create Pages project
+npx wrangler pages project create phonetiq --production-branch main
 ```
 
-### 2. Deploy the API Worker
+### 2. Upload audio files to R2
+
+Upload the 338 `.m4a` files from `.audio-cache/` to the `phonetiq-audio` R2 bucket via the Cloudflare Dashboard (R2 > phonetiq-audio > Upload Files).
+
+### 3. Deploy manually (first time)
 
 ```bash
+# Deploy API Worker
 cd api && npx wrangler deploy
+
+# Build and deploy frontend
+cd web && VITE_API_URL=https://api.phonetiq.mihassan.com npm run build
+npx wrangler pages deploy dist --project-name phonetiq
 ```
 
-### 3. Deploy the frontend
+### 4. CI/CD (automatic on push)
 
-Connect [Cloudflare Pages](https://pages.cloudflare.com/) to your GitHub repository:
+Both the API Worker and frontend are auto-deployed via GitHub Actions on push to `main`:
 
-- **Framework preset:** Vite
-- **Build command:** `npm run build`
-- **Build output directory:** `dist`
-- **Root directory:** `web`
-- **Environment variable:** `VITE_API_URL` = `https://your-worker.workers.dev/api`
+- `.github/workflows/deploy-api.yml` — triggers on changes to `api/`
+- `.github/workflows/deploy-web.yml` — triggers on changes to `web/`
 
-### 4. CI/CD
+**Required GitHub secrets:**
 
-The included GitHub Action (`.github/workflows/deploy-api.yml`) automatically deploys the Worker API when changes are pushed to the `api/` directory on `main`. Add your `CLOUDFLARE_API_TOKEN` as a GitHub repository secret.
+| Secret | Value |
+| --- | --- |
+| `CLOUDFLARE_API_TOKEN` | API token with Workers Scripts Edit + Cloudflare Pages Edit permissions |
+| `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID |
+
+### 5. Custom domains
+
+- **Frontend:** Add `phonetiq.mihassan.com` via Pages > Custom domains (requires a CNAME record pointing to `phonetiq.pages.dev`)
+- **API:** Configured in `api/wrangler.toml` via `routes` with `custom_domain = true` (auto-creates DNS record)
 
 ## Documentation
 
