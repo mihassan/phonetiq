@@ -8,7 +8,7 @@ binding = "AI"
 [[d1_databases]]
 binding = "DB"
 database_name = "phonetiq-db"
-database_id = "local"
+database_id = "0794f6e7-3390-44ef-88be-23e35bbc4c67"
 migrations_dir = "drizzle"
 
 [[r2_buckets]]
