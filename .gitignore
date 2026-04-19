@@ -4,3 +4,4 @@ dist/
 .audio-cache/
 .dev.vars
 *.local
+.DS_Store

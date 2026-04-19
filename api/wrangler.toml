@@ -1,6 +1,11 @@
 name = "phonetiq-api"
 main = "src/index.ts"
 compatibility_date = "2025-04-18"
+workers_dev = true
+
+routes = [
+  { pattern = "api.phonetiq.mihassan.com", custom_domain = true }
+]
 
 [ai]
 binding = "AI"
