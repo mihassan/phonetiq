@@ -12,6 +12,20 @@ A web app for practicing English **minimal pair pronunciation** — words that d
 **Learn Mode** — hear the correct pronunciation of each word via pre-generated TTS audio.
 **Practice Mode** — speak into your microphone and get instant AI feedback via Cloudflare Workers AI (Whisper).
 
+## Screenshots
+
+### Desktop
+
+| Learn | Practice |
+| --- | --- |
+| ![Learn mode desktop](docs/learn-desktop.png) | ![Practice mode desktop](docs/practice-desktop.png) |
+
+### Mobile
+
+| Learn | Practice |
+| --- | --- |
+| ![Learn mode mobile](docs/learn-mobile.png) | ![Practice mode mobile](docs/practice-mobile.png) |
+
 ## Features
 
 - 186 curated word pairs across 9 phoneme categories (vowels, consonants, fricatives, affricates, liquids, nasals, sibilants, approximants)
