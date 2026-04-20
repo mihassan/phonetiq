@@ -13,4 +13,4 @@ export interface Category {
   count: number;
 }
 
-export type Mode = 'LEARN' | 'PRACTICE';
+export type Mode = 'LEARN' | 'PRACTICE' | 'CATEGORIES';

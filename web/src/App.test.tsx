@@ -99,6 +99,20 @@ describe('App', () => {
     expect(screen.queryByTestId('learn-stage')).not.toBeInTheDocument();
   });
 
+  it('renders categories stage when Categories mode is selected', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await screen.findByText(/pair 1 of 2/i);
+
+    await user.click(screen.getByRole('button', { name: /categories/i }));
+
+    expect(screen.getByTestId('categories-stage')).toBeInTheDocument();
+    expect(screen.queryByTestId('learn-stage')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('practice-stage')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('category-filter')).not.toBeInTheDocument();
+  });
+
   it('uses themed header and mode-toggle styling aligned with the design direction', async () => {
     render(<App />);
 

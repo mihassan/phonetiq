@@ -4,6 +4,7 @@ import { Navigation } from './components/Navigation';
 import { CategoryFilter } from './components/CategoryFilter';
 import { AppShell } from './components/AppShell';
 import { LearnStage } from './components/LearnStage';
+import { CategoriesStage } from './components/CategoriesStage';
 import { usePracticeSession } from './hooks/usePracticeSession';
 
 function App() {
@@ -61,7 +62,7 @@ function App() {
           <div data-testid="mode-toggle" className="flex bg-[#1a2438]/80 p-1 md:p-1.5 rounded-full border border-[#7dd3fc]/10">
             <button
               onClick={() => setMode('LEARN')}
-              className={`px-5 md:px-7 py-2 md:py-2.5 rounded-full text-xs md:text-sm font-bold transition-all ${
+              className={`px-4 md:px-6 py-2 md:py-2.5 rounded-full text-xs md:text-sm font-bold transition-all ${
                 mode === 'LEARN'
                   ? 'bg-[#0f1524] shadow-md shadow-[#7dd3fc]/10 text-[#e0e8f0]'
                   : 'text-[#a0b4c4] hover:text-[#e0e8f0]'
@@ -70,8 +71,18 @@ function App() {
               Learn
             </button>
             <button
+              onClick={() => setMode('CATEGORIES')}
+              className={`px-4 md:px-6 py-2 md:py-2.5 rounded-full text-xs md:text-sm font-bold transition-all ${
+                mode === 'CATEGORIES'
+                  ? 'bg-[#0f1524] shadow-md shadow-[#7dd3fc]/10 text-[#e0e8f0]'
+                  : 'text-[#a0b4c4] hover:text-[#e0e8f0]'
+              }`}
+            >
+              Categories
+            </button>
+            <button
               onClick={() => setMode('PRACTICE')}
-              className={`px-5 md:px-7 py-2 md:py-2.5 rounded-full text-xs md:text-sm font-bold transition-all ${
+              className={`px-4 md:px-6 py-2 md:py-2.5 rounded-full text-xs md:text-sm font-bold transition-all ${
                 mode === 'PRACTICE'
                   ? 'bg-[#0f1524] shadow-md shadow-[#7dd3fc]/10 text-[#e0e8f0]'
                   : 'text-[#a0b4c4] hover:text-[#e0e8f0]'
@@ -83,11 +94,13 @@ function App() {
         </header>
       }
       filters={
-        <CategoryFilter
-          categories={categories}
-          selected={selectedCategory}
-          onSelect={setSelectedCategory}
-        />
+        mode === 'CATEGORIES' ? null : (
+          <CategoryFilter
+            categories={categories}
+            selected={selectedCategory}
+            onSelect={setSelectedCategory}
+          />
+        )
       }
       stage={
         mode === 'LEARN' ? (
@@ -96,6 +109,15 @@ function App() {
             index={index}
             totalPairs={pairs.length}
             progress={progress}
+          />
+        ) : mode === 'CATEGORIES' ? (
+          <CategoriesStage
+            categories={categories}
+            selectedCategory={selectedCategory}
+            onSelectCategory={(category) => {
+              setSelectedCategory(category);
+              setMode('LEARN');
+            }}
           />
         ) : (
           <main
@@ -149,12 +171,14 @@ function App() {
         )
       }
       navigation={
-        <Navigation
-          onPrev={goPrev}
-          onNext={goNext}
-          word1={currentPair.word1}
-          word2={currentPair.word2}
-        />
+        mode === 'CATEGORIES' ? null : (
+          <Navigation
+            onPrev={goPrev}
+            onNext={goNext}
+            word1={currentPair.word1}
+            word2={currentPair.word2}
+          />
+        )
       }
     />
   );
