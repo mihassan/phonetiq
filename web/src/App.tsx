@@ -151,7 +151,10 @@ function App() {
               </div>
             </div>
 
-            <div className="flex flex-col md:flex-row flex-1 pb-8 md:pb-0">
+            <div
+              data-testid="practice-stage-body"
+              className="flex flex-col md:flex-row flex-1 pb-8 md:pb-0 py-6 md:py-4 gap-2 md:gap-0"
+            >
               <PracticeCard
                 word={currentPair.word1}
                 isActive={targetNum === 1}

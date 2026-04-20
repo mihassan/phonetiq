@@ -9,9 +9,16 @@ interface Props {
   isFirstWord: boolean;
 }
 
+function wordSizeClass(word: string) {
+  if (word.length >= 11) return 'text-[48px] md:text-[72px]';
+  if (word.length >= 6) return 'text-[56px] md:text-[88px]';
+  return 'text-[64px] md:text-[104px]';
+}
+
 export function PairCard({ word, isActive, isFirstWord }: Props) {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const sizeClass = wordSizeClass(word);
 
   const play = () => {
     audioRef.current = playWordAudio(audioUrl(word), {
@@ -31,7 +38,7 @@ export function PairCard({ word, isActive, isFirstWord }: Props) {
     >
       <h2
         data-testid="pair-card-heading"
-        className="text-[64px] md:text-[104px] font-black text-[#e0e8f0] tracking-tighter mb-4 md:mb-6 leading-none capitalize"
+        className={`w-full max-w-[22rem] md:max-w-[28rem] min-h-[104px] md:min-h-[136px] px-2 text-center ${sizeClass} font-black text-[#e0e8f0] tracking-tighter mb-4 md:mb-6 leading-[0.95] capitalize flex items-center justify-center`}
       >
         {word}
       </h2>

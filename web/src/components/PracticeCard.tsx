@@ -13,9 +13,16 @@ interface Props {
   partnerWord: string;
 }
 
+function wordSizeClass(word: string) {
+  if (word.length >= 11) return 'text-[48px] md:text-[72px]';
+  if (word.length >= 6) return 'text-[56px] md:text-[88px]';
+  return 'text-[64px] md:text-[104px]';
+}
+
 export function PracticeCard({ word, isActive, onSuccess, isFirstWord, partnerWord: _partnerWord }: Props) {
   const { transcript, status, progress, isCompleted, handleRecord } =
     usePracticeAttempt({ word, onSuccess, recordDurationMs: RECORD_DURATION });
+  const sizeClass = wordSizeClass(word);
 
   const play = () => {
     playWordAudio(audioUrl(word));
@@ -30,13 +37,14 @@ export function PracticeCard({ word, isActive, onSuccess, isFirstWord, partnerWo
     return (
       <div className="flex-1 flex flex-col justify-center items-center opacity-35 md:border-r border-b md:border-b-0 border-[#7dd3fc]/10 pb-8 md:pb-0 pt-2 md:pt-0 transition-opacity duration-500">
         <div className="flex items-center gap-4">
-          <div className="text-5xl md:text-[80px] font-extrabold text-[#a0b4c4] tracking-tight leading-none capitalize">
+          <div className={`w-full max-w-[22rem] md:max-w-[28rem] min-h-[104px] md:min-h-[136px] px-2 text-center ${sizeClass} font-extrabold text-[#a0b4c4] tracking-tight leading-[0.95] capitalize flex items-center justify-center`}>
             {word}
           </div>
           <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-[#141c2e] border border-[#7dd3fc]/30 flex justify-center items-center text-[#7dd3fc] shadow-sm">
             <Check size={16} strokeWidth={3} />
           </div>
         </div>
+        <div data-testid="practice-inactive-slot" className="h-[148px] md:h-[184px]" />
       </div>
     );
   }
@@ -45,9 +53,10 @@ export function PracticeCard({ word, isActive, onSuccess, isFirstWord, partnerWo
   if (!isActive) {
     return (
       <div className="flex-1 flex flex-col justify-center items-center opacity-35 pb-8 md:pb-0 transition-opacity duration-500">
-        <div className="text-[56px] md:text-[80px] font-extrabold text-[#a0b4c4] tracking-tight leading-none mb-4 capitalize">
+        <div className={`w-full max-w-[22rem] md:max-w-[28rem] min-h-[104px] md:min-h-[136px] px-2 text-center ${sizeClass} font-extrabold text-[#a0b4c4] tracking-tight leading-[0.95] mb-4 capitalize flex items-center justify-center`}>
           {word}
         </div>
+        <div data-testid="practice-inactive-slot" className="h-[148px] md:h-[184px]" />
       </div>
     );
   }
@@ -91,11 +100,11 @@ export function PracticeCard({ word, isActive, onSuccess, isFirstWord, partnerWo
   return (
     <div
       data-testid="practice-card-active"
-      className={`flex-1 flex flex-col justify-center items-center ${isFirstWord ? 'md:border-r border-b md:border-b-0 border-[#7dd3fc]/10' : ''} pb-8 md:pb-0 pt-2 md:pt-0`}
+      className={`flex-1 flex flex-col justify-center items-center px-6 md:px-8 ${isFirstWord ? 'md:border-r border-b md:border-b-0 border-[#7dd3fc]/10' : ''} pb-8 md:pb-0 pt-2 md:pt-0`}
     >
       <h2
         data-testid="practice-card-heading"
-        className="text-[64px] md:text-[104px] font-black text-[#e0e8f0] tracking-tighter mb-4 md:mb-6 leading-none capitalize"
+        className={`w-full max-w-[22rem] md:max-w-[28rem] min-h-[104px] md:min-h-[136px] px-2 text-center ${sizeClass} font-black text-[#e0e8f0] tracking-tighter mb-4 md:mb-6 leading-[0.95] capitalize flex items-center justify-center`}
       >
         {word}
       </h2>

@@ -126,10 +126,63 @@ describe('PracticeCard', () => {
 
     expect(card.className).toContain('border-[#7dd3fc]/10');
     expect(heading.className).toContain('text-[#e0e8f0]');
+    expect(heading.className).toContain('w-full');
+    expect(heading.className).toContain('text-center');
+    expect(heading.className).toContain('min-h-[104px]');
     expect(listen.className).toContain('text-[#7dd3fc]');
     expect(status.className).toContain('text-[#a0b4c4]');
     expect(record.className).toContain('bg-[#7dd3fc]');
     expect(record.className).toContain('text-[#001f2e]');
+    expect(card.className).toContain('px-6');
+  });
+
+  it('keeps inactive word layout centered and width-constrained for balance', () => {
+    render(
+      <PracticeCard
+        word="internationalization"
+        isActive={false}
+        onSuccess={vi.fn()}
+        isFirstWord={false}
+        partnerWord="ship"
+      />,
+    );
+
+    const inactiveWord = screen.getByText(/internationalization/i);
+    expect(inactiveWord.className).toContain('w-full');
+    expect(inactiveWord.className).toContain('text-center');
+    expect(inactiveWord.className).toContain('min-h-[104px]');
+    expect(inactiveWord.className).toContain('text-[48px]');
+    expect(inactiveWord.className).toContain('md:text-[72px]');
+  });
+
+  it('keeps inactive practice card with balanced placeholder slot', () => {
+    render(
+      <PracticeCard
+        word="sheep"
+        isActive={false}
+        onSuccess={vi.fn()}
+        isFirstWord={false}
+        partnerWord="ship"
+      />,
+    );
+
+    expect(screen.getByTestId('practice-inactive-slot')).toBeInTheDocument();
+  });
+
+  it('reduces heading size for medium-length active words', () => {
+    render(
+      <PracticeCard
+        word="tongue"
+        isActive={true}
+        onSuccess={vi.fn()}
+        isFirstWord={true}
+        partnerWord="ton"
+      />,
+    );
+
+    const heading = screen.getByTestId('practice-card-heading');
+    expect(heading.className).toContain('text-[56px]');
+    expect(heading.className).toContain('md:text-[88px]');
   });
 
   it('uses themed recording-state colors', async () => {

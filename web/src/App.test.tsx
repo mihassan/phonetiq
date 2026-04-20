@@ -167,6 +167,18 @@ describe('App', () => {
     expect(targetSounds.className).toContain('text-[#7dd3fc]');
   });
 
+  it('uses roomier practice-stage body spacing for card balance', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await screen.findByText(/pair 1 of 2/i);
+    await user.click(screen.getByRole('button', { name: /practice/i }));
+
+    const body = screen.getByTestId('practice-stage-body');
+    expect(body.className).toContain('py-6');
+    expect(body.className).toContain('gap-2');
+  });
+
   it('goes next, wraps around, and previous wraps back', async () => {
     const user = userEvent.setup();
     render(<App />);
