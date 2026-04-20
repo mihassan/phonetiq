@@ -33,7 +33,7 @@ export function PracticeCard({ word, isActive, onSuccess, isFirstWord, partnerWo
           <div className="text-5xl md:text-[80px] font-extrabold text-[#a0b4c4] tracking-tight leading-none capitalize">
             {word}
           </div>
-          <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-emerald-100 flex justify-center items-center text-emerald-600 shadow-sm">
+          <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-[#141c2e] border border-[#7dd3fc]/30 flex justify-center items-center text-[#7dd3fc] shadow-sm">
             <Check size={16} strokeWidth={3} />
           </div>
         </div>
@@ -73,15 +73,15 @@ export function PracticeCard({ word, isActive, onSuccess, isFirstWord, partnerWo
       label: 'Processing...',
     },
     correct: {
-      btnBg: 'bg-emerald-100',
-      textCol: 'text-emerald-600',
-      icon: <Check size={28} className="text-emerald-600" strokeWidth={3} />,
+      btnBg: 'bg-[#141c2e] border border-[#7dd3fc]/30',
+      textCol: 'text-[#7dd3fc]',
+      icon: <Check size={28} className="text-[#7dd3fc]" strokeWidth={3} />,
       label: 'Correct!',
     },
     incorrect: {
-      btnBg: 'bg-orange-100',
-      textCol: 'text-orange-600',
-      icon: <X size={28} className="text-orange-600" strokeWidth={3} />,
+      btnBg: 'bg-[#3d1414] border border-[#ff6b6b]/30',
+      textCol: 'text-[#ffb3b3]',
+      icon: <X size={28} className="text-[#ffb3b3]" strokeWidth={3} />,
       label: 'Try again',
     },
   };
@@ -114,14 +114,15 @@ export function PracticeCard({ word, isActive, onSuccess, isFirstWord, partnerWo
           {/* Recording Rings */}
           {status === 'recording' && (
             <>
-              <div className="absolute inset-0 border-4 border-red-100 rounded-full"></div>
+              <div data-testid="practice-recording-ring" className="absolute inset-0 border-4 border-[#ff6b6b]/30 rounded-full"></div>
               <svg className="absolute inset-0 -rotate-90 w-full h-full" viewBox="0 0 100 100">
                 <circle
+                  data-testid="practice-recording-ring-progress"
                   cx="50"
                   cy="50"
                   r={ringRadius}
                   fill="none"
-                  stroke="#dc2626"
+                  stroke="#ff6b6b"
                   strokeWidth="4"
                   strokeLinecap="round"
                   strokeDasharray={ringCircumference}

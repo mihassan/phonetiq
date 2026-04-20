@@ -112,6 +112,16 @@ describe('App', () => {
     expect(toggle.className).toContain('bg-[#1a2438]/80');
   });
 
+  it('uses themed shell root background and text colors', async () => {
+    render(<App />);
+
+    await screen.findByText(/pair 1 of 2/i);
+
+    const shellRoot = screen.getByTestId('app-shell-root');
+    expect(shellRoot.className).toContain('bg-[#0a0e1a]');
+    expect(shellRoot.className).toContain('text-[#e0e8f0]');
+  });
+
   it('applies themed container styling to the Practice stage', async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -178,6 +188,10 @@ describe('App', () => {
     fetchPairsMock.mockResolvedValueOnce({ pairs: [] });
 
     render(<App />);
+
+    const emptyState = await screen.findByTestId('empty-state');
+    expect(emptyState.className).toContain('bg-[#0a0e1a]');
+    expect(emptyState.className).toContain('text-[#a0b4c4]');
 
     expect(await screen.findByText(/no word pairs found/i)).toBeInTheDocument();
   });

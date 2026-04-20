@@ -26,9 +26,9 @@ function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-4">
-        <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
-        <div className="text-slate-500 text-sm font-bold tracking-widest uppercase animate-pulse">
+      <div data-testid="loading-state" className="min-h-screen bg-[#0a0e1a] flex flex-col items-center justify-center gap-4">
+        <Loader2 className="w-8 h-8 text-[#7dd3fc] animate-spin" />
+        <div className="text-[#a0b4c4] text-sm font-bold tracking-widest uppercase animate-pulse">
           Loading pairs
         </div>
       </div>
@@ -37,8 +37,8 @@ function App() {
 
   if (pairs.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-slate-400 text-sm font-bold">
+      <div data-testid="empty-state" className="min-h-screen bg-[#0a0e1a] text-[#a0b4c4] flex items-center justify-center">
+        <div className="text-sm font-bold">
           No word pairs found.
         </div>
       </div>

@@ -150,9 +150,13 @@ describe('PracticeCard', () => {
 
     const record = screen.getByRole('button', { name: /record pronunciation/i });
     const status = screen.getByTestId('practice-status-label');
+    const ring = screen.getByTestId('practice-recording-ring');
+    const ringProgress = screen.getByTestId('practice-recording-ring-progress');
 
     expect(record.className).toContain('bg-[#ff6b6b]');
     expect(status.className).toContain('text-[#ffb3b3]');
+    expect(ring.className).toContain('border-[#ff6b6b]/30');
+    expect(ringProgress.getAttribute('stroke')).toBe('#ff6b6b');
   });
 
   it('uses themed processing-state colors', async () => {
@@ -184,5 +188,69 @@ describe('PracticeCard', () => {
 
     expect(record.className).toContain('bg-[#1a3a4e]');
     expect(status.className).toContain('text-[#7dd3fc]');
+  });
+
+  it('uses themed correct-state colors', async () => {
+    recognizeSpeechMock.mockResolvedValue('ship');
+
+    render(
+      <PracticeCard
+        word="ship"
+        isActive={true}
+        onSuccess={vi.fn()}
+        isFirstWord={true}
+        partnerWord="sheep"
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /record pronunciation/i }));
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const record = screen.getByRole('button', { name: /record pronunciation/i });
+    const status = screen.getByTestId('practice-status-label');
+
+    expect(record.className).toContain('bg-[#141c2e]');
+    expect(record.className).toContain('border-[#7dd3fc]/30');
+    expect(status.className).toContain('text-[#7dd3fc]');
+  });
+
+  it('uses themed incorrect-state colors', async () => {
+    recognizeSpeechMock.mockResolvedValue('shape');
+
+    render(
+      <PracticeCard
+        word="ship"
+        isActive={true}
+        onSuccess={vi.fn()}
+        isFirstWord={true}
+        partnerWord="sheep"
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /record pronunciation/i }));
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const record = screen.getByRole('button', { name: /record pronunciation/i });
+    const status = screen.getByTestId('practice-status-label');
+
+    expect(record.className).toContain('bg-[#3d1414]');
+    expect(record.className).toContain('border-[#ff6b6b]/30');
+    expect(status.className).toContain('text-[#ffb3b3]');
   });
 });
