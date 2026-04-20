@@ -88,4 +88,65 @@ describe('usePracticeAttempt', () => {
 
     expect(result.current.status).toBe('idle');
   });
+
+  it('ignores repeat clicks while an attempt is in progress', async () => {
+    recognizeSpeechMock.mockImplementation(() => new Promise<string>(() => {}));
+
+    const { result } = renderHook(() =>
+      usePracticeAttempt({ word: 'ship', onSuccess: vi.fn() }),
+    );
+
+    await act(async () => {
+      await result.current.handleRecord();
+    });
+
+    expect(result.current.status).toBe('recording');
+    expect(startRecordingMock).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await result.current.handleRecord();
+    });
+
+    expect(startRecordingMock).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+    });
+
+    expect(result.current.status).toBe('processing');
+
+    await act(async () => {
+      await result.current.handleRecord();
+    });
+
+    expect(startRecordingMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not start a new recording from incorrect state before reset', async () => {
+    recognizeSpeechMock.mockResolvedValue('shape');
+
+    const { result } = renderHook(() =>
+      usePracticeAttempt({ word: 'ship', onSuccess: vi.fn() }),
+    );
+
+    await act(async () => {
+      await result.current.handleRecord();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(result.current.status).toBe('incorrect');
+    expect(startRecordingMock).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await result.current.handleRecord();
+    });
+
+    expect(startRecordingMock).toHaveBeenCalledTimes(1);
+  });
 });

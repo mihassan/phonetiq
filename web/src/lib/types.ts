@@ -14,3 +14,5 @@ export interface Category {
 }
 
 export type Mode = 'LEARN' | 'PRACTICE' | 'CATEGORIES';
+
+export type Dialect = 'all' | 'uk_only' | 'us_only';

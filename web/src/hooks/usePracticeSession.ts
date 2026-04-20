@@ -1,32 +1,32 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fetchCategories, fetchPairs } from '../lib/api';
-import type { Category, Mode, WordPair } from '../lib/types';
+import type { Category, Dialect, Mode, WordPair } from '../lib/types';
 
 export function usePracticeSession() {
   const [mode, setMode] = useState<Mode>('LEARN');
   const [pairs, setPairs] = useState<WordPair[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [dialect, setDialect] = useState<Dialect>('all');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [index, setIndex] = useState(0);
   const [targetNum, setTargetNum] = useState<1 | 2>(1);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchCategories().then((data) => setCategories(data.categories));
-  }, []);
-
-  useEffect(() => {
     setIsLoading(true);
     setIndex(0);
     setTargetNum(1);
 
+    fetchCategories({ dialect }).then((data) => setCategories(data.categories));
+
     fetchPairs({
       category: selectedCategory || undefined,
+      dialect,
       limit: 200,
     })
       .then((data) => setPairs(data.pairs))
       .finally(() => setIsLoading(false));
-  }, [selectedCategory]);
+  }, [selectedCategory, dialect]);
 
   const currentPair = pairs[index];
 
@@ -59,6 +59,8 @@ export function usePracticeSession() {
     setMode,
     pairs,
     categories,
+    dialect,
+    setDialect,
     selectedCategory,
     setSelectedCategory,
     index,

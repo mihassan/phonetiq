@@ -18,7 +18,23 @@ describe('usePracticeSession', () => {
       ],
     });
 
-    fetchPairsMock.mockImplementation(async (params?: { category?: string }) => {
+    fetchPairsMock.mockImplementation(async (params?: { category?: string; dialect?: string }) => {
+      if (params?.dialect === 'uk_only') {
+        return {
+          pairs: [
+            {
+              id: 50,
+              word1: 'paw',
+              word2: 'pour',
+              phoneme_type: 'vowel_long',
+              target_sounds: 'ɔː/ɔə',
+              dialect_filter: 'uk_only',
+              difficulty_level: 2,
+            },
+          ],
+        };
+      }
+
       if (params?.category === 'nasal') {
         return {
           pairs: [
@@ -72,7 +88,8 @@ describe('usePracticeSession', () => {
     });
 
     expect(fetchCategoriesMock).toHaveBeenCalledTimes(1);
-    expect(fetchPairsMock).toHaveBeenCalledWith({ category: undefined, limit: 200 });
+    expect(fetchCategoriesMock).toHaveBeenCalledWith({ dialect: 'all' });
+    expect(fetchPairsMock).toHaveBeenCalledWith({ category: undefined, dialect: 'all', limit: 200 });
     expect(result.current.categories).toHaveLength(2);
     expect(result.current.pairs).toHaveLength(2);
     expect(result.current.index).toBe(0);
@@ -148,6 +165,32 @@ describe('usePracticeSession', () => {
     expect(result.current.index).toBe(0);
     expect(result.current.targetNum).toBe(1);
     expect(result.current.pairs).toHaveLength(1);
-    expect(fetchPairsMock).toHaveBeenLastCalledWith({ category: 'nasal', limit: 200 });
+    expect(fetchPairsMock).toHaveBeenLastCalledWith({ category: 'nasal', dialect: 'all', limit: 200 });
+  });
+
+  it('refetches pairs and categories when dialect changes', async () => {
+    const { result } = renderHook(() => usePracticeSession());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    act(() => {
+      result.current.setDialect('uk_only');
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(fetchCategoriesMock).toHaveBeenLastCalledWith({ dialect: 'uk_only' });
+    expect(fetchPairsMock).toHaveBeenLastCalledWith({
+      category: undefined,
+      dialect: 'uk_only',
+      limit: 200,
+    });
+    expect(result.current.pairs).toHaveLength(1);
+    expect(result.current.index).toBe(0);
+    expect(result.current.targetNum).toBe(1);
   });
 });

@@ -2,6 +2,7 @@ import { Mic2, Loader2 } from 'lucide-react';
 import { PracticeCard } from './components/PracticeCard';
 import { Navigation } from './components/Navigation';
 import { CategoryFilter } from './components/CategoryFilter';
+import { DialectFilter } from './components/DialectFilter';
 import { AppShell } from './components/AppShell';
 import { LearnStage } from './components/LearnStage';
 import { CategoriesStage } from './components/CategoriesStage';
@@ -13,6 +14,8 @@ function App() {
     setMode,
     pairs,
     categories,
+    dialect,
+    setDialect,
     selectedCategory,
     setSelectedCategory,
     index,
@@ -94,13 +97,16 @@ function App() {
         </header>
       }
       filters={
-        mode === 'CATEGORIES' ? null : (
-          <CategoryFilter
-            categories={categories}
-            selected={selectedCategory}
-            onSelect={setSelectedCategory}
-          />
-        )
+        <>
+          <DialectFilter selected={dialect} onSelect={setDialect} />
+          {mode === 'CATEGORIES' ? null : (
+            <CategoryFilter
+              categories={categories}
+              selected={selectedCategory}
+              onSelect={setSelectedCategory}
+            />
+          )}
+        </>
       }
       stage={
         mode === 'LEARN' ? (

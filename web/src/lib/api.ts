@@ -19,8 +19,11 @@ export async function fetchPairs(params?: {
   return res.json();
 }
 
-export async function fetchCategories() {
-  const res = await fetch(`${API_BASE}/pairs/categories`);
+export async function fetchCategories(params?: { dialect?: string }) {
+  const url = new URL(`${API_BASE}/pairs/categories`, window.location.origin);
+  if (params?.dialect) url.searchParams.set('dialect', params.dialect);
+
+  const res = await fetch(url.toString());
   if (!res.ok) throw new Error('Failed to fetch categories');
   return res.json();
 }

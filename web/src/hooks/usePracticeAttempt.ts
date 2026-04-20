@@ -34,6 +34,7 @@ export function usePracticeAttempt({
   const animFrameRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(0 as unknown as ReturnType<typeof setTimeout>);
+  const outcomeTimerRef = useRef<ReturnType<typeof setTimeout>>(0 as unknown as ReturnType<typeof setTimeout>);
 
   useEffect(() => {
     if (status !== 'recording') {
@@ -56,7 +57,10 @@ export function usePracticeAttempt({
   }, [status, recordDurationMs]);
 
   const handleRecord = useCallback(async () => {
-    if (status !== 'idle' && status !== 'incorrect') return;
+    if (status !== 'idle') return;
+
+    clearTimeout(timerRef.current);
+    clearTimeout(outcomeTimerRef.current);
 
     setStatus('recording');
     setTranscript('');
@@ -77,7 +81,7 @@ export function usePracticeAttempt({
         const target = word.toLowerCase();
         if (text.includes(target)) {
           setStatus('correct');
-          setTimeout(() => {
+          outcomeTimerRef.current = setTimeout(() => {
             setStatus('idle');
             setTranscript('');
             setIsCompleted(true);
@@ -85,7 +89,9 @@ export function usePracticeAttempt({
           }, successDelayMs);
         } else {
           setStatus('incorrect');
-          setTimeout(() => setStatus('idle'), incorrectDelayMs);
+          outcomeTimerRef.current = setTimeout(() => {
+            setStatus('idle');
+          }, incorrectDelayMs);
         }
       } catch {
         setStatus('idle');
@@ -103,7 +109,10 @@ export function usePracticeAttempt({
   ]);
 
   useEffect(() => {
-    return () => clearTimeout(timerRef.current);
+    return () => {
+      clearTimeout(timerRef.current);
+      clearTimeout(outcomeTimerRef.current);
+    };
   }, []);
 
   return {

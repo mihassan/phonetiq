@@ -168,9 +168,9 @@ export function PracticeCard({ word, isActive, onSuccess, isFirstWord, partnerWo
 
           <button
             onClick={handleRecord}
-            disabled={status === 'processing' || status === 'correct'}
+            disabled={status !== 'idle'}
             aria-label="Record pronunciation"
-            className={`w-[72px] h-[72px] md:w-[92px] md:h-[92px] rounded-full flex items-center justify-center shadow-xl transition-all duration-300 z-10 ${ui.btnBg}`}
+            className={`w-[72px] h-[72px] md:w-[92px] md:h-[92px] rounded-full flex items-center justify-center shadow-xl transition-all duration-300 z-10 disabled:opacity-70 disabled:cursor-not-allowed ${ui.btnBg}`}
           >
             {ui.icon}
           </button>

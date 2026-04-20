@@ -32,8 +32,14 @@ pairsRoutes.get('/', async (c) => {
 
 // GET /api/pairs/categories - List all available categories
 pairsRoutes.get('/categories', async (c) => {
+  const dialect = c.req.query('dialect') || 'all';
+
   const { results } = await c.env.DB.prepare(
-    `SELECT phoneme_type, COUNT(*) as count FROM word_pairs GROUP BY phoneme_type ORDER BY phoneme_type`
-  ).all();
+    `SELECT phoneme_type, COUNT(*) as count
+     FROM word_pairs
+     WHERE dialect_filter IN ('all', ?)
+     GROUP BY phoneme_type
+     ORDER BY phoneme_type`
+  ).bind(dialect).all();
   return c.json({ categories: results });
 });

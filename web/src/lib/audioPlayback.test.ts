@@ -6,6 +6,8 @@ type MockAudio = {
   onplay: (() => void) | null;
   onended: (() => void) | null;
   onerror: (() => void) | null;
+  currentTime: number;
+  pause: ReturnType<typeof vi.fn>;
   play: ReturnType<typeof vi.fn>;
 };
 
@@ -15,6 +17,8 @@ function createMockAudio(): MockAudio {
     onplay: null,
     onended: null,
     onerror: null,
+    currentTime: 0,
+    pause: vi.fn(),
     play: vi.fn().mockResolvedValue(undefined),
   };
 }
@@ -88,5 +92,33 @@ describe('audioPlayback', () => {
 
     vi.advanceTimersByTime(1);
     expect(second.play).toHaveBeenCalledTimes(1);
+  });
+
+  it('stops previous pair playback before starting a new one', async () => {
+    const firstA = createMockAudio();
+    const secondA = createMockAudio();
+    const firstB = createMockAudio();
+    const secondB = createMockAudio();
+
+    const factory = vi
+      .fn()
+      .mockReturnValueOnce(firstA as unknown as HTMLAudioElement)
+      .mockReturnValueOnce(secondA as unknown as HTMLAudioElement)
+      .mockReturnValueOnce(firstB as unknown as HTMLAudioElement)
+      .mockReturnValueOnce(secondB as unknown as HTMLAudioElement);
+
+    await playPairAudio('/api/audio/ship', '/api/audio/sheep', { factory, gapMs: 600 });
+    await playPairAudio('/api/audio/bit', '/api/audio/beet', { factory, gapMs: 600 });
+
+    expect(firstA.pause).toHaveBeenCalledTimes(1);
+    expect(secondA.pause).toHaveBeenCalledTimes(1);
+    expect(firstA.currentTime).toBe(0);
+    expect(secondA.currentTime).toBe(0);
+
+    firstA.onended?.();
+    vi.advanceTimersByTime(600);
+    expect(secondA.play).toHaveBeenCalledTimes(0);
+
+    expect(firstB.play).toHaveBeenCalledTimes(1);
   });
 });

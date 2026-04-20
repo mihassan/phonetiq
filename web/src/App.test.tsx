@@ -14,14 +14,38 @@ vi.mock('./lib/api', () => ({
 
 describe('App', () => {
   beforeEach(() => {
-    fetchCategoriesMock.mockResolvedValue({
-      categories: [
-        { phoneme_type: 'vowel_short', count: 2 },
-        { phoneme_type: 'nasal', count: 1 },
-      ],
+    fetchCategoriesMock.mockImplementation(async (params?: { dialect?: string }) => {
+      if (params?.dialect === 'uk_only') {
+        return {
+          categories: [{ phoneme_type: 'vowel_short', count: 1 }],
+        };
+      }
+
+      return {
+        categories: [
+          { phoneme_type: 'vowel_short', count: 2 },
+          { phoneme_type: 'nasal', count: 1 },
+        ],
+      };
     });
 
-    fetchPairsMock.mockImplementation(async (params?: { category?: string }) => {
+    fetchPairsMock.mockImplementation(async (params?: { category?: string; dialect?: string }) => {
+      if (params?.dialect === 'uk_only') {
+        return {
+          pairs: [
+            {
+              id: 11,
+              word1: 'paw',
+              word2: 'pour',
+              phoneme_type: 'vowel_short',
+              target_sounds: 'ɔː/ɔə',
+              dialect_filter: 'uk_only',
+              difficulty_level: 2,
+            },
+          ],
+        };
+      }
+
       if (params?.category === 'nasal') {
         return {
           pairs: [
@@ -195,6 +219,22 @@ describe('App', () => {
     expect(body.className).toContain('practice-stage-columns');
     expect(body.className).toContain('py-8');
     expect(body.className).toContain('gap-4');
+  });
+
+  it('shows dialect controls and updates totals for selected dialect', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await screen.findByText(/pair 1 of 2/i);
+    expect(screen.getByRole('button', { name: /general/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /all \(3\)/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /uk/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/pair 1 of 1/i)).toBeInTheDocument();
+    });
+    expect(screen.getByRole('button', { name: /all \(1\)/i })).toBeInTheDocument();
   });
 
   it('goes next, wraps around, and previous wraps back', async () => {
