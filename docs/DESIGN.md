@@ -13,6 +13,27 @@ The initial prototype (`index.html`) relied on browser-native `SpeechSynthesis` 
 *   **AI (Speech-to-Text):** Cloudflare Workers AI (`@cf/openai/whisper`).
 *   **CI/CD:** GitHub Actions with `cloudflare/wrangler-action` for both frontend and API.
 
+## Visual Theme (Glacier / Dark)
+The app uses a dark "Glacier" theme focused on high contrast readability and cool accent colors.
+
+### Core tokens
+* **Background:** `#0a0e1a`
+* **Surface:** `#0f1524`
+* **Surface Variant:** `#1a2438`
+* **Primary:** `#7dd3fc`
+* **Secondary:** `#88b4cc`
+* **Tertiary:** `#c8a0f0`
+* **Text:** `#e0e8f0`
+* **Muted Text:** `#a0b4c4`
+* **Outline:** `#4a6070`
+* **Error:** `#ff6b6b`
+
+### Typography and shape
+* **Color mode:** Dark
+* **Font family:** Inter (headline/body/label)
+* **Roundness:** 12px baseline (`ROUND_TWELVE`)
+* **Theme seed color:** `#7dd3fc`
+
 ## Data Model (D1 Schema - `schema.sql`)
 The word pairs are no longer a hardcoded array. They live in D1, allowing the app to filter by dialect (e.g., US vs UK) and phonetic category (e.g., vowels, fricatives, voicing).
 
@@ -49,7 +70,7 @@ The `dialect_filter` column ensures the app only presents relevant pairs based o
 ### 3. Mic Interaction Design
 *   **Option chosen:** Tap once to start, auto-stop after 3 seconds.
 *   **Visual feedback:** SVG progress ring + countdown text during recording, prominent transcript display after processing.
-*   **Architecture:** The `useAudioRecorder` hook is a "dumb" wrapper — it only starts/stops when told. `PracticeCard` orchestrates the 3s timing via `setTimeout`, avoiding race conditions from internal timers.
+*   **Architecture:** The `useAudioRecorder` hook is a "dumb" wrapper — it only starts/stops when told. `usePracticeAttempt` orchestrates the 3s timing and status transitions.
 
 ## Rate Limiting
 Two-tier native Cloudflare rate limiting (configured in `wrangler.toml`):

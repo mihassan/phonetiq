@@ -14,17 +14,11 @@ A web app for practicing English **minimal pair pronunciation** — words that d
 
 ## Screenshots
 
-### Desktop
-
-| Learn | Practice |
-| --- | --- |
-| ![Learn mode desktop](docs/learn-desktop.png) | ![Practice mode desktop](docs/practice-desktop.png) |
-
 ### Mobile
 
-| Learn | Practice |
-| --- | --- |
-| ![Learn mode mobile](docs/learn-mobile.png) | ![Practice mode mobile](docs/practice-mobile.png) |
+| Learn | Practice | Categories |
+| --- | --- | --- |
+| ![Learn mode mobile](docs/screenshots/learn-mobile.png) | ![Practice mode mobile](docs/screenshots/practice-mobile.png) | ![Categories mode mobile](docs/screenshots/categories-mobile.png) |
 
 ## Features
 
