@@ -80,4 +80,29 @@ describe('CategoriesStage', () => {
     expect(chips).toHaveLength(3);
     expect(chips[0]).toHaveTextContent(/category/i);
   });
+
+  it('uses roomier spacing and balanced odd-card layout', () => {
+    render(
+      <CategoriesStage
+        categories={categories}
+        selectedCategory={null}
+        onSelectCategory={vi.fn()}
+      />,
+    );
+
+    const stage = screen.getByTestId('categories-stage');
+    const grid = screen.getByTestId('categories-grid');
+    const cards = screen.getAllByTestId('category-card');
+
+    expect(stage.className).toContain('px-8');
+    expect(stage.className).toContain('py-8');
+    expect(grid.className).toContain('gap-6');
+
+    cards.forEach((card) => {
+      expect(card.className).toContain('min-h-[190px]');
+    });
+
+    expect(cards[cards.length - 1].className).toContain('col-span-2');
+    expect(cards[cards.length - 1].className).toContain('justify-self-center');
+  });
 });
