@@ -99,6 +99,23 @@ describe('App', () => {
     expect(screen.queryByTestId('learn-stage')).not.toBeInTheDocument();
   });
 
+  it('uses strict equal-width column grids for Learn and Practice stages', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await screen.findByText(/pair 1 of 2/i);
+
+    const learnColumns = screen.getByTestId('learn-stage-columns');
+    expect(learnColumns.className).toContain('grid');
+    expect(learnColumns.className).toContain('md:grid-cols-2');
+
+    await user.click(screen.getByRole('button', { name: /practice/i }));
+
+    const practiceColumns = screen.getByTestId('practice-stage-body');
+    expect(practiceColumns.className).toContain('grid');
+    expect(practiceColumns.className).toContain('md:grid-cols-2');
+  });
+
   it('renders categories stage when Categories mode is selected', async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -175,8 +192,9 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /practice/i }));
 
     const body = screen.getByTestId('practice-stage-body');
-    expect(body.className).toContain('py-6');
-    expect(body.className).toContain('gap-2');
+    expect(body.className).toContain('practice-stage-columns');
+    expect(body.className).toContain('py-8');
+    expect(body.className).toContain('gap-4');
   });
 
   it('goes next, wraps around, and previous wraps back', async () => {

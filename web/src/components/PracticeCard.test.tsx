@@ -133,7 +133,7 @@ describe('PracticeCard', () => {
     expect(status.className).toContain('text-[#a0b4c4]');
     expect(record.className).toContain('bg-[#7dd3fc]');
     expect(record.className).toContain('text-[#001f2e]');
-    expect(card.className).toContain('px-6');
+    expect(card.className).toContain('px-8');
   });
 
   it('keeps inactive word layout centered and width-constrained for balance', () => {
@@ -151,8 +151,8 @@ describe('PracticeCard', () => {
     expect(inactiveWord.className).toContain('w-full');
     expect(inactiveWord.className).toContain('text-center');
     expect(inactiveWord.className).toContain('min-h-[104px]');
-    expect(inactiveWord.className).toContain('text-[48px]');
-    expect(inactiveWord.className).toContain('md:text-[72px]');
+    expect(inactiveWord.className).toContain('text-[38px]');
+    expect(inactiveWord.className).toContain('md:text-[52px]');
   });
 
   it('keeps inactive practice card with balanced placeholder slot', () => {
@@ -181,8 +181,24 @@ describe('PracticeCard', () => {
     );
 
     const heading = screen.getByTestId('practice-card-heading');
-    expect(heading.className).toContain('text-[56px]');
-    expect(heading.className).toContain('md:text-[88px]');
+    expect(heading.className).toContain('text-[44px]');
+    expect(heading.className).toContain('md:text-[60px]');
+  });
+
+  it('uses partner-word length so both practice sides stay visually aligned', () => {
+    render(
+      <PracticeCard
+        word="ton"
+        partnerWord="tongue"
+        isActive={true}
+        onSuccess={vi.fn()}
+        isFirstWord={true}
+      />,
+    );
+
+    const heading = screen.getByTestId('practice-card-heading');
+    expect(heading.className).toContain('text-[44px]');
+    expect(heading.className).toContain('md:text-[60px]');
   });
 
   it('uses themed recording-state colors', async () => {

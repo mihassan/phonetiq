@@ -2,6 +2,7 @@ import { Mic, Check, X, Loader2, Play } from 'lucide-react';
 import { audioUrl } from '../lib/api';
 import { playWordAudio } from '../lib/audioPlayback';
 import { usePracticeAttempt } from '../hooks/usePracticeAttempt';
+import { getPracticeHeadingSizeClass } from '../lib/wordSizing';
 
 const RECORD_DURATION = 3000;
 
@@ -13,16 +14,10 @@ interface Props {
   partnerWord: string;
 }
 
-function wordSizeClass(word: string) {
-  if (word.length >= 11) return 'text-[48px] md:text-[72px]';
-  if (word.length >= 6) return 'text-[56px] md:text-[88px]';
-  return 'text-[64px] md:text-[104px]';
-}
-
-export function PracticeCard({ word, isActive, onSuccess, isFirstWord, partnerWord: _partnerWord }: Props) {
+export function PracticeCard({ word, isActive, onSuccess, isFirstWord, partnerWord }: Props) {
   const { transcript, status, progress, isCompleted, handleRecord } =
     usePracticeAttempt({ word, onSuccess, recordDurationMs: RECORD_DURATION });
-  const sizeClass = wordSizeClass(word);
+  const sizeClass = getPracticeHeadingSizeClass(word, partnerWord);
 
   const play = () => {
     playWordAudio(audioUrl(word));
@@ -35,16 +30,28 @@ export function PracticeCard({ word, isActive, onSuccess, isFirstWord, partnerWo
   // If this card is the first word and we have already completed it, show the "Done" state
   if (isFirstWord && !isActive && isCompleted) {
     return (
-      <div className="flex-1 flex flex-col justify-center items-center opacity-35 md:border-r border-b md:border-b-0 border-[#7dd3fc]/10 pb-8 md:pb-0 pt-2 md:pt-0 transition-opacity duration-500">
-        <div className="flex items-center gap-4">
-          <div className={`w-full max-w-[22rem] md:max-w-[28rem] min-h-[104px] md:min-h-[136px] px-2 text-center ${sizeClass} font-extrabold text-[#a0b4c4] tracking-tight leading-[0.95] capitalize flex items-center justify-center`}>
+      <div className="practice-card practice-card--inactive ui-practice-card-layout flex-1 w-full h-full md:border-r border-b md:border-b-0 border-[#7dd3fc]/10 px-8 md:px-12 pb-8 md:pb-0 pt-2 md:pt-0 transition-opacity duration-500">
+        <div className="ui-practice-zone-title">
+          <h2 className={`w-full max-w-[20rem] md:max-w-[24rem] min-h-[104px] md:min-h-[136px] px-2 text-center ${sizeClass} font-black text-[#a0b4c4] tracking-tighter leading-[0.95] capitalize flex items-center justify-center`}>
             {word}
-          </div>
-          <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-[#141c2e] border border-[#7dd3fc]/30 flex justify-center items-center text-[#7dd3fc] shadow-sm">
-            <Check size={16} strokeWidth={3} />
+          </h2>
+        </div>
+
+        <div className="ui-practice-zone-helper">
+          <div className="inline-flex items-center gap-1.5 text-[11px] md:text-xs font-bold text-[#7dd3fc]">
+            <Check size={14} strokeWidth={3} /> Done
           </div>
         </div>
-        <div data-testid="practice-inactive-slot" className="h-[148px] md:h-[184px]" />
+
+        <div className="ui-practice-zone-action">
+          <div
+            data-testid="practice-inactive-slot"
+            className="w-[72px] h-[72px] md:w-[92px] md:h-[92px] rounded-full border border-[#7dd3fc]/10"
+          />
+        </div>
+
+        <div className="ui-practice-zone-status" />
+        <div className="ui-practice-zone-feedback" />
       </div>
     );
   }
@@ -52,11 +59,24 @@ export function PracticeCard({ word, isActive, onSuccess, isFirstWord, partnerWo
   // Inactive state (waiting its turn)
   if (!isActive) {
     return (
-      <div className="flex-1 flex flex-col justify-center items-center opacity-35 pb-8 md:pb-0 transition-opacity duration-500">
-        <div className={`w-full max-w-[22rem] md:max-w-[28rem] min-h-[104px] md:min-h-[136px] px-2 text-center ${sizeClass} font-extrabold text-[#a0b4c4] tracking-tight leading-[0.95] mb-4 capitalize flex items-center justify-center`}>
-          {word}
+      <div className="practice-card practice-card--inactive ui-practice-card-layout flex-1 w-full h-full px-8 md:px-12 pb-8 md:pb-0 transition-opacity duration-500">
+        <div className="ui-practice-zone-title">
+          <h2 className={`w-full max-w-[20rem] md:max-w-[24rem] min-h-[104px] md:min-h-[136px] px-2 text-center ${sizeClass} font-black text-[#a0b4c4] tracking-tighter leading-[0.95] capitalize flex items-center justify-center`}>
+            {word}
+          </h2>
         </div>
-        <div data-testid="practice-inactive-slot" className="h-[148px] md:h-[184px]" />
+
+        <div className="ui-practice-zone-helper" />
+
+        <div className="ui-practice-zone-action">
+          <div
+            data-testid="practice-inactive-slot"
+            className="w-[72px] h-[72px] md:w-[92px] md:h-[92px] rounded-full border border-[#7dd3fc]/10"
+          />
+        </div>
+
+        <div className="ui-practice-zone-status" />
+        <div className="ui-practice-zone-feedback" />
       </div>
     );
   }
@@ -98,27 +118,31 @@ export function PracticeCard({ word, isActive, onSuccess, isFirstWord, partnerWo
   const ui = stateMap[status];
 
   return (
-    <div
-      data-testid="practice-card-active"
-      className={`flex-1 flex flex-col justify-center items-center px-6 md:px-8 ${isFirstWord ? 'md:border-r border-b md:border-b-0 border-[#7dd3fc]/10' : ''} pb-8 md:pb-0 pt-2 md:pt-0`}
-    >
-      <h2
-        data-testid="practice-card-heading"
-        className={`w-full max-w-[22rem] md:max-w-[28rem] min-h-[104px] md:min-h-[136px] px-2 text-center ${sizeClass} font-black text-[#e0e8f0] tracking-tighter mb-4 md:mb-6 leading-[0.95] capitalize flex items-center justify-center`}
+      <div
+        data-testid="practice-card-active"
+        className={`practice-card practice-card--active ui-practice-card-layout flex-1 w-full h-full px-8 md:px-12 ${isFirstWord ? 'md:border-r border-b md:border-b-0 border-[#7dd3fc]/10' : ''} pb-8 md:pb-0 pt-2 md:pt-0`}
       >
-        {word}
-      </h2>
+      <div className="ui-practice-zone-title">
+        <h2
+          data-testid="practice-card-heading"
+          className={`w-full max-w-[20rem] md:max-w-[24rem] min-h-[104px] md:min-h-[136px] px-2 text-center ${sizeClass} font-black text-[#e0e8f0] tracking-tighter leading-[0.95] capitalize flex items-center justify-center`}
+        >
+          {word}
+        </h2>
+      </div>
 
-      <button
-        onClick={play}
-        data-testid="practice-listen-button"
-        className="mb-8 flex items-center gap-1.5 text-xs font-bold text-[#7dd3fc] hover:text-[#9bddff] transition-colors"
-      >
-        <Play size={14} fill="currentColor" /> Listen first
-      </button>
+      <div className="ui-practice-zone-helper">
+        <button
+          onClick={play}
+          data-testid="practice-listen-button"
+          className="flex items-center gap-1.5 text-[11px] md:text-xs font-bold text-[#7dd3fc] hover:text-[#9bddff] transition-colors"
+        >
+          <Play size={14} fill="currentColor" /> Listen first
+        </button>
+      </div>
 
-      <div className="flex flex-col items-center gap-4 relative">
-        <div className="relative w-24 h-24 md:w-32 md:h-32 flex items-center justify-center">
+      <div className="ui-practice-zone-action">
+        <div className="relative w-24 h-24 md:w-[120px] md:h-[120px] flex items-center justify-center">
           
           {/* Recording Rings */}
           {status === 'recording' && (
@@ -146,29 +170,33 @@ export function PracticeCard({ word, isActive, onSuccess, isFirstWord, partnerWo
             onClick={handleRecord}
             disabled={status === 'processing' || status === 'correct'}
             aria-label="Record pronunciation"
-            className={`w-[72px] h-[72px] md:w-[88px] md:h-[88px] rounded-full flex items-center justify-center shadow-xl transition-all duration-300 z-10 ${ui.btnBg}`}
+            className={`w-[72px] h-[72px] md:w-[92px] md:h-[92px] rounded-full flex items-center justify-center shadow-xl transition-all duration-300 z-10 ${ui.btnBg}`}
           >
             {ui.icon}
           </button>
         </div>
+      </div>
 
+      <div className="ui-practice-zone-status">
         <p
           data-testid="practice-status-label"
-          className={`text-[10px] md:text-xs font-extrabold uppercase tracking-widest ${ui.textCol}`}
+          className={`text-[10px] md:text-[11px] font-extrabold uppercase tracking-widest ${ui.textCol}`}
         >
           {ui.label}
         </p>
       </div>
 
       {/* Transcript Pill */}
-      {(status === 'correct' || status === 'incorrect') && transcript && (
-        <div className={`mt-6 px-5 py-2 rounded-full border flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 ${
-          status === 'correct' ? 'bg-[#141c2e] border-[#7dd3fc]/20' : 'bg-[#3d1414] border-[#ff6b6b]/30'
-        }`}>
-          <span className={`text-xs font-bold ${status === 'correct' ? 'text-[#a0b4c4]' : 'text-[#ffb3b3]'}`}>Heard:</span>
-          <span className="text-sm font-black text-[#e0e8f0] capitalize">&ldquo;{transcript}&rdquo;</span>
-        </div>
-      )}
+      <div className="ui-practice-zone-feedback">
+        {(status === 'correct' || status === 'incorrect') && transcript && (
+          <div className={`px-5 py-2 rounded-full border flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 ${
+            status === 'correct' ? 'bg-[#141c2e] border-[#7dd3fc]/20' : 'bg-[#3d1414] border-[#ff6b6b]/30'
+          }`}>
+            <span className={`text-xs font-bold ${status === 'correct' ? 'text-[#a0b4c4]' : 'text-[#ffb3b3]'}`}>Heard:</span>
+            <span className="text-sm font-black text-[#e0e8f0] capitalize">&ldquo;{transcript}&rdquo;</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

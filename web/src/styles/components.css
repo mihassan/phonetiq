@@ -1,0 +1,147 @@
+.ui-shell {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.ui-topbar {
+  background: color-mix(in srgb, var(--color-surface) 76%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 10%, transparent);
+  backdrop-filter: var(--blur-sm);
+  box-shadow: var(--shadow-soft);
+}
+
+.ui-stage-panel {
+  background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 10%, transparent);
+  backdrop-filter: var(--blur-sm);
+  box-shadow: var(--shadow-soft);
+}
+
+.ui-progress-track {
+  background: var(--color-surface-variant);
+}
+
+.ui-progress-fill {
+  background: var(--color-primary);
+}
+
+.ui-meta-label {
+  color: var(--color-text-muted);
+}
+
+.ui-sound-chip {
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-secondary) 42%, transparent);
+}
+
+.word-heading {
+  width: 100%;
+  text-align: center;
+  color: var(--color-text);
+  line-height: 0.95;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.word-heading--learn {
+  max-width: 24rem;
+  min-height: 104px;
+}
+
+@media (min-width: 768px) {
+  .word-heading--learn {
+    min-height: 136px;
+    max-width: 28rem;
+  }
+}
+
+.ui-cta-primary {
+  background: var(--color-primary);
+  color: #001f2e;
+  box-shadow: var(--shadow-cta);
+}
+
+.ui-label-muted {
+  color: var(--color-text-muted);
+}
+
+.ui-filter-shell {
+  background: color-mix(in srgb, var(--color-surface) 68%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 10%, transparent);
+  border-radius: var(--radius-xl);
+  backdrop-filter: var(--blur-sm);
+}
+
+.ui-filter-chip {
+  color: var(--color-text-muted);
+}
+
+.ui-filter-chip[aria-pressed='true'] {
+  background: var(--color-primary);
+  color: #001f2e;
+}
+
+.ui-practice-zone-title,
+.ui-practice-zone-helper,
+.ui-practice-zone-action,
+.ui-practice-zone-status,
+.ui-practice-zone-feedback {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.ui-practice-card-layout {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.ui-practice-zone-title {
+  min-height: 136px;
+  align-items: center;
+}
+
+.ui-practice-zone-helper {
+  min-height: 24px;
+  align-items: center;
+}
+
+.ui-practice-zone-action {
+  min-height: 120px;
+  align-items: center;
+}
+
+.ui-practice-zone-status {
+  min-height: 26px;
+  align-items: center;
+}
+
+.ui-practice-zone-feedback {
+  min-height: 52px;
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .ui-practice-zone-title {
+    min-height: 168px;
+  }
+
+  .ui-practice-zone-helper {
+    min-height: 30px;
+  }
+
+  .ui-practice-zone-action {
+    min-height: 142px;
+  }
+
+  .ui-practice-zone-status {
+    min-height: 32px;
+  }
+
+  .ui-practice-zone-feedback {
+    min-height: 58px;
+  }
+}

@@ -15,10 +15,10 @@ export function CategoriesStage({
   const [query, setQuery] = useState('');
 
   const cardPalette = [
-    { surface: 'bg-[#dbe9f8]/70 border-[#9db8d6]/60', ring: '#5f88d6', chip: 'bg-[#e9f0fb]' },
-    { surface: 'bg-[#e8dcf4]/70 border-[#b79acb]/60', ring: '#8f62bb', chip: 'bg-[#f2e9fa]' },
-    { surface: 'bg-[#d8ecde]/70 border-[#8ab399]/60', ring: '#4f9b68', chip: 'bg-[#e7f5eb]' },
-    { surface: 'bg-[#f1decc]/70 border-[#caa889]/60', ring: '#ce7b4d', chip: 'bg-[#f8ede3]' },
+    { surface: 'bg-[#141c2e] border-[#7dd3fc]/15', ring: '#7dd3fc', chip: 'bg-[#1a2438]' },
+    { surface: 'bg-[#172136] border-[#88b4cc]/20', ring: '#88b4cc', chip: 'bg-[#1e2940]' },
+    { surface: 'bg-[#1b2440] border-[#c8a0f0]/20', ring: '#c8a0f0', chip: 'bg-[#252f4f]' },
+    { surface: 'bg-[#151f33] border-[#7dd3fc]/15', ring: '#7dd3fc', chip: 'bg-[#1d2940]' },
   ] as const;
 
   const visibleCategories = useMemo(() => {
@@ -38,10 +38,10 @@ export function CategoriesStage({
   return (
     <main
       data-testid="categories-stage"
-      className="w-[92%] md:w-full max-w-5xl bg-[radial-gradient(circle_at_20%_0%,_rgba(232,242,255,0.98),_rgba(219,228,247,0.95)_45%,_rgba(203,220,236,0.92))] border border-white/40 rounded-[32px] md:rounded-[48px] shadow-2xl shadow-[#7dd3fc]/15 backdrop-blur-sm flex flex-col overflow-hidden relative min-h-[500px] md:min-h-[600px] mt-4 md:mt-8 px-8 md:px-12 py-8 md:py-10"
+      className="categories-stage categories-stage-surface ui-stage-panel w-[92%] md:w-full max-w-5xl bg-[#11192a]/92 border border-[#7dd3fc]/12 rounded-[32px] md:rounded-[48px] shadow-2xl shadow-[#7dd3fc]/12 backdrop-blur-sm flex flex-col overflow-hidden relative min-h-[500px] md:min-h-[600px] mt-4 md:mt-8 px-8 md:px-12 py-8 md:py-10"
     >
       <div className="flex flex-col gap-4 md:gap-6">
-        <h2 className="text-3xl md:text-4xl font-black tracking-tight text-[#0f1e33]">
+        <h2 className="text-3xl md:text-4xl font-black tracking-tight text-[#e0e8f0]">
           Categories
         </h2>
 
@@ -51,10 +51,10 @@ export function CategoriesStage({
           placeholder="Search phonemes or pairs..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="w-full bg-white/55 border border-white/60 rounded-xl px-4 py-3 text-sm text-[#1a2a40] placeholder:text-[#6d7f95] outline-none focus:border-[#7aa3d8]"
+          className="w-full bg-[#1a2438] border border-[#7dd3fc]/12 rounded-xl px-4 py-3 text-sm text-[#e0e8f0] placeholder:text-[#a0b4c4] outline-none focus:border-[#7dd3fc]/45"
         />
 
-        <div data-testid="categories-grid" className="grid grid-cols-2 gap-6">
+        <div data-testid="categories-grid" className="categories-grid grid grid-cols-2 gap-6">
           {visibleCategories.map((cat, idx) => {
             const label = cat.phoneme_type.replace(/_/g, ' ');
             const selected = selectedCategory === cat.phoneme_type;
@@ -71,21 +71,21 @@ export function CategoriesStage({
                 data-testid="category-card"
                 key={cat.phoneme_type}
                 onClick={() => onSelectCategory(cat.phoneme_type)}
-                className={`text-left rounded-2xl border px-5 py-5 min-h-[190px] transition-all ${
+                className={`categories-card text-left rounded-2xl border px-5 py-5 min-h-[190px] transition-all ${
                   isOddLast ? 'col-span-2 justify-self-center w-[calc(50%-0.75rem)]' : ''
                 } ${
                   selected
-                    ? 'bg-white/75 border-[#5f88d6]/65 shadow-md shadow-[#7aa3d8]/25'
-                    : `${palette.surface} hover:border-[#7aa3d8]/60`
+                    ? 'bg-[#1a3a4e]/65 border-[#7dd3fc]/40 shadow-md shadow-[#7dd3fc]/20'
+                    : `${palette.surface} hover:border-[#7dd3fc]/35`
                 }`}
               >
                 <div
                   data-testid="category-chip"
-                  className={`inline-flex text-xs uppercase tracking-wider text-[#4b5e76] border border-white/70 rounded-full px-2.5 py-1 mb-3 ${palette.chip}`}
+                  className={`inline-flex text-xs uppercase tracking-wider text-[#a0b4c4] border border-[#7dd3fc]/12 rounded-full px-2.5 py-1 mb-3 ${palette.chip}`}
                 >
                   {selected ? 'Selected' : 'Category'}
                 </div>
-                <div className="text-[32px] leading-[1.05] font-black capitalize text-[#12253d] min-h-[64px]">
+                <div className="text-[30px] leading-[1.05] font-black capitalize text-[#e0e8f0] min-h-[64px]">
                   {label}
                 </div>
 
@@ -97,7 +97,7 @@ export function CategoriesStage({
                         cy="24"
                         r={radius}
                         fill="none"
-                        stroke="rgba(125, 211, 252, 0.2)"
+                        stroke="rgba(125, 211, 252, 0.18)"
                         strokeWidth="4"
                       />
                       <circle
@@ -112,14 +112,14 @@ export function CategoriesStage({
                         strokeDashoffset={strokeOffset}
                       />
                     </svg>
-                    <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-[#223a59]">
+                    <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-[#e0e8f0]">
                       {percent}%
                     </div>
                   </div>
 
                   <div className="flex flex-col">
-                    <div className="text-sm text-[#365a86]">{cat.count} pairs</div>
-                    <div className="text-xs text-[#5f7693]">
+                    <div className="text-sm text-[#7dd3fc]">{cat.count} pairs</div>
+                    <div className="text-xs text-[#a0b4c4]">
                       {completedPairs} of {cat.count}
                     </div>
                   </div>
@@ -131,7 +131,7 @@ export function CategoriesStage({
 
         <button
           onClick={() => onSelectCategory(null)}
-          className="self-start text-sm font-bold text-[#365a86] hover:text-[#28496f]"
+          className="self-start text-sm font-bold text-[#7dd3fc] hover:text-[#9bddff]"
         >
           Show all pairs
         </button>

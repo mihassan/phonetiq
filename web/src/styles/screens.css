@@ -1,0 +1,79 @@
+.learn-stage {
+  border-radius: var(--radius-2xl);
+}
+
+@media (min-width: 768px) {
+  .learn-stage {
+    border-radius: var(--radius-3xl);
+  }
+}
+
+.learn-stage-columns {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .learn-stage-columns {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.practice-stage {
+  border-radius: var(--radius-2xl);
+}
+
+@media (min-width: 768px) {
+  .practice-stage {
+    border-radius: var(--radius-3xl);
+  }
+}
+
+.practice-stage-columns {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .practice-stage-columns {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.categories-stage {
+  border-radius: var(--radius-2xl);
+}
+
+@media (min-width: 768px) {
+  .categories-stage {
+    border-radius: var(--radius-3xl);
+  }
+}
+
+.practice-card {
+  position: relative;
+}
+
+.practice-card--active {
+  opacity: 1;
+}
+
+.practice-card--inactive {
+  opacity: 0.32;
+}
+
+.categories-stage-surface {
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
+
+.categories-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+.categories-card {
+  min-height: 188px;
+  border-radius: 1.1rem;
+}

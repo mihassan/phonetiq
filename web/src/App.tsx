@@ -51,7 +51,7 @@ function App() {
       header={
         <header
           data-testid="app-header"
-          className="flex justify-between items-center bg-[#0f1524]/75 border border-[#7dd3fc]/10 p-2 md:p-3 pr-2 md:pr-4 pl-4 md:pl-8 rounded-full shadow-lg shadow-[#7dd3fc]/10 backdrop-blur-sm w-[92%] md:w-[680px] max-w-3xl mt-6 md:mt-0 mb-8 md:mb-12"
+          className="ui-topbar flex justify-between items-center bg-[#0f1524]/75 border border-[#7dd3fc]/10 p-2 md:p-3 pr-2 md:pr-4 pl-4 md:pl-8 rounded-full shadow-lg shadow-[#7dd3fc]/10 backdrop-blur-sm w-[92%] md:w-[680px] max-w-3xl mt-6 md:mt-0 mb-8 md:mb-12"
         >
           <div className="flex items-center gap-2 md:gap-3">
             <div className="w-7 h-7 md:w-9 md:h-9 bg-[#7dd3fc] rounded-lg flex items-center justify-center text-[#001f2e]">
@@ -122,28 +122,28 @@ function App() {
         ) : (
           <main
             data-testid="practice-stage"
-            className="w-[92%] md:w-full max-w-5xl bg-[#0f1524]/90 border border-[#7dd3fc]/10 rounded-[32px] md:rounded-[48px] shadow-2xl shadow-[#7dd3fc]/10 backdrop-blur-sm flex flex-col overflow-hidden relative min-h-[500px] md:min-h-[600px] mt-4 md:mt-8"
+            className="practice-stage ui-stage-panel w-[92%] md:w-full max-w-5xl bg-[#0f1524]/90 border border-[#7dd3fc]/10 rounded-[32px] md:rounded-[48px] shadow-2xl shadow-[#7dd3fc]/10 backdrop-blur-sm flex flex-col overflow-hidden relative min-h-[560px] md:min-h-[700px] mt-4 md:mt-8"
           >
             <div className="flex flex-col">
-              <div data-testid="practice-progress-track" className="w-full h-1 md:h-1.5 bg-[#1a2438]">
+              <div data-testid="practice-progress-track" className="ui-progress-track w-full h-1 md:h-1.5 bg-[#1a2438]">
                 <div
                   data-testid="practice-progress-fill"
-                  className="h-full bg-[#7dd3fc] rounded-r-full transition-all duration-500 ease-out"
+                  className="ui-progress-fill h-full bg-[#7dd3fc] rounded-r-full transition-all duration-500 ease-out"
                   style={{ width: `${progress}%` }}
                 />
               </div>
 
-              <div className="flex justify-between items-center px-6 md:px-12 pt-6 md:pt-8 pb-4">
+              <div className="flex justify-between items-center px-8 md:px-12 pt-6 md:pt-8 pb-5">
                 <div
                   data-testid="practice-pair-meta"
-                  className="text-[10px] md:text-xs font-extrabold text-[#a0b4c4] uppercase tracking-widest"
+                  className="ui-meta-label text-[10px] md:text-xs font-extrabold text-[#a0b4c4] uppercase tracking-widest"
                 >
                   Pair {index + 1} of {pairs.length}
                 </div>
                 {currentPair.target_sounds && (
                   <div
                     data-testid="practice-target-sounds"
-                    className="text-[10px] md:text-sm font-extrabold text-[#7dd3fc] bg-[#1a3a4e]/60 px-2 md:px-3 py-1 md:py-1.5 rounded-md md:rounded-lg tracking-wider"
+                    className="ui-sound-chip text-[10px] md:text-sm font-extrabold text-[#7dd3fc] bg-[#1a3a4e]/60 px-2 md:px-3 py-1 md:py-1.5 rounded-md md:rounded-lg tracking-wider"
                   >
                     {currentPair.target_sounds}
                   </div>
@@ -153,7 +153,7 @@ function App() {
 
             <div
               data-testid="practice-stage-body"
-              className="flex flex-col md:flex-row flex-1 pb-8 md:pb-0 py-6 md:py-4 gap-2 md:gap-0"
+              className="practice-stage-columns grid grid-cols-1 md:grid-cols-2 items-stretch flex-1 pb-8 md:pb-0 py-8 md:py-6 gap-4 md:gap-0"
             >
               <PracticeCard
                 word={currentPair.word1}
