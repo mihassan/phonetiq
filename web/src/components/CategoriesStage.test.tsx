@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { CategoriesStage } from './CategoriesStage';
+import type { CategoryProgressSummary } from '../lib/types';
 
 describe('CategoriesStage', () => {
   const categories = [
@@ -8,20 +9,48 @@ describe('CategoriesStage', () => {
     { phoneme_type: 'nasal', count: 12 },
   ];
 
-  it('shows progress placeholders (percent + completed pairs) on category cards', () => {
+  const progressByCategory: Record<string, CategoryProgressSummary> = {
+    consonant_voicing: {
+      totalPairs: 48,
+      completedPairs: 10,
+      attemptedPairs: 22,
+      totalAttempts: 120,
+      totalCorrect: 90,
+      accuracy: 75,
+    },
+    vowel_short: {
+      totalPairs: 36,
+      completedPairs: 36,
+      attemptedPairs: 36,
+      totalAttempts: 200,
+      totalCorrect: 200,
+      accuracy: 100,
+    },
+    nasal: {
+      totalPairs: 12,
+      completedPairs: 3,
+      attemptedPairs: 8,
+      totalAttempts: 20,
+      totalCorrect: 5,
+      accuracy: 25,
+    },
+  };
+
+  it('shows real tracked progress (percent + completed pairs) on category cards', () => {
     render(
       <CategoriesStage
         categories={categories}
+        progressByCategory={progressByCategory}
         selectedCategory={null}
         onSelectCategory={vi.fn()}
       />,
     );
 
     expect(screen.getByText('100%')).toBeInTheDocument();
-    expect(screen.getByText('48 of 48')).toBeInTheDocument();
+    expect(screen.getByText('36 of 36')).toBeInTheDocument();
 
-    expect(screen.getByText('75%')).toBeInTheDocument();
-    expect(screen.getByText('27 of 36')).toBeInTheDocument();
+    expect(screen.getByText('21%')).toBeInTheDocument();
+    expect(screen.getByText('10 of 48')).toBeInTheDocument();
 
     expect(screen.getByText('25%')).toBeInTheDocument();
     expect(screen.getByText('3 of 12')).toBeInTheDocument();
@@ -31,6 +60,7 @@ describe('CategoriesStage', () => {
     render(
       <CategoriesStage
         categories={categories}
+        progressByCategory={progressByCategory}
         selectedCategory={null}
         onSelectCategory={vi.fn()}
       />,
@@ -52,6 +82,7 @@ describe('CategoriesStage', () => {
     render(
       <CategoriesStage
         categories={categories}
+        progressByCategory={progressByCategory}
         selectedCategory={null}
         onSelectCategory={onSelectCategory}
       />,
@@ -68,6 +99,7 @@ describe('CategoriesStage', () => {
     render(
       <CategoriesStage
         categories={categories}
+        progressByCategory={progressByCategory}
         selectedCategory={null}
         onSelectCategory={vi.fn()}
       />,
@@ -85,6 +117,7 @@ describe('CategoriesStage', () => {
     render(
       <CategoriesStage
         categories={categories}
+        progressByCategory={progressByCategory}
         selectedCategory={null}
         onSelectCategory={vi.fn()}
       />,

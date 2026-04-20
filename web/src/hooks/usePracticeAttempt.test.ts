@@ -149,4 +149,53 @@ describe('usePracticeAttempt', () => {
 
     expect(startRecordingMock).toHaveBeenCalledTimes(1);
   });
+
+  it('emits attempt evaluation callbacks for correct and incorrect results', async () => {
+    const onAttemptEvaluated = vi.fn();
+
+    recognizeSpeechMock.mockResolvedValueOnce('ship');
+    const { result, rerender } = renderHook(
+      ({ word }: { word: string }) =>
+        usePracticeAttempt({ word, onSuccess: vi.fn(), onAttemptEvaluated }),
+      { initialProps: { word: 'ship' } },
+    );
+
+    await act(async () => {
+      await result.current.handleRecord();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(onAttemptEvaluated).toHaveBeenCalledWith({
+      isCorrect: true,
+      transcript: 'ship',
+    });
+
+    recognizeSpeechMock.mockResolvedValueOnce('shape');
+    rerender({ word: 'ship' });
+
+    await act(async () => {
+      vi.advanceTimersByTime(1500);
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      await result.current.handleRecord();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(onAttemptEvaluated).toHaveBeenLastCalledWith({
+      isCorrect: false,
+      transcript: 'shape',
+    });
+  });
 });

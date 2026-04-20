@@ -1,14 +1,16 @@
 import { useMemo, useState } from 'react';
-import type { Category } from '../lib/types';
+import type { Category, CategoryProgressSummary } from '../lib/types';
 
 interface CategoriesStageProps {
   categories: Category[];
+  progressByCategory: Record<string, CategoryProgressSummary>;
   selectedCategory: string | null;
   onSelectCategory: (category: string | null) => void;
 }
 
 export function CategoriesStage({
   categories,
+  progressByCategory,
   selectedCategory,
   onSelectCategory,
 }: CategoriesStageProps) {
@@ -29,11 +31,6 @@ export function CategoriesStage({
       cat.phoneme_type.replace(/_/g, ' ').toLowerCase().includes(q),
     );
   }, [categories, query]);
-
-  const maxCount = useMemo(() => {
-    if (categories.length === 0) return 1;
-    return Math.max(...categories.map((c) => c.count), 1);
-  }, [categories]);
 
   return (
     <main
@@ -58,8 +55,9 @@ export function CategoriesStage({
           {visibleCategories.map((cat, idx) => {
             const label = cat.phoneme_type.replace(/_/g, ' ');
             const selected = selectedCategory === cat.phoneme_type;
-            const percent = Math.round((cat.count / maxCount) * 100);
-            const completedPairs = Math.round((percent / 100) * cat.count);
+            const categoryProgress = progressByCategory[cat.phoneme_type];
+            const completedPairs = categoryProgress?.completedPairs ?? 0;
+            const percent = cat.count > 0 ? Math.round((completedPairs / cat.count) * 100) : 0;
             const radius = 20;
             const circumference = 2 * Math.PI * radius;
             const strokeOffset = circumference * (1 - percent / 100);

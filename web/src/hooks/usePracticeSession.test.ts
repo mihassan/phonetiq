@@ -193,4 +193,49 @@ describe('usePracticeSession', () => {
     expect(result.current.index).toBe(0);
     expect(result.current.targetNum).toBe(1);
   });
+
+  it('records practice attempt outcomes to local progress state', async () => {
+    const { result } = renderHook(() => usePracticeSession());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    act(() => {
+      result.current.recordPracticeAttempt({
+        pairId: 1,
+        category: 'vowel_short',
+        targetWord: 1,
+        isCorrect: true,
+      });
+    });
+
+    expect(result.current.progressStore.totalAttempts).toBe(1);
+    expect(result.current.progressStore.totalCorrect).toBe(1);
+    expect(result.current.progressStore.pairs['1'].word1Attempts).toBe(1);
+    expect(result.current.progressStore.pairs['1'].word1Correct).toBe(1);
+  });
+
+  it('uses adaptive next selection in practice mode based on weakness', async () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0);
+    const { result } = renderHook(() => usePracticeSession());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    act(() => {
+      result.current.recordPracticeAttempt({
+        pairId: 2,
+        category: 'vowel_short',
+        targetWord: 1,
+        isCorrect: false,
+      });
+      result.current.setMode('PRACTICE');
+      result.current.goNext();
+    });
+
+    expect(result.current.index).toBe(1);
+    randomSpy.mockRestore();
+  });
 });

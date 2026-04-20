@@ -10,13 +10,26 @@ interface Props {
   word: string;
   isActive: boolean;
   onSuccess: () => void;
+  onAttemptEvaluated?: (result: { isCorrect: boolean; transcript: string }) => void;
   isFirstWord: boolean;
   partnerWord: string;
 }
 
-export function PracticeCard({ word, isActive, onSuccess, isFirstWord, partnerWord }: Props) {
+export function PracticeCard({
+  word,
+  isActive,
+  onSuccess,
+  onAttemptEvaluated,
+  isFirstWord,
+  partnerWord,
+}: Props) {
   const { transcript, status, progress, isCompleted, handleRecord } =
-    usePracticeAttempt({ word, onSuccess, recordDurationMs: RECORD_DURATION });
+    usePracticeAttempt({
+      word,
+      onSuccess,
+      onAttemptEvaluated,
+      recordDurationMs: RECORD_DURATION,
+    });
   const sizeClass = getPracticeHeadingSizeClass(word, partnerWord);
 
   const play = () => {

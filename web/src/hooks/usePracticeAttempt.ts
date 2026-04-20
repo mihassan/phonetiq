@@ -12,6 +12,7 @@ export type PracticeStatus =
 interface UsePracticeAttemptOptions {
   word: string;
   onSuccess: () => void;
+  onAttemptEvaluated?: (result: { isCorrect: boolean; transcript: string }) => void;
   recordDurationMs?: number;
   successDelayMs?: number;
   incorrectDelayMs?: number;
@@ -20,6 +21,7 @@ interface UsePracticeAttemptOptions {
 export function usePracticeAttempt({
   word,
   onSuccess,
+  onAttemptEvaluated,
   recordDurationMs = 3000,
   successDelayMs = 1500,
   incorrectDelayMs = 2500,
@@ -80,6 +82,7 @@ export function usePracticeAttempt({
 
         const target = word.toLowerCase();
         if (text.includes(target)) {
+          onAttemptEvaluated?.({ isCorrect: true, transcript: text });
           setStatus('correct');
           outcomeTimerRef.current = setTimeout(() => {
             setStatus('idle');
@@ -88,6 +91,7 @@ export function usePracticeAttempt({
             onSuccess();
           }, successDelayMs);
         } else {
+          onAttemptEvaluated?.({ isCorrect: false, transcript: text });
           setStatus('incorrect');
           outcomeTimerRef.current = setTimeout(() => {
             setStatus('idle');
@@ -106,6 +110,7 @@ export function usePracticeAttempt({
     recordDurationMs,
     successDelayMs,
     incorrectDelayMs,
+    onAttemptEvaluated,
   ]);
 
   useEffect(() => {

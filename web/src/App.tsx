@@ -6,6 +6,7 @@ import { DialectFilter } from './components/DialectFilter';
 import { AppShell } from './components/AppShell';
 import { LearnStage } from './components/LearnStage';
 import { CategoriesStage } from './components/CategoriesStage';
+import { ProfileStage } from './components/ProfileStage';
 import { usePracticeSession } from './hooks/usePracticeSession';
 
 function App() {
@@ -23,9 +24,14 @@ function App() {
     isLoading,
     currentPair,
     progress,
+    categoryProgress,
+    profileSummary,
     goNext,
     goPrev,
     handlePracticeSuccess,
+    recordPracticeAttempt,
+    startWeakPairPractice,
+    resetProgress,
   } = usePracticeSession();
 
   if (isLoading) {
@@ -93,13 +99,23 @@ function App() {
             >
               Practice
             </button>
+            <button
+              onClick={() => setMode('PROFILE')}
+              className={`px-4 md:px-6 py-2 md:py-2.5 rounded-full text-xs md:text-sm font-bold transition-all ${
+                mode === 'PROFILE'
+                  ? 'bg-[#0f1524] shadow-md shadow-[#7dd3fc]/10 text-[#e0e8f0]'
+                  : 'text-[#a0b4c4] hover:text-[#e0e8f0]'
+              }`}
+            >
+              Profile
+            </button>
           </div>
         </header>
       }
       filters={
         <>
           <DialectFilter selected={dialect} onSelect={setDialect} />
-          {mode === 'CATEGORIES' ? null : (
+          {mode === 'CATEGORIES' || mode === 'PROFILE' ? null : (
             <CategoryFilter
               categories={categories}
               selected={selectedCategory}
@@ -119,11 +135,18 @@ function App() {
         ) : mode === 'CATEGORIES' ? (
           <CategoriesStage
             categories={categories}
+            progressByCategory={categoryProgress}
             selectedCategory={selectedCategory}
             onSelectCategory={(category) => {
               setSelectedCategory(category);
               setMode('LEARN');
             }}
+          />
+        ) : mode === 'PROFILE' ? (
+          <ProfileStage
+            summary={profileSummary}
+            onPracticeWeakPairs={startWeakPairPractice}
+            onResetProgress={resetProgress}
           />
         ) : (
           <main
@@ -167,6 +190,14 @@ function App() {
                 isFirstWord={true}
                 partnerWord={currentPair.word2}
                 onSuccess={handlePracticeSuccess}
+                onAttemptEvaluated={({ isCorrect }) => {
+                  recordPracticeAttempt({
+                    pairId: currentPair.id,
+                    category: currentPair.phoneme_type,
+                    targetWord: 1,
+                    isCorrect,
+                  });
+                }}
               />
               <PracticeCard
                 word={currentPair.word2}
@@ -174,13 +205,21 @@ function App() {
                 isFirstWord={false}
                 partnerWord={currentPair.word1}
                 onSuccess={handlePracticeSuccess}
+                onAttemptEvaluated={({ isCorrect }) => {
+                  recordPracticeAttempt({
+                    pairId: currentPair.id,
+                    category: currentPair.phoneme_type,
+                    targetWord: 2,
+                    isCorrect,
+                  });
+                }}
               />
             </div>
           </main>
         )
       }
       navigation={
-        mode === 'CATEGORIES' ? null : (
+        mode === 'CATEGORIES' || mode === 'PROFILE' ? null : (
           <Navigation
             onPrev={goPrev}
             onNext={goNext}
