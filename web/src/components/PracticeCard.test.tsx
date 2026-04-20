@@ -1,0 +1,188 @@
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { PracticeCard } from './PracticeCard';
+
+const startRecordingMock = vi.fn();
+const stopRecordingMock = vi.fn();
+const recognizeSpeechMock = vi.fn();
+
+vi.mock('../hooks/useAudioRecorder', () => ({
+  useAudioRecorder: () => ({
+    startRecording: startRecordingMock,
+    stopRecording: stopRecordingMock,
+  }),
+}));
+
+vi.mock('../lib/api', () => ({
+  recognizeSpeech: (...args: unknown[]) => recognizeSpeechMock(...args),
+  audioUrl: (word: string) => `/api/audio/${word}`,
+}));
+
+describe('PracticeCard', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    startRecordingMock.mockResolvedValue(undefined);
+    stopRecordingMock.mockResolvedValue(new Blob(['audio'], { type: 'audio/webm' }));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.clearAllMocks();
+  });
+
+  it('records, recognizes a correct transcript, and calls onSuccess', async () => {
+    const onSuccess = vi.fn();
+    recognizeSpeechMock.mockResolvedValue('ship');
+
+    render(
+      <PracticeCard
+        word="ship"
+        isActive={true}
+        onSuccess={onSuccess}
+        isFirstWord={true}
+        partnerWord="sheep"
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /record pronunciation/i }));
+      await Promise.resolve();
+    });
+
+    expect(startRecordingMock).toHaveBeenCalledTimes(1);
+    expect(screen.getByText(/listening/i)).toBeInTheDocument();
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(stopRecordingMock).toHaveBeenCalledTimes(1);
+    expect(recognizeSpeechMock).toHaveBeenCalledTimes(1);
+
+    expect(screen.getByText(/correct!/i)).toBeInTheDocument();
+
+    await act(async () => {
+      vi.advanceTimersByTime(1500);
+      await Promise.resolve();
+    });
+
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows try again for incorrect transcript and returns to idle state', async () => {
+    recognizeSpeechMock.mockResolvedValue('shape');
+
+    render(
+      <PracticeCard
+        word="ship"
+        isActive={true}
+        onSuccess={vi.fn()}
+        isFirstWord={false}
+        partnerWord="sheep"
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /record pronunciation/i }));
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(screen.getByText(/try again/i)).toBeInTheDocument();
+    const heardLabel = screen.getByText(/heard:/i);
+    const transcriptPill = heardLabel.closest('div');
+    expect(transcriptPill?.className).toContain('bg-[#3d1414]');
+    expect(transcriptPill?.className).toContain('border-[#ff6b6b]/30');
+
+    await act(async () => {
+      vi.advanceTimersByTime(2500);
+    });
+
+    expect(screen.getByText(/tap to speak/i)).toBeInTheDocument();
+  });
+
+  it('uses themed active-card, heading, and listen styles', () => {
+    render(
+      <PracticeCard
+        word="ship"
+        isActive={true}
+        onSuccess={vi.fn()}
+        isFirstWord={true}
+        partnerWord="sheep"
+      />,
+    );
+
+    const card = screen.getByTestId('practice-card-active');
+    const heading = screen.getByTestId('practice-card-heading');
+    const listen = screen.getByTestId('practice-listen-button');
+    const status = screen.getByTestId('practice-status-label');
+    const record = screen.getByRole('button', { name: /record pronunciation/i });
+
+    expect(card.className).toContain('border-[#7dd3fc]/10');
+    expect(heading.className).toContain('text-[#e0e8f0]');
+    expect(listen.className).toContain('text-[#7dd3fc]');
+    expect(status.className).toContain('text-[#a0b4c4]');
+    expect(record.className).toContain('bg-[#7dd3fc]');
+    expect(record.className).toContain('text-[#001f2e]');
+  });
+
+  it('uses themed recording-state colors', async () => {
+    render(
+      <PracticeCard
+        word="ship"
+        isActive={true}
+        onSuccess={vi.fn()}
+        isFirstWord={true}
+        partnerWord="sheep"
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /record pronunciation/i }));
+      await Promise.resolve();
+    });
+
+    const record = screen.getByRole('button', { name: /record pronunciation/i });
+    const status = screen.getByTestId('practice-status-label');
+
+    expect(record.className).toContain('bg-[#ff6b6b]');
+    expect(status.className).toContain('text-[#ffb3b3]');
+  });
+
+  it('uses themed processing-state colors', async () => {
+    recognizeSpeechMock.mockImplementation(() => new Promise<string>(() => {}));
+
+    render(
+      <PracticeCard
+        word="ship"
+        isActive={true}
+        onSuccess={vi.fn()}
+        isFirstWord={true}
+        partnerWord="sheep"
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /record pronunciation/i }));
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+    });
+
+    expect(screen.getByText(/processing/i)).toBeInTheDocument();
+    const record = screen.getByRole('button', { name: /record pronunciation/i });
+    const status = screen.getByTestId('practice-status-label');
+
+    expect(record.className).toContain('bg-[#1a3a4e]');
+    expect(status.className).toContain('text-[#7dd3fc]');
+  });
+});

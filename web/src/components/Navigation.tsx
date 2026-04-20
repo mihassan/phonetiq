@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight, PlaySquare } from 'lucide-react';
 import { audioUrl } from '../lib/api';
+import { playPairAudio } from '../lib/audioPlayback';
 
 interface Props {
   onPrev: () => void;
@@ -10,37 +11,35 @@ interface Props {
 
 export function Navigation({ onPrev, onNext, word1, word2 }: Props) {
   const playPair = async () => {
-    const a1 = new Audio(audioUrl(word1));
-    const a2 = new Audio(audioUrl(word2));
-
-    try {
-      await a1.play();
-      a1.onended = () => {
-        setTimeout(() => a2.play(), 600);
-      };
-    } catch {}
+    await playPairAudio(audioUrl(word1), audioUrl(word2));
   };
 
   return (
-    <div className="flex justify-center items-center gap-4 md:gap-6 mt-8 md:mt-12">
+    <div
+      data-testid="navigation-controls"
+      className="flex justify-center items-center gap-4 md:gap-6 mt-8 md:mt-12 bg-[#0f1524]/60 border border-[#7dd3fc]/10 rounded-full px-3 py-2"
+    >
       <button
         onClick={onPrev}
-        className="w-14 h-14 md:w-16 md:h-16 bg-white rounded-full flex items-center justify-center text-slate-900 hover:bg-slate-50 transition-colors shadow-lg shadow-slate-200/50"
+        aria-label="Previous pair"
+        className="w-14 h-14 md:w-16 md:h-16 bg-[#1a2438] rounded-full flex items-center justify-center text-[#e0e8f0] hover:bg-[#202c42] transition-colors shadow-lg shadow-[#7dd3fc]/10"
       >
         <ChevronLeft size={24} />
       </button>
 
-      <button
-        onClick={playPair}
-        className="h-14 md:h-16 px-8 md:px-10 bg-slate-900 text-white rounded-full flex items-center gap-3 font-bold md:text-lg hover:bg-slate-800 transition-colors shadow-xl shadow-slate-900/20"
-      >
+        <button
+          onClick={playPair}
+          aria-label="Play pair audio"
+          className="h-14 md:h-16 px-8 md:px-10 bg-[#7dd3fc] text-[#001f2e] rounded-full flex items-center gap-3 font-bold md:text-lg hover:bg-[#9bddff] transition-colors shadow-xl shadow-[#7dd3fc]/30"
+        >
         <PlaySquare size={20} fill="currentColor" />
         Play Auto
       </button>
 
       <button
         onClick={onNext}
-        className="w-14 h-14 md:w-16 md:h-16 bg-white rounded-full flex items-center justify-center text-slate-900 hover:bg-slate-50 transition-colors shadow-lg shadow-slate-200/50"
+        aria-label="Next pair"
+        className="w-14 h-14 md:w-16 md:h-16 bg-[#1a2438] rounded-full flex items-center justify-center text-[#e0e8f0] hover:bg-[#202c42] transition-colors shadow-lg shadow-[#7dd3fc]/10"
       >
         <ChevronRight size={24} />
       </button>
