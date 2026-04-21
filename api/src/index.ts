@@ -3,6 +3,9 @@ import { cors } from 'hono/cors';
 import { pairsRoutes } from './routes/pairs';
 import { audioRoutes } from './routes/audio';
 import { recognizeRoutes } from './routes/recognize';
+import { authRoutes } from './routes/auth';
+import { meRoutes } from './routes/me';
+import { progressRoutes } from './routes/progress';
 
 export type Env = {
   DB: D1Database;
@@ -10,6 +13,11 @@ export type Env = {
   AUDIO_BUCKET: R2Bucket;
   AI_RATE_LIMITER: RateLimit;
   API_RATE_LIMITER: RateLimit;
+  GOOGLE_CLIENT_ID: string;
+  GOOGLE_CLIENT_SECRET: string;
+  SESSION_SECRET: string;
+  WEB_ORIGIN: string;
+  OAUTH_REDIRECT_URI?: string;
 };
 
 const app = new Hono<{ Bindings: Env }>();
@@ -41,5 +49,8 @@ app.get('/api/health', (c) => c.json({ status: 'ok' }));
 app.route('/api/pairs', pairsRoutes);
 app.route('/api/audio', audioRoutes);
 app.route('/api/recognize', recognizeRoutes);
+app.route('/api/auth', authRoutes);
+app.route('/api/me', meRoutes);
+app.route('/api/progress', progressRoutes);
 
 export default app;

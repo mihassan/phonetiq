@@ -10,3 +10,38 @@ export const wordPairs = sqliteTable('word_pairs', {
   difficultyLevel: integer('difficulty_level').notNull().default(1),
   createdAt: text('created_at').notNull().default('CURRENT_TIMESTAMP'),
 });
+
+export const users = sqliteTable('users', {
+  id: text('id').primaryKey(),
+  email: text('email').notNull().unique(),
+  name: text('name'),
+  avatarUrl: text('avatar_url'),
+  provider: text('provider').notNull(),
+  providerUserId: text('provider_user_id').notNull(),
+  createdAt: text('created_at').notNull().default('CURRENT_TIMESTAMP'),
+  updatedAt: text('updated_at').notNull().default('CURRENT_TIMESTAMP'),
+});
+
+export const sessions = sqliteTable('sessions', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull(),
+  expiresAt: text('expires_at').notNull(),
+  createdAt: text('created_at').notNull().default('CURRENT_TIMESTAMP'),
+});
+
+export const userProgress = sqliteTable('user_progress', {
+  userId: text('user_id').notNull(),
+  pairId: integer('pair_id').notNull(),
+  dialect: text('dialect').notNull(),
+  category: text('category').notNull(),
+  word1Attempts: integer('word1_attempts').notNull().default(0),
+  word1Correct: integer('word1_correct').notNull().default(0),
+  word2Attempts: integer('word2_attempts').notNull().default(0),
+  word2Correct: integer('word2_correct').notNull().default(0),
+  pairCompletions: integer('pair_completions').notNull().default(0),
+  exposureCount: integer('exposure_count').notNull().default(0),
+  recentIncorrectCount: integer('recent_incorrect_count').notNull().default(0),
+  successStreak: integer('success_streak').notNull().default(0),
+  lastSeenAt: text('last_seen_at'),
+  lastCorrectAt: text('last_correct_at'),
+});

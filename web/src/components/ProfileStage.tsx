@@ -1,15 +1,21 @@
-import type { ProfileSummary } from '../lib/types';
+import type { AuthUser, ProfileSummary } from '../lib/types';
 
 interface ProfileStageProps {
   summary: ProfileSummary;
   onPracticeWeakPairs: () => void;
   onResetProgress: () => void;
+  authUser?: AuthUser | null;
+  onLogin?: () => void;
+  onLogout?: () => void;
 }
 
 export function ProfileStage({
   summary,
   onPracticeWeakPairs,
   onResetProgress,
+  authUser,
+  onLogin,
+  onLogout,
 }: ProfileStageProps) {
   return (
     <main
@@ -18,6 +24,35 @@ export function ProfileStage({
     >
       <div className="flex flex-col gap-6">
         <h2 className="text-3xl md:text-4xl font-black tracking-tight text-[#e0e8f0]">Profile</h2>
+
+        <section className="bg-[#141c2e] border border-[#7dd3fc]/10 rounded-2xl px-5 py-4 flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-extrabold uppercase tracking-widest text-[#a0b4c4]">Account</h3>
+            {authUser ? (
+              <p className="text-sm text-[#e0e8f0] mt-2">
+                Signed in as <span className="font-bold">{authUser.email}</span>
+              </p>
+            ) : (
+              <p className="text-sm text-[#a0b4c4] mt-2">Guest mode active (progress is local only).</p>
+            )}
+          </div>
+
+          {authUser ? (
+            <button
+              onClick={onLogout}
+              className="h-10 px-4 bg-[#1a2438] text-[#e0e8f0] rounded-full font-bold border border-[#7dd3fc]/10 hover:bg-[#202c42] transition-colors"
+            >
+              Sign out
+            </button>
+          ) : (
+            <button
+              onClick={onLogin}
+              className="h-10 px-4 bg-[#7dd3fc] text-[#001f2e] rounded-full font-bold hover:bg-[#9bddff] transition-colors"
+            >
+              Sign in
+            </button>
+          )}
+        </section>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           <div className="bg-[#141c2e] border border-[#7dd3fc]/10 rounded-2xl px-4 py-4">
@@ -93,7 +128,11 @@ export function ProfileStage({
             Reset progress
           </button>
 
-          <p className="text-xs text-[#a0b4c4]">Progress is stored locally on this device.</p>
+          <p className="text-xs text-[#a0b4c4]">
+            {authUser
+              ? 'Signed-in progress can be synced to cloud profile storage.'
+              : 'Progress is stored locally on this device until you sign in.'}
+          </p>
         </div>
       </div>
     </main>

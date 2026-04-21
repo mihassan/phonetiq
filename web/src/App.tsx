@@ -1,4 +1,5 @@
 import { Mic2, Loader2 } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 import { PracticeCard } from './components/PracticeCard';
 import { Navigation } from './components/Navigation';
 import { CategoryFilter } from './components/CategoryFilter';
@@ -7,9 +8,17 @@ import { AppShell } from './components/AppShell';
 import { LearnStage } from './components/LearnStage';
 import { CategoriesStage } from './components/CategoriesStage';
 import { ProfileStage } from './components/ProfileStage';
+import { useAuth } from './hooks/useAuth';
 import { usePracticeSession } from './hooks/usePracticeSession';
+import {
+  fetchCloudProgress,
+  importCloudProgress,
+  updateCloudProgressAttempt,
+} from './lib/authApi';
 
 function App() {
+  const { user, isAuthenticated, isLoading: isAuthLoading, login, logout } = useAuth();
+
   const {
     mode,
     setMode,
@@ -25,20 +34,55 @@ function App() {
     currentPair,
     currentPracticePair,
     progress,
+    progressStore,
     categoryProgress,
     profileSummary,
     goNext,
     goPrev,
     handlePracticeSuccess,
     recordPracticeAttempt,
+    applyProgressStore,
     startWeakPairPractice,
     refreshPracticeBatch,
     resetProgress,
     practicePairNumber,
     practicePairTotal,
   } = usePracticeSession();
+  const hasHandledCloudSyncRef = useRef(false);
 
   const practicePair = currentPracticePair ?? currentPair;
+
+  useEffect(() => {
+    if (!isAuthenticated || hasHandledCloudSyncRef.current) return;
+    hasHandledCloudSyncRef.current = true;
+
+    void (async () => {
+      try {
+        const cloud = await fetchCloudProgress();
+
+        if (cloud.store) {
+          applyProgressStore(cloud.store);
+          return;
+        }
+
+        if (profileSummary.totalAttempts > 0) {
+          const shouldImport = window.confirm(
+            'Import your local progress to your cloud profile?',
+          );
+          if (shouldImport) {
+            await importCloudProgress(progressStore, 'merge');
+          }
+        }
+      } catch {
+        // Non-blocking: local mode still works.
+      }
+    })();
+  }, [
+    isAuthenticated,
+    applyProgressStore,
+    profileSummary.totalAttempts,
+    progressStore,
+  ]);
 
   if (isLoading) {
     return (
@@ -116,6 +160,14 @@ function App() {
               Profile
             </button>
           </div>
+
+          <button
+            onClick={isAuthenticated ? logout : login}
+            disabled={isAuthLoading}
+            className="ml-3 h-10 px-4 rounded-full text-xs md:text-sm font-bold bg-[#1a2438] border border-[#7dd3fc]/20 text-[#e0e8f0] hover:bg-[#202c42] disabled:opacity-60"
+          >
+            {isAuthenticated ? 'Sign out' : 'Sign in'}
+          </button>
         </header>
       }
       filters={
@@ -153,6 +205,9 @@ function App() {
             summary={profileSummary}
             onPracticeWeakPairs={startWeakPairPractice}
             onResetProgress={resetProgress}
+            authUser={user}
+            onLogin={login}
+            onLogout={logout}
           />
         ) : (
           <main
@@ -205,12 +260,25 @@ function App() {
                 onSuccess={handlePracticeSuccess}
                 onAttemptEvaluated={({ isCorrect, matchType }) => {
                   if (matchType === 'no_match') return;
-                  recordPracticeAttempt({
+                  const updated = recordPracticeAttempt({
                     pairId: practicePair.id,
                     category: practicePair.phoneme_type,
                     targetWord: 1,
                     isCorrect,
                   });
+
+                  if (isAuthenticated) {
+                    void updateCloudProgressAttempt({
+                      pairId: practicePair.id,
+                      category: practicePair.phoneme_type,
+                      dialect,
+                      targetWord: 1,
+                      isCorrect,
+                      timestamp: updated.lastPracticedAt ?? undefined,
+                    }).catch(() => {
+                      // Non-blocking cloud sync.
+                    });
+                  }
                 }}
               />
               <PracticeCard
@@ -222,12 +290,25 @@ function App() {
                 onSuccess={handlePracticeSuccess}
                 onAttemptEvaluated={({ isCorrect, matchType }) => {
                   if (matchType === 'no_match') return;
-                  recordPracticeAttempt({
+                  const updated = recordPracticeAttempt({
                     pairId: practicePair.id,
                     category: practicePair.phoneme_type,
                     targetWord: 2,
                     isCorrect,
                   });
+
+                  if (isAuthenticated) {
+                    void updateCloudProgressAttempt({
+                      pairId: practicePair.id,
+                      category: practicePair.phoneme_type,
+                      dialect,
+                      targetWord: 2,
+                      isCorrect,
+                      timestamp: updated.lastPracticedAt ?? undefined,
+                    }).catch(() => {
+                      // Non-blocking cloud sync.
+                    });
+                  }
                 }}
               />
             </div>

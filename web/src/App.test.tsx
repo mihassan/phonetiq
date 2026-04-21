@@ -12,8 +12,23 @@ vi.mock('./lib/api', () => ({
   recognizeSpeech: vi.fn(),
 }));
 
+const useAuthMock = vi.fn();
+
+vi.mock('./hooks/useAuth', () => ({
+  useAuth: () => useAuthMock(),
+}));
+
 describe('App', () => {
   beforeEach(() => {
+    useAuthMock.mockReturnValue({
+      user: null,
+      isLoading: false,
+      isAuthenticated: false,
+      login: vi.fn(),
+      logout: vi.fn(),
+      refreshUser: vi.fn(),
+    });
+
     fetchCategoriesMock.mockImplementation(async (params?: { dialect?: string }) => {
       if (params?.dialect === 'uk_only') {
         return {
@@ -95,6 +110,13 @@ describe('App', () => {
     expect(await screen.findByText(/pair 1 of 2/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /ship/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /sheep/i })).toBeInTheDocument();
+  });
+
+  it('shows sign-in action in header for guests', async () => {
+    render(<App />);
+
+    await screen.findByText(/pair 1 of 2/i);
+    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
   });
 
   it('renders the new shell regions for header, filters, stage, and navigation', async () => {

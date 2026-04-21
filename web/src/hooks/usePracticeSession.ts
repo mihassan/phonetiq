@@ -144,9 +144,14 @@ export function usePracticeSession() {
       });
 
       setProgressStore(updated);
+      return updated;
     },
     [dialect],
   );
+
+  const applyProgressStore = useCallback((store: ProgressStore) => {
+    setProgressStore(store);
+  }, []);
 
   const startWeakPairPractice = useCallback(() => {
     if (weakPairQueue.length === 0) return;
@@ -204,6 +209,7 @@ export function usePracticeSession() {
     goPrev,
     handlePracticeSuccess,
     recordPracticeAttempt,
+    applyProgressStore,
     startWeakPairPractice,
     refreshPracticeBatch,
     resetProgress,
