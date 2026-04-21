@@ -23,6 +23,7 @@ function App() {
     targetNum,
     isLoading,
     currentPair,
+    currentPracticePair,
     progress,
     categoryProgress,
     profileSummary,
@@ -31,8 +32,13 @@ function App() {
     handlePracticeSuccess,
     recordPracticeAttempt,
     startWeakPairPractice,
+    refreshPracticeBatch,
     resetProgress,
+    practicePairNumber,
+    practicePairTotal,
   } = usePracticeSession();
+
+  const practicePair = currentPracticePair ?? currentPair;
 
   if (isLoading) {
     return (
@@ -167,14 +173,20 @@ function App() {
                   data-testid="practice-pair-meta"
                   className="ui-meta-label text-[10px] md:text-xs font-extrabold text-[#a0b4c4] uppercase tracking-widest"
                 >
-                  Pair {index + 1} of {pairs.length}
+                  Pair {practicePairNumber} of {practicePairTotal}
                 </div>
-                {currentPair.target_sounds && (
+                <button
+                  onClick={refreshPracticeBatch}
+                  className="h-8 px-3 rounded-full bg-[#1a2438] border border-[#7dd3fc]/20 text-[10px] md:text-xs font-bold uppercase tracking-wider text-[#7dd3fc] hover:bg-[#202c42]"
+                >
+                  Refresh batch
+                </button>
+                {practicePair.target_sounds && (
                   <div
                     data-testid="practice-target-sounds"
                     className="ui-sound-chip text-[10px] md:text-sm font-extrabold text-[#7dd3fc] bg-[#1a3a4e]/60 px-2 md:px-3 py-1 md:py-1.5 rounded-md md:rounded-lg tracking-wider"
                   >
-                    {currentPair.target_sounds}
+                    {practicePair.target_sounds}
                   </div>
                 )}
               </div>
@@ -185,32 +197,32 @@ function App() {
               className="practice-stage-columns grid grid-cols-1 md:grid-cols-2 items-stretch flex-1 pb-8 md:pb-0 py-8 md:py-6 gap-4 md:gap-0"
             >
               <PracticeCard
-                word={currentPair.word1}
+                word={practicePair.word1}
                 isActive={targetNum === 1}
                 isFirstWord={true}
-                partnerWord={currentPair.word2}
+                partnerWord={practicePair.word2}
                 onSuccess={handlePracticeSuccess}
                 onAttemptEvaluated={({ isCorrect, matchType }) => {
                   if (matchType === 'no_match') return;
                   recordPracticeAttempt({
-                    pairId: currentPair.id,
-                    category: currentPair.phoneme_type,
+                    pairId: practicePair.id,
+                    category: practicePair.phoneme_type,
                     targetWord: 1,
                     isCorrect,
                   });
                 }}
               />
               <PracticeCard
-                word={currentPair.word2}
+                word={practicePair.word2}
                 isActive={targetNum === 2}
                 isFirstWord={false}
-                partnerWord={currentPair.word1}
+                partnerWord={practicePair.word1}
                 onSuccess={handlePracticeSuccess}
                 onAttemptEvaluated={({ isCorrect, matchType }) => {
                   if (matchType === 'no_match') return;
                   recordPracticeAttempt({
-                    pairId: currentPair.id,
-                    category: currentPair.phoneme_type,
+                    pairId: practicePair.id,
+                    category: practicePair.phoneme_type,
                     targetWord: 2,
                     isCorrect,
                   });
@@ -225,8 +237,8 @@ function App() {
           <Navigation
             onPrev={goPrev}
             onNext={goNext}
-            word1={currentPair.word1}
-            word2={currentPair.word2}
+            word1={mode === 'PRACTICE' ? practicePair.word1 : currentPair.word1}
+            word2={mode === 'PRACTICE' ? practicePair.word2 : currentPair.word2}
           />
         )
       }

@@ -246,6 +246,22 @@ describe('App', () => {
     expect(body.className).toContain('gap-4');
   });
 
+  it('shows refresh batch control and resets to first pair in practice session', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await screen.findByText(/pair 1 of 2/i);
+    await user.click(screen.getByRole('button', { name: /practice/i }));
+
+    expect(screen.getByRole('button', { name: /refresh batch/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /next pair/i }));
+    expect(screen.getByText(/pair 2 of 2/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /refresh batch/i }));
+    expect(screen.getByText(/pair 1 of 2/i)).toBeInTheDocument();
+  });
+
   it('shows dialect controls and updates totals for selected dialect', async () => {
     const user = userEvent.setup();
     render(<App />);

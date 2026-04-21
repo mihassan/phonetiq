@@ -5,6 +5,19 @@ export const recognizeRoutes = new Hono<{ Bindings: Env }>();
 
 type MatchType = 'exact' | 'token' | 'fuzzy' | 'no_match' | 'freeform';
 
+function arrayBufferToBase64(buffer: ArrayBuffer) {
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+  let binary = '';
+
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+
+  return btoa(binary);
+}
+
 function normalizeText(input: string) {
   return input
     .toLowerCase()
@@ -105,8 +118,10 @@ recognizeRoutes.post('/', async (c) => {
   }
 
   try {
+    const base64Audio = arrayBufferToBase64(audioBytes);
+
     const result = await c.env.AI.run('@cf/openai/whisper-large-v3-turbo', {
-      audio: [...new Uint8Array(audioBytes)],
+      audio: base64Audio,
       task: 'transcribe',
       language: 'en',
       vad_filter: true,

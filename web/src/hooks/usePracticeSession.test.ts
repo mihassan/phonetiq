@@ -217,7 +217,6 @@ describe('usePracticeSession', () => {
   });
 
   it('uses adaptive next selection in practice mode based on weakness', async () => {
-    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0);
     const { result } = renderHook(() => usePracticeSession());
 
     await waitFor(() => {
@@ -225,17 +224,40 @@ describe('usePracticeSession', () => {
     });
 
     act(() => {
-      result.current.recordPracticeAttempt({
-        pairId: 2,
-        category: 'vowel_short',
-        targetWord: 1,
-        isCorrect: false,
-      });
       result.current.setMode('PRACTICE');
+    });
+
+    expect(result.current.practiceBatch.length).toBe(2);
+    expect(result.current.currentPracticePair).toBeDefined();
+    expect(result.current.practicePairNumber).toBe(1);
+    expect(result.current.practicePairTotal).toBe(2);
+  });
+
+  it('moves sequentially within the practice batch and refreshes batch', async () => {
+    const { result } = renderHook(() => usePracticeSession());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    act(() => {
+      result.current.setMode('PRACTICE');
+    });
+
+    const firstId = result.current.currentPracticePair?.id;
+
+    act(() => {
       result.current.goNext();
     });
 
-    expect(result.current.index).toBe(1);
-    randomSpy.mockRestore();
+    expect(result.current.practicePairNumber).toBe(2);
+    expect(result.current.currentPracticePair?.id).not.toBe(firstId);
+
+    act(() => {
+      result.current.refreshPracticeBatch();
+    });
+
+    expect(result.current.practicePairNumber).toBe(1);
+    expect(result.current.practicePairTotal).toBe(2);
   });
 });

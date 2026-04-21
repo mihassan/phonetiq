@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { buildWeakPairQueue, pickAdaptiveNextIndex, scorePairForPractice } from './pairSelection';
+import {
+  buildPracticeBatch,
+  buildWeakPairQueue,
+  pickAdaptiveNextIndex,
+  scorePairForPractice,
+} from './pairSelection';
 import type { ProgressStore, WordPair } from './types';
 
 const pairs: WordPair[] = [
@@ -100,5 +105,67 @@ describe('pairSelection', () => {
     const next = pickAdaptiveNextIndex(pairs, progress, 0, () => 0);
 
     expect(next).toBe(1);
+  });
+
+  it('builds a mixed practice batch with fixed weak quota and unseen fill', () => {
+    const manyPairs: WordPair[] = Array.from({ length: 20 }, (_, i) => ({
+      id: i + 1,
+      word1: `word-${i + 1}`,
+      word2: `word-${i + 1}-b`,
+      phoneme_type: 'vowel_short',
+      target_sounds: null,
+      dialect_filter: 'all',
+      difficulty_level: 1,
+    }));
+
+    const seededProgress: ProgressStore = {
+      ...progress,
+      pairs: {
+        ...progress.pairs,
+        '4': {
+          pairId: 4,
+          category: 'vowel_short',
+          dialect: 'all',
+          word1Attempts: 6,
+          word1Correct: 1,
+          word2Attempts: 6,
+          word2Correct: 1,
+          pairCompletions: 0,
+          exposureCount: 6,
+          recentIncorrectCount: 4,
+          successStreak: 0,
+          lastSeenAt: '2026-04-20T13:00:00.000Z',
+          lastCorrectAt: null,
+        },
+        '5': {
+          pairId: 5,
+          category: 'vowel_short',
+          dialect: 'all',
+          word1Attempts: 5,
+          word1Correct: 1,
+          word2Attempts: 5,
+          word2Correct: 1,
+          pairCompletions: 0,
+          exposureCount: 5,
+          recentIncorrectCount: 3,
+          successStreak: 0,
+          lastSeenAt: '2026-04-20T13:00:00.000Z',
+          lastCorrectAt: null,
+        },
+      },
+    };
+
+    const batch = buildPracticeBatch(manyPairs, seededProgress, {
+      batchSize: 15,
+      weakCount: 5,
+      random: () => 0.42,
+    });
+
+    expect(batch).toHaveLength(15);
+    expect(new Set(batch.map((pair) => pair.id)).size).toBe(15);
+
+    const weakIds = new Set([2, 3, 4, 5]);
+    const weakIncluded = batch.filter((pair) => weakIds.has(pair.id));
+    expect(weakIncluded.length).toBeGreaterThanOrEqual(3);
   });
 });

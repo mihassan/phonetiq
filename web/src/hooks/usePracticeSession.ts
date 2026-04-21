@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fetchCategories, fetchPairs } from '../lib/api';
 import { buildCategoryProgress, getProfileSummary } from '../lib/progressMetrics';
-import { buildWeakPairQueue, pickAdaptiveNextIndex } from '../lib/pairSelection';
+import { buildPracticeBatch, buildWeakPairQueue } from '../lib/pairSelection';
 import {
   loadProgressStore,
   resetProgressStore,
@@ -27,11 +27,15 @@ export function usePracticeSession() {
   const [isLoading, setIsLoading] = useState(true);
   const [progressStore, setProgressStore] = useState<ProgressStore>(() => loadProgressStore());
   const [isWeakPracticeMode, setIsWeakPracticeMode] = useState(false);
+  const [practiceBatch, setPracticeBatch] = useState<WordPair[]>([]);
+  const [practiceBatchIndex, setPracticeBatchIndex] = useState(0);
 
   useEffect(() => {
     setIsLoading(true);
     setIndex(0);
     setTargetNum(1);
+    setPracticeBatch([]);
+    setPracticeBatchIndex(0);
 
     fetchCategories({ dialect }).then((data) => setCategories(data.categories));
 
@@ -45,11 +49,11 @@ export function usePracticeSession() {
   }, [selectedCategory, dialect]);
 
   const currentPair = pairs[index];
+  const currentPracticePair = practiceBatch[practiceBatchIndex] ?? pairs[0];
   const weakPairQueue = useMemo(
     () => buildWeakPairQueue(pairs, progressStore, 12),
     [pairs, progressStore],
   );
-  const weakPairQueueIds = useMemo(() => new Set(weakPairQueue.map((pair) => pair.id)), [weakPairQueue]);
 
   const categoryProgress = useMemo(
     () => buildCategoryProgress(categories, pairs, progressStore),
@@ -61,37 +65,61 @@ export function usePracticeSession() {
     [pairs, categories, progressStore],
   );
 
-  const goNext = useCallback(() => {
-    setIndex((i) => {
-      if (mode === 'PRACTICE') {
-        if (isWeakPracticeMode && weakPairQueueIds.size > 0) {
-          const weakPairs = pairs.filter((pair) => weakPairQueueIds.has(pair.id));
-          if (weakPairs.length > 0) {
-            const currentId = pairs[i]?.id;
-            const currentWeakIndex = Math.max(
-              0,
-              weakPairs.findIndex((pair) => pair.id === currentId),
-            );
-            const nextWeakIndex = pickAdaptiveNextIndex(weakPairs, progressStore, currentWeakIndex);
-            const nextPairId = weakPairs[nextWeakIndex].id;
-            const mappedIndex = pairs.findIndex((pair) => pair.id === nextPairId);
+  const refreshPracticeBatch = useCallback(() => {
+    if (pairs.length === 0) {
+      setPracticeBatch([]);
+      setPracticeBatchIndex(0);
+      return;
+    }
 
-            if (mappedIndex >= 0) return mappedIndex;
-          }
-        }
+    if (isWeakPracticeMode && weakPairQueue.length > 0) {
+      setPracticeBatch(weakPairQueue.slice(0, Math.min(5, weakPairQueue.length)));
+      setPracticeBatchIndex(0);
+      setTargetNum(1);
+      return;
+    }
 
-        return pickAdaptiveNextIndex(pairs, progressStore, i);
-      }
-
-      return (i + 1) % pairs.length;
+    const nextBatch = buildPracticeBatch(pairs, progressStore, {
+      batchSize: 15,
+      weakCount: 5,
     });
+    setPracticeBatch(nextBatch);
+    setPracticeBatchIndex(0);
     setTargetNum(1);
-  }, [pairs, mode, progressStore, isWeakPracticeMode, weakPairQueueIds]);
+  }, [pairs, progressStore, isWeakPracticeMode, weakPairQueue]);
+
+  useEffect(() => {
+    if (mode !== 'PRACTICE') return;
+    refreshPracticeBatch();
+  }, [mode, refreshPracticeBatch]);
+
+  const goNext = useCallback(() => {
+    if (mode === 'PRACTICE') {
+      setPracticeBatchIndex((i) => {
+        if (practiceBatch.length === 0) return 0;
+        return (i + 1) % practiceBatch.length;
+      });
+      setTargetNum(1);
+      return;
+    }
+
+    setIndex((i) => (i + 1) % pairs.length);
+    setTargetNum(1);
+  }, [mode, practiceBatch.length, pairs.length]);
 
   const goPrev = useCallback(() => {
+    if (mode === 'PRACTICE') {
+      setPracticeBatchIndex((i) => {
+        if (practiceBatch.length === 0) return 0;
+        return (i - 1 + practiceBatch.length) % practiceBatch.length;
+      });
+      setTargetNum(1);
+      return;
+    }
+
     setIndex((i) => (i - 1 + pairs.length) % pairs.length);
     setTargetNum(1);
-  }, [pairs.length]);
+  }, [mode, practiceBatch.length, pairs.length]);
 
   const handlePracticeSuccess = useCallback(() => {
     if (targetNum === 1) {
@@ -123,15 +151,12 @@ export function usePracticeSession() {
   const startWeakPairPractice = useCallback(() => {
     if (weakPairQueue.length === 0) return;
 
-    const firstPairId = weakPairQueue[0].id;
-    const firstIndex = pairs.findIndex((pair) => pair.id === firstPairId);
-    if (firstIndex < 0) return;
-
     setIsWeakPracticeMode(true);
+    setPracticeBatch(weakPairQueue.slice(0, Math.min(5, weakPairQueue.length)));
+    setPracticeBatchIndex(0);
     setMode('PRACTICE');
     setTargetNum(1);
-    setIndex(firstIndex);
-  }, [weakPairQueue, pairs]);
+  }, [weakPairQueue]);
 
   const resetProgress = useCallback(() => {
     resetProgressStore();
@@ -140,9 +165,17 @@ export function usePracticeSession() {
   }, []);
 
   const progress = useMemo(() => {
+    if (mode === 'PRACTICE') {
+      if (practiceBatch.length === 0) return 5;
+      return Math.max(5, ((practiceBatchIndex + 1) / practiceBatch.length) * 100);
+    }
+
     if (pairs.length === 0) return 5;
     return Math.max(5, ((index + 1) / pairs.length) * 100);
-  }, [index, pairs.length]);
+  }, [mode, practiceBatchIndex, practiceBatch.length, index, pairs.length]);
+
+  const practicePairNumber = practiceBatch.length === 0 ? 0 : practiceBatchIndex + 1;
+  const practicePairTotal = practiceBatch.length;
 
   return {
     mode,
@@ -157,17 +190,22 @@ export function usePracticeSession() {
     targetNum,
     isLoading,
     currentPair,
+    currentPracticePair,
     progress,
     progressStore,
     categoryProgress,
     profileSummary,
     weakPairQueue,
     isWeakPracticeMode,
+    practiceBatch,
+    practicePairNumber,
+    practicePairTotal,
     goNext,
     goPrev,
     handlePracticeSuccess,
     recordPracticeAttempt,
     startWeakPairPractice,
+    refreshPracticeBatch,
     resetProgress,
   };
 }
