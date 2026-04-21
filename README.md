@@ -10,7 +10,8 @@
 A web app for practicing English **minimal pair pronunciation** — words that differ by only one sound, like *ship* vs *sheep*. Built entirely on the Cloudflare stack.
 
 **Learn Mode** — hear the correct pronunciation of each word via pre-generated TTS audio.
-**Practice Mode** — speak into your microphone and get instant AI feedback via Cloudflare Workers AI (Whisper).
+**Practice Mode** — complete refreshable adaptive sessions (15 pairs) and get instant AI feedback from candidate-constrained speech recognition.
+**Profile Mode** — review key stats, weak pairs/categories, and launch weak-pair practice.
 
 ## Screenshots
 
@@ -23,8 +24,12 @@ A web app for practicing English **minimal pair pronunciation** — words that d
 ## Features
 
 - 186 curated word pairs across 9 phoneme categories (vowels, consonants, fricatives, affricates, liquids, nasals, sibilants, approximants)
-- Dialect-aware pairs tagged with `all`, `us_only`, or `uk_only` to handle accent-dependent contrasts (cot–caught merger, rhoticity)
-- Cross-platform speech recognition using `MediaRecorder` API + server-side Whisper AI (no fragmented browser `SpeechRecognition`)
+- Dialect-aware pair filtering (`Common`=`all`, `UK`=`uk_only`, `US`=`us_only` support in schema)
+- Adaptive Practice sessions: 15-pair batches with 5 weak-pair quota + unseen/medium-weak filler
+- Local progress tracking (attempts, accuracy, completions, streaks, weak-pair signals)
+- Profile stage with key stats + weak-pair practice action
+- Cross-platform speech recognition using `MediaRecorder` + Workers AI (`@cf/openai/whisper-large-v3-turbo`)
+- Candidate-constrained recognition (2 target words) with explicit `no_match` fallback
 - Category filtering, progress ring countdown, and responsive mobile-friendly UI
 - Two-tier rate limiting to protect the AI endpoint from abuse
 
@@ -36,7 +41,7 @@ A web app for practicing English **minimal pair pronunciation** — words that d
 | Backend API | Cloudflare Workers + Hono |
 | Database | Cloudflare D1 (SQLite) + Drizzle ORM |
 | Audio Storage | Cloudflare R2 (pre-generated `.m4a` files) |
-| Speech Recognition | Cloudflare Workers AI (`@cf/openai/whisper`) |
+| Speech Recognition | Cloudflare Workers AI (`@cf/openai/whisper-large-v3-turbo`) |
 | Hosting | Cloudflare Pages (frontend) + Cloudflare Workers (API) |
 | Custom Domains | `phonetiq.mihassan.com` (frontend), `api.phonetiq.mihassan.com` (API) |
 | CI/CD | GitHub Actions (`cloudflare/wrangler-action`) for both frontend and API |
@@ -51,7 +56,7 @@ Phonetiq/
       routes/
         pairs.ts              # GET /api/pairs, GET /api/pairs/categories
         audio.ts              # GET /api/audio/:word (serves from R2)
-        recognize.ts          # POST /api/recognize (Whisper STT)
+        recognize.ts          # POST /api/recognize (dialect-aware Whisper STT)
       db/
         schema.ts             # Drizzle ORM schema
         seed.sql              # 186 word pairs seed data
@@ -59,16 +64,22 @@ Phonetiq/
     wrangler.toml             # Bindings: D1, R2, AI, Rate Limiters
   web/                        # React SPA (Vite)
     src/
-      App.tsx                 # Main app with mode toggle + category filter
+      App.tsx                 # Main app with Learn/Categories/Practice/Profile modes
       components/
         PairCard.tsx          # Learn mode: word display + audio playback
         PracticeCard.tsx      # Practice mode: record + STT + feedback
+        ProfileStage.tsx      # Profile mode: key stats + weak areas/actions
         Navigation.tsx        # Prev/Next navigation
         CategoryFilter.tsx    # Category filter pills
+        DialectFilter.tsx     # Dialect selector pills
       hooks/
         useAudioRecorder.ts   # MediaRecorder wrapper
+        usePracticeSession.ts # Session state (batch practice + progress)
       lib/
         api.ts                # API client functions
+        pairSelection.ts      # Adaptive batch selection helpers
+        progressStorage.ts    # Local progress persistence
+        progressMetrics.ts    # Derived stats (profile/categories)
         types.ts              # Shared TypeScript types
   scripts/
     generate-audio.sh         # TTS audio generation + R2 upload

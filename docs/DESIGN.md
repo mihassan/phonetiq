@@ -10,7 +10,7 @@ The initial prototype (`index.html`) relied on browser-native `SpeechSynthesis` 
 *   **Backend:** Cloudflare Workers (Hono framework for routing).
 *   **Database:** Cloudflare D1 (SQLite) via Drizzle ORM.
 *   **Storage (TTS Audio):** Cloudflare R2 bucket (pre-generated `.m4a` files).
-*   **AI (Speech-to-Text):** Cloudflare Workers AI (`@cf/openai/whisper`).
+*   **AI (Speech-to-Text):** Cloudflare Workers AI (`@cf/openai/whisper-large-v3-turbo`).
 *   **CI/CD:** GitHub Actions with `cloudflare/wrangler-action` for both frontend and API.
 
 ## Visual Theme (Glacier / Dark)
@@ -52,9 +52,9 @@ CREATE TABLE word_pairs (
 
 ### Addressing the "Dialect Trap"
 Minimal pairs are highly dependent on the speaker's accent. For example:
-- `["hut", "heart"]` is a minimal pair in non-rhotic accents (UK/Aus) but not General American.
+- `["hut", "heart"]` is a minimal pair in non-rhotic accents (UK/Aus) but not in many rhotic American accents.
 - `["cot", "caught"]` is distinct in the UK, but identical for most North Americans due to the cot-caught merger.
-The `dialect_filter` column ensures the app only presents relevant pairs based on the user's selected dialect (default: General American).
+The `dialect_filter` column ensures the app only presents relevant pairs based on selected dialect. In the UI, `Common` maps to `all` (shared/cross-dialect pairs), while `UK` maps to `uk_only` additions.
 
 ## Audio Pipelines
 ### 1. Text-to-Speech (TTS) Pipeline
@@ -65,7 +65,12 @@ The `dialect_filter` column ensures the app only presents relevant pairs based o
 ### 2. Speech-to-Text (STT) Pipeline
 *   **Problem:** `SpeechRecognition` is unsupported in Firefox and buggy in Safari.
 *   **Solution:** The universally supported HTML5 `MediaRecorder` API captures audio on the frontend.
-*   **Workflow:** User taps the mic button → 3-second recording with visual countdown (SVG progress ring) → audio blob sent to `POST /api/recognize` → Worker passes audio to **Cloudflare Workers AI (`@cf/openai/whisper`)** → transcription returned to frontend for validation against the target word.
+*   **Workflow:** User taps the mic button → 3-second recording with visual countdown (SVG progress ring) → audio blob sent to `POST /api/recognize` with the two candidate words and selected dialect → Worker sends base64 audio to **Cloudflare Workers AI (`@cf/openai/whisper-large-v3-turbo`)** with `language=en`, `vad_filter=true`, and dialect-aware prompt context → backend maps transcript to candidate 1 / candidate 2 / `no_match` → structured result returned to frontend.
+
+## Practice Session Personalization
+*   **Local Progress Store:** Practice outcomes are persisted in browser storage (attempts, correctness, completions, streaks, weak-pair signals, timestamps).
+*   **Adaptive Batch Sessions:** Practice mode runs refreshable batches instead of global index jumps. Default batch size is 15 with a fixed weak-pair quota of 5; remaining items are filled from unseen then medium-weak pairs.
+*   **Profile & Weak Review:** Profile stage shows aggregate stats (accuracy, attempts, streaks, completions) plus weak pairs/categories and supports a weak-pair practice entry action.
 
 ### 3. Mic Interaction Design
 *   **Option chosen:** Tap once to start, auto-stop after 3 seconds.

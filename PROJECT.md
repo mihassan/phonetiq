@@ -5,7 +5,7 @@
 - **Hosting:** Cloudflare Pages (Frontend) + Cloudflare Workers (Backend API via Hono).
 - **Database:** Cloudflare D1 (SQLite) + Drizzle ORM. Schema in `api/src/db/schema.ts`.
 - **Storage:** Cloudflare R2 (pre-generated TTS audio files, `.m4a` format).
-- **AI / Speech:** Cloudflare Workers AI (`@cf/openai/whisper`) for Speech-to-Text (STT).
+- **AI / Speech:** Cloudflare Workers AI (`@cf/openai/whisper-large-v3-turbo`) for Speech-to-Text (STT).
 - **CI/CD:** GitHub Actions for both frontend (Pages) and API (Workers) — triggers on push to `main`.
 
 ## Live URLs
@@ -16,9 +16,10 @@
 ## Key Technical Decisions
 1. **API-Driven Data:** Word pairs are stored in D1, not hardcoded. The frontend fetches dynamically with optional category and dialect filters.
 2. **Audio Reliability (TTS):** Pre-generated `.m4a` audio files stored in R2. Generated locally using macOS `say` command via `scripts/generate-audio.sh`. Served by Worker via `GET /api/audio/:word`.
-3. **Speech Recognition (STT):** Frontend uses `MediaRecorder` API (universally supported) to capture audio blobs. Sent to Worker at `POST /api/recognize`, processed by Whisper AI.
-4. **Dialect Awareness:** Word pairs have a `dialect_filter` column (`all`, `us_only`, `uk_only`) to handle accent-dependent minimal pairs (e.g., cot-caught merger, rhoticity).
-5. **CI/CD:** GitHub Actions for both deployments (not Cloudflare Pages Git integration, which requires Direct Upload projects to be recreated). Single `CLOUDFLARE_API_TOKEN` secret shared by both workflows.
+3. **Speech Recognition (STT):** Frontend uses `MediaRecorder` API to capture audio blobs. Sent to `POST /api/recognize`, transcribed by `@cf/openai/whisper-large-v3-turbo` with English + VAD settings, candidate-word hints, and explicit `no_match` handling.
+4. **Dialect Awareness:** Word pairs use `dialect_filter` (`all`, `us_only`, `uk_only`). UI label `Common` maps to `all`. STT receives selected dialect and uses dialect-specific prompt context.
+5. **Progress & Personalization:** Local progress is persisted in browser storage. Practice uses refreshable 15-pair batches (5 weak-pair quota + unseen/medium-weak fill). Profile stage shows key stats and weak areas.
+6. **CI/CD:** GitHub Actions for both deployments (not Cloudflare Pages Git integration, which requires Direct Upload projects to be recreated). Single `CLOUDFLARE_API_TOKEN` secret shared by both workflows.
 
 ## Commands Reference
 ### API (`api/`)
@@ -41,14 +42,15 @@
 ## Data Schema
 - **186 word pairs** across 9 phoneme categories
 - Categories: vowel_short, vowel_long, consonant_voicing, fricative, sibilant, affricate, liquid, nasal, approximant
-- Dialect filters: `all` (170 pairs), `uk_only` (16 pairs)
+- Dialect filters currently seeded: `all` (170 pairs), `uk_only` (16 pairs)
+- `us_only` is supported by schema/query path but has limited/no exclusive seeded rows at present
 
 ## API Endpoints
 - `GET /api/health` - Health check
 - `GET /api/pairs?category=&dialect=&difficulty=&limit=&offset=` - List word pairs
 - `GET /api/pairs/categories` - List categories with counts
 - `GET /api/audio/:word` - Serve audio from R2
-- `POST /api/recognize` - Transcribe audio via Whisper AI
+- `POST /api/recognize` - Candidate-constrained speech recognition via Whisper AI (`large-v3-turbo`) with dialect-aware prompt context
 
 ## Wrangler Bindings (api/wrangler.toml)
 - `DB` - D1 database `phonetiq-db`

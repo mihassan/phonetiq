@@ -1,26 +1,38 @@
 # Product Requirements Document (PRD)
 
 ## Title: Phonetiq - Minimal Pair Pronunciation Practice
-**Status:** Live (v1)
+**Status:** Live (current)
 **Live URL:** https://phonetiq.mihassan.com
 
 ### Overview
-Phonetiq is a web application designed to help English language learners master "minimal pairs" (words that differ by only one phonological element, like "ship" vs. "sheep"). The app provides auditory examples and leverages speech recognition to validate the user's pronunciation.
+Phonetiq helps learners practice English minimal pairs (e.g., *ship* vs *sheep*) with clear listen-first examples and microphone-based pronunciation validation. The product combines pre-generated TTS audio with server-side STT validation and local progress tracking.
 
 ### Target Audience
-ESL/EFL learners, speech therapy patients, and linguistics enthusiasts looking to improve phonemic awareness and pronunciation accuracy.
+ESL/EFL learners, speech therapy users, and pronunciation-focused self-learners improving phonemic awareness and production.
 
-### Core User Stories (v1)
-*   **As a user**, I want to see a pair of confusing words so that I know what sounds I am practicing.
-*   **As a user in Learn Mode**, I want to click a word to hear its correct pronunciation (via Text-to-Speech) so I can learn the difference.
-*   **As a user in Practice Mode**, I want to speak into my microphone and have the app tell me which word it heard, validating my pronunciation.
-*   **As a user**, I want to navigate through a comprehensive list of common English minimal pairs categorized by phonetic difficulty (e.g., Vowels, Consonants, Fricatives).
+### Current User Stories
+* **As a learner**, I want to hear each word clearly so I can internalize the sound contrast.
+* **As a learner**, I want to record and receive immediate recognition feedback while practicing one side of a minimal pair.
+* **As a learner**, I want recognition to prefer only the 2 target words and return a safe retry state when uncertain.
+* **As a learner**, I want practice sessions to prioritize weak and unseen pairs in manageable batches.
+* **As a learner**, I want to track my progress (accuracy, attempts, completions, streaks, weak areas) and jump into weak-pair practice.
+* **As a learner**, I want to filter content by category and dialect relevance.
 
-### Future User Stories (v2 - Requires Auth/Backend)
-*   **As a returning user**, I want to log in so my progress is saved.
-*   **As a user**, I want the app to track which pairs I struggle with and surface them more frequently (Spaced Repetition).
-*   **As a teacher**, I want to create custom lists of word pairs for my classroom.
+### Current Product Scope
+* Learn mode (pair listening and navigation)
+* Practice mode (record → STT → correct/incorrect/no-match)
+* Batch-based adaptive sessions (default: 15 pairs; 5 weak-pair quota)
+* Categories mode with real progress summaries
+* Profile mode with key stats and weak-pair practice action
+* Local-only persistence of performance data (browser storage)
 
-### Out of Scope (v1)
-*   User authentication (Anonymous usage only).
-*   Progress tracking (State is lost on refresh).
+### Future Roadmap
+* Account-based sync for cross-device progress
+* Stronger dialect coverage and curated `au_only` dataset (AU UI only after meaningful dataset)
+* Classroom/teacher custom lists and assignments
+* More advanced review scheduling and personalized practice plans
+* STT quality analytics/tuning dashboards
+
+### Out of Scope (current)
+* Authentication and cloud-synced user profiles
+* Teacher admin tooling and multi-user class management
