@@ -13,6 +13,7 @@ export type PracticeStatus =
 interface UsePracticeAttemptOptions {
   word: string;
   partnerWord?: string;
+  dialect?: string;
   onSuccess: () => void;
   onAttemptEvaluated?: (result: {
     isCorrect: boolean;
@@ -27,6 +28,7 @@ interface UsePracticeAttemptOptions {
 export function usePracticeAttempt({
   word,
   partnerWord,
+  dialect,
   onSuccess,
   onAttemptEvaluated,
   recordDurationMs = 3000,
@@ -87,6 +89,7 @@ export function usePracticeAttempt({
         const rawRecognition = await recognizeSpeech(blob, {
           candidate1: word,
           candidate2: partnerWord ?? word,
+          dialect,
         });
         const recognition =
           typeof rawRecognition === 'string'
@@ -145,6 +148,7 @@ export function usePracticeAttempt({
     stopRecording,
     word,
     partnerWord,
+    dialect,
     onSuccess,
     recordDurationMs,
     successDelayMs,

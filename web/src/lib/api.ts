@@ -41,12 +41,13 @@ export interface RecognizeSpeechResult {
 
 export async function recognizeSpeech(
   audioBlob: Blob,
-  options?: { candidate1?: string; candidate2?: string },
+  options?: { candidate1?: string; candidate2?: string; dialect?: string },
 ): Promise<RecognizeSpeechResult> {
   const formData = new FormData();
   formData.append('audio', audioBlob, 'recording.webm');
   if (options?.candidate1) formData.append('candidate1', options.candidate1);
   if (options?.candidate2) formData.append('candidate2', options.candidate2);
+  if (options?.dialect) formData.append('dialect', options.dialect);
 
   const res = await fetch(`${API_BASE}/recognize`, {
     method: 'POST',

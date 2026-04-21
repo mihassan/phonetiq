@@ -91,6 +91,7 @@ recognizeRoutes.post('/', async (c) => {
   const contentType = c.req.header('content-type') || '';
   let candidate1: string | undefined;
   let candidate2: string | undefined;
+  let dialect: string | undefined;
 
   let audioBytes: ArrayBuffer;
 
@@ -99,6 +100,7 @@ recognizeRoutes.post('/', async (c) => {
     const file = formData.get('audio');
     candidate1 = String(formData.get('candidate1') || '').trim() || undefined;
     candidate2 = String(formData.get('candidate2') || '').trim() || undefined;
+    dialect = String(formData.get('dialect') || '').trim() || undefined;
 
     if (!file || !(file instanceof File)) {
       return c.json({ error: 'Missing "audio" file in form data' }, 400);
@@ -120,6 +122,15 @@ recognizeRoutes.post('/', async (c) => {
   try {
     const base64Audio = arrayBufferToBase64(audioBytes);
 
+    const dialectPrompt =
+      dialect === 'uk_only'
+        ? 'The speaker will say one short English word in British English.'
+        : dialect === 'us_only'
+          ? 'The speaker will say one short English word in American English.'
+          : dialect === 'au_only'
+            ? 'The speaker will say one short English word in Australian English.'
+            : 'The speaker will say one short English word in common international English.';
+
     const result = await c.env.AI.run('@cf/openai/whisper-large-v3-turbo', {
       audio: base64Audio,
       task: 'transcribe',
@@ -127,8 +138,8 @@ recognizeRoutes.post('/', async (c) => {
       vad_filter: true,
       initial_prompt:
         candidate1 && candidate2
-          ? `The speaker will say one English word. The expected options are: ${candidate1} or ${candidate2}.`
-          : 'The speaker will say one short English word.',
+          ? `${dialectPrompt} The expected options are: ${candidate1} or ${candidate2}.`
+          : dialectPrompt,
     } as Record<string, unknown>);
 
     const transcript = ((result as Record<string, unknown>).text as string || '').toLowerCase().trim();

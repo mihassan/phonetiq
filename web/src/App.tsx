@@ -201,6 +201,7 @@ function App() {
                 isActive={targetNum === 1}
                 isFirstWord={true}
                 partnerWord={practicePair.word2}
+                dialect={dialect}
                 onSuccess={handlePracticeSuccess}
                 onAttemptEvaluated={({ isCorrect, matchType }) => {
                   if (matchType === 'no_match') return;
@@ -217,6 +218,7 @@ function App() {
                 isActive={targetNum === 2}
                 isFirstWord={false}
                 partnerWord={practicePair.word1}
+                dialect={dialect}
                 onSuccess={handlePracticeSuccess}
                 onAttemptEvaluated={({ isCorrect, matchType }) => {
                   if (matchType === 'no_match') return;

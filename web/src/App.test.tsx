@@ -267,7 +267,7 @@ describe('App', () => {
     render(<App />);
 
     await screen.findByText(/pair 1 of 2/i);
-    expect(screen.getByRole('button', { name: /general/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /common/i })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: /all \(3\)/i })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /uk/i }));

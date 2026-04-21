@@ -205,7 +205,12 @@ describe('usePracticeAttempt', () => {
     recognizeSpeechMock.mockResolvedValue({ transcript: 'ship', matchType: 'exact', matchedWord: 'ship' });
 
     const { result } = renderHook(() =>
-      usePracticeAttempt({ word: 'ship', partnerWord: 'sheep', onSuccess: vi.fn() }),
+      usePracticeAttempt({
+        word: 'ship',
+        partnerWord: 'sheep',
+        dialect: 'uk_only',
+        onSuccess: vi.fn(),
+      }),
     );
 
     await act(async () => {
@@ -221,6 +226,7 @@ describe('usePracticeAttempt', () => {
     expect(recognizeSpeechMock).toHaveBeenCalledWith(expect.any(Blob), {
       candidate1: 'ship',
       candidate2: 'sheep',
+      dialect: 'uk_only',
     });
   });
 

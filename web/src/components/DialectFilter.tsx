@@ -6,7 +6,7 @@ interface DialectFilterProps {
 }
 
 const DIALECT_OPTIONS: Array<{ value: Dialect; label: string }> = [
-  { value: 'all', label: 'General' },
+  { value: 'all', label: 'Common' },
   { value: 'uk_only', label: 'UK' },
   { value: 'us_only', label: 'US' },
 ];

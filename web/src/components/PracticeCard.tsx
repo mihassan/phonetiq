@@ -15,6 +15,7 @@ interface Props {
     transcript: string;
     matchType: 'exact' | 'token' | 'fuzzy' | 'no_match' | 'freeform';
   }) => void;
+  dialect?: string;
   isFirstWord: boolean;
   partnerWord: string;
 }
@@ -24,6 +25,7 @@ export function PracticeCard({
   isActive,
   onSuccess,
   onAttemptEvaluated,
+  dialect,
   isFirstWord,
   partnerWord,
 }: Props) {
@@ -31,6 +33,7 @@ export function PracticeCard({
     usePracticeAttempt({
       word,
       partnerWord,
+      dialect,
       onSuccess,
       onAttemptEvaluated,
       recordDurationMs: RECORD_DURATION,
