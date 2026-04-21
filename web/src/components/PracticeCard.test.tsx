@@ -322,4 +322,36 @@ describe('PracticeCard', () => {
     expect(record.className).toContain('border-[#ff6b6b]/30');
     expect(status.className).toContain('text-[#ffb3b3]');
   });
+
+  it('shows a no-match retry state when speech is unrelated', async () => {
+    recognizeSpeechMock.mockResolvedValue({
+      transcript: 'bonjour',
+      matchType: 'no_match',
+      matchedWord: null,
+    });
+
+    render(
+      <PracticeCard
+        word="ship"
+        isActive={true}
+        onSuccess={vi.fn()}
+        isFirstWord={true}
+        partnerWord="sheep"
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /record pronunciation/i }));
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(screen.getByText(/didn't catch that/i)).toBeInTheDocument();
+    expect(screen.getByText(/bonjour/i)).toBeInTheDocument();
+  });
 });

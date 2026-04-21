@@ -173,6 +173,7 @@ describe('usePracticeAttempt', () => {
     expect(onAttemptEvaluated).toHaveBeenCalledWith({
       isCorrect: true,
       transcript: 'ship',
+      matchType: 'freeform',
     });
 
     recognizeSpeechMock.mockResolvedValueOnce('shape');
@@ -196,6 +197,57 @@ describe('usePracticeAttempt', () => {
     expect(onAttemptEvaluated).toHaveBeenLastCalledWith({
       isCorrect: false,
       transcript: 'shape',
+      matchType: 'freeform',
     });
+  });
+
+  it('passes both word candidates to speech recognition', async () => {
+    recognizeSpeechMock.mockResolvedValue({ transcript: 'ship', matchType: 'exact', matchedWord: 'ship' });
+
+    const { result } = renderHook(() =>
+      usePracticeAttempt({ word: 'ship', partnerWord: 'sheep', onSuccess: vi.fn() }),
+    );
+
+    await act(async () => {
+      await result.current.handleRecord();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(recognizeSpeechMock).toHaveBeenCalledWith(expect.any(Blob), {
+      candidate1: 'ship',
+      candidate2: 'sheep',
+    });
+  });
+
+  it('uses no-match state and returns to idle', async () => {
+    recognizeSpeechMock.mockResolvedValue({ transcript: 'bonjour', matchType: 'no_match', matchedWord: null });
+
+    const { result } = renderHook(() =>
+      usePracticeAttempt({ word: 'ship', partnerWord: 'sheep', onSuccess: vi.fn() }),
+    );
+
+    await act(async () => {
+      await result.current.handleRecord();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(result.current.status).toBe('no_match');
+
+    await act(async () => {
+      vi.advanceTimersByTime(2500);
+      await Promise.resolve();
+    });
+
+    expect(result.current.status).toBe('idle');
   });
 });

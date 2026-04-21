@@ -7,12 +7,18 @@ export type PracticeStatus =
   | 'recording'
   | 'processing'
   | 'correct'
-  | 'incorrect';
+  | 'incorrect'
+  | 'no_match';
 
 interface UsePracticeAttemptOptions {
   word: string;
+  partnerWord?: string;
   onSuccess: () => void;
-  onAttemptEvaluated?: (result: { isCorrect: boolean; transcript: string }) => void;
+  onAttemptEvaluated?: (result: {
+    isCorrect: boolean;
+    transcript: string;
+    matchType: 'exact' | 'token' | 'fuzzy' | 'no_match' | 'freeform';
+  }) => void;
   recordDurationMs?: number;
   successDelayMs?: number;
   incorrectDelayMs?: number;
@@ -20,6 +26,7 @@ interface UsePracticeAttemptOptions {
 
 export function usePracticeAttempt({
   word,
+  partnerWord,
   onSuccess,
   onAttemptEvaluated,
   recordDurationMs = 3000,
@@ -77,12 +84,39 @@ export function usePracticeAttempt({
 
       setStatus('processing');
       try {
-        const text = await recognizeSpeech(blob);
+        const rawRecognition = await recognizeSpeech(blob, {
+          candidate1: word,
+          candidate2: partnerWord ?? word,
+        });
+        const recognition =
+          typeof rawRecognition === 'string'
+            ? { transcript: rawRecognition, matchType: 'freeform' as const, matchedWord: null }
+            : rawRecognition;
+        const text = recognition.transcript.toLowerCase().trim();
         setTranscript(text);
 
         const target = word.toLowerCase();
-        if (text.includes(target)) {
-          onAttemptEvaluated?.({ isCorrect: true, transcript: text });
+        const matched = recognition.matchedWord?.toLowerCase().trim() ?? null;
+
+        if (recognition.matchType === 'no_match') {
+          onAttemptEvaluated?.({
+            isCorrect: false,
+            transcript: text,
+            matchType: 'no_match',
+          });
+          setStatus('no_match');
+          outcomeTimerRef.current = setTimeout(() => {
+            setStatus('idle');
+          }, incorrectDelayMs);
+          return;
+        }
+
+        if (matched === target || text.includes(target)) {
+          onAttemptEvaluated?.({
+            isCorrect: true,
+            transcript: text,
+            matchType: recognition.matchType,
+          });
           setStatus('correct');
           outcomeTimerRef.current = setTimeout(() => {
             setStatus('idle');
@@ -91,7 +125,11 @@ export function usePracticeAttempt({
             onSuccess();
           }, successDelayMs);
         } else {
-          onAttemptEvaluated?.({ isCorrect: false, transcript: text });
+          onAttemptEvaluated?.({
+            isCorrect: false,
+            transcript: text,
+            matchType: recognition.matchType,
+          });
           setStatus('incorrect');
           outcomeTimerRef.current = setTimeout(() => {
             setStatus('idle');
@@ -106,6 +144,7 @@ export function usePracticeAttempt({
     startRecording,
     stopRecording,
     word,
+    partnerWord,
     onSuccess,
     recordDurationMs,
     successDelayMs,

@@ -33,9 +33,20 @@ export function audioUrl(word: string): string {
   return `${API_BASE}/audio/${encodeURIComponent(sanitized)}`;
 }
 
-export async function recognizeSpeech(audioBlob: Blob): Promise<string> {
+export interface RecognizeSpeechResult {
+  transcript: string;
+  matchedWord: string | null;
+  matchType: 'exact' | 'token' | 'fuzzy' | 'no_match' | 'freeform';
+}
+
+export async function recognizeSpeech(
+  audioBlob: Blob,
+  options?: { candidate1?: string; candidate2?: string },
+): Promise<RecognizeSpeechResult> {
   const formData = new FormData();
   formData.append('audio', audioBlob, 'recording.webm');
+  if (options?.candidate1) formData.append('candidate1', options.candidate1);
+  if (options?.candidate2) formData.append('candidate2', options.candidate2);
 
   const res = await fetch(`${API_BASE}/recognize`, {
     method: 'POST',
@@ -44,5 +55,10 @@ export async function recognizeSpeech(audioBlob: Blob): Promise<string> {
 
   if (!res.ok) throw new Error('Speech recognition failed');
   const data = await res.json();
-  return data.transcript || '';
+
+  return {
+    transcript: data.transcript || '',
+    matchedWord: data.matchedWord ?? null,
+    matchType: data.matchType ?? 'freeform',
+  };
 }

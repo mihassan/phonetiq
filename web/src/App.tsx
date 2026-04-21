@@ -190,7 +190,8 @@ function App() {
                 isFirstWord={true}
                 partnerWord={currentPair.word2}
                 onSuccess={handlePracticeSuccess}
-                onAttemptEvaluated={({ isCorrect }) => {
+                onAttemptEvaluated={({ isCorrect, matchType }) => {
+                  if (matchType === 'no_match') return;
                   recordPracticeAttempt({
                     pairId: currentPair.id,
                     category: currentPair.phoneme_type,
@@ -205,7 +206,8 @@ function App() {
                 isFirstWord={false}
                 partnerWord={currentPair.word1}
                 onSuccess={handlePracticeSuccess}
-                onAttemptEvaluated={({ isCorrect }) => {
+                onAttemptEvaluated={({ isCorrect, matchType }) => {
+                  if (matchType === 'no_match') return;
                   recordPracticeAttempt({
                     pairId: currentPair.id,
                     category: currentPair.phoneme_type,

@@ -10,7 +10,11 @@ interface Props {
   word: string;
   isActive: boolean;
   onSuccess: () => void;
-  onAttemptEvaluated?: (result: { isCorrect: boolean; transcript: string }) => void;
+  onAttemptEvaluated?: (result: {
+    isCorrect: boolean;
+    transcript: string;
+    matchType: 'exact' | 'token' | 'fuzzy' | 'no_match' | 'freeform';
+  }) => void;
   isFirstWord: boolean;
   partnerWord: string;
 }
@@ -26,6 +30,7 @@ export function PracticeCard({
   const { transcript, status, progress, isCompleted, handleRecord } =
     usePracticeAttempt({
       word,
+      partnerWord,
       onSuccess,
       onAttemptEvaluated,
       recordDurationMs: RECORD_DURATION,
@@ -126,6 +131,12 @@ export function PracticeCard({
       icon: <X size={28} className="text-[#ffb3b3]" strokeWidth={3} />,
       label: 'Try again',
     },
+    no_match: {
+      btnBg: 'bg-[#3a2b13] border border-[#f6c453]/35',
+      textCol: 'text-[#f6c453]',
+      icon: <X size={28} className="text-[#f6c453]" strokeWidth={3} />,
+      label: "Didn't catch that",
+    },
   };
 
   const ui = stateMap[status];
@@ -201,11 +212,21 @@ export function PracticeCard({
 
       {/* Transcript Pill */}
       <div className="ui-practice-zone-feedback">
-        {(status === 'correct' || status === 'incorrect') && transcript && (
+        {(status === 'correct' || status === 'incorrect' || status === 'no_match') && transcript && (
           <div className={`px-5 py-2 rounded-full border flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 ${
-            status === 'correct' ? 'bg-[#141c2e] border-[#7dd3fc]/20' : 'bg-[#3d1414] border-[#ff6b6b]/30'
+            status === 'correct'
+              ? 'bg-[#141c2e] border-[#7dd3fc]/20'
+              : status === 'incorrect'
+                ? 'bg-[#3d1414] border-[#ff6b6b]/30'
+                : 'bg-[#3a2b13] border-[#f6c453]/35'
           }`}>
-            <span className={`text-xs font-bold ${status === 'correct' ? 'text-[#a0b4c4]' : 'text-[#ffb3b3]'}`}>Heard:</span>
+            <span className={`text-xs font-bold ${
+              status === 'correct'
+                ? 'text-[#a0b4c4]'
+                : status === 'incorrect'
+                  ? 'text-[#ffb3b3]'
+                  : 'text-[#f6c453]'
+            }`}>Heard:</span>
             <span className="text-sm font-black text-[#e0e8f0] capitalize">&ldquo;{transcript}&rdquo;</span>
           </div>
         )}
