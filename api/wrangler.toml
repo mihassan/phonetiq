@@ -3,17 +3,16 @@ main = "src/index.ts"
 compatibility_date = "2025-04-18"
 workers_dev = true
 
-routes = [
-  { pattern = "api.phonetiq.mihassan.com", custom_domain = true }
-]
+routes = [{ pattern = "api.phonetiq.mihassan.com", custom_domain = true }]
 
 [ai]
 binding = "AI"
 
 [vars]
 WEB_ORIGIN = "https://phonetiq.mihassan.com"
-GOOGLE_CLIENT_ID = ""
+GOOGLE_CLIENT_ID = "660048861953-11hsthhhf00nprvtuov8sorqd1vbt4q8.apps.googleusercontent.com"
 OAUTH_REDIRECT_URI = "https://api.phonetiq.mihassan.com/api/auth/callback"
+CORS_ALLOWED_ORIGINS = "https://phonetiq.pages.dev"
 
 [[d1_databases]]
 binding = "DB"

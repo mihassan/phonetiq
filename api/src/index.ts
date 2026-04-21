@@ -18,11 +18,28 @@ export type Env = {
   SESSION_SECRET: string;
   WEB_ORIGIN: string;
   OAUTH_REDIRECT_URI?: string;
+  CORS_ALLOWED_ORIGINS?: string;
 };
 
 const app = new Hono<{ Bindings: Env }>();
 
-app.use('/*', cors());
+app.use('/*', (c, next) => {
+  const configured = c.env.CORS_ALLOWED_ORIGINS?.split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean) ?? [];
+
+  const allowlist = new Set([c.env.WEB_ORIGIN, ...configured]);
+
+  return cors({
+    origin: (origin) => {
+      if (!origin) return c.env.WEB_ORIGIN;
+      return allowlist.has(origin) ? origin : '';
+    },
+    credentials: true,
+    allowMethods: ['GET', 'POST', 'OPTIONS'],
+    allowHeaders: ['Content-Type', 'Authorization'],
+  })(c, next);
+});
 
 // Tier 1: Strict rate limit for the AI endpoint (10 req/min per IP)
 app.use('/api/recognize/*', async (c, next) => {
