@@ -124,15 +124,13 @@ describe('PracticeCard', () => {
     const status = screen.getByTestId('practice-status-label');
     const record = screen.getByRole('button', { name: /record pronunciation/i });
 
-    expect(card.className).toContain('border-[#7dd3fc]/10');
-    expect(heading.className).toContain('text-[#e0e8f0]');
+    expect(card.className).toContain('ui-divider-border');
     expect(heading.className).toContain('w-full');
     expect(heading.className).toContain('text-center');
     expect(heading.className).toContain('min-h-[104px]');
-    expect(listen.className).toContain('text-[#7dd3fc]');
-    expect(status.className).toContain('text-[#a0b4c4]');
-    expect(record.className).toContain('bg-[#7dd3fc]');
-    expect(record.className).toContain('text-[#001f2e]');
+    expect(listen.className).toContain('ui-link');
+    expect(status.className).toContain('ui-muted');
+    expect(record.className).toContain('ui-btn-primary');
     expect(card.className).toContain('px-8');
   });
 
@@ -255,8 +253,8 @@ describe('PracticeCard', () => {
     const record = screen.getByRole('button', { name: /record pronunciation/i });
     const status = screen.getByTestId('practice-status-label');
 
-    expect(record.className).toContain('bg-[#1a3a4e]');
-    expect(status.className).toContain('text-[#7dd3fc]');
+    expect(record.className).toContain('ui-btn-secondary');
+    expect(status.className).toContain('text-[color:var(--color-primary)]');
   });
 
   it('uses themed correct-state colors', async () => {
@@ -286,9 +284,8 @@ describe('PracticeCard', () => {
     const record = screen.getByRole('button', { name: /record pronunciation/i });
     const status = screen.getByTestId('practice-status-label');
 
-    expect(record.className).toContain('bg-[#141c2e]');
-    expect(record.className).toContain('border-[#7dd3fc]/30');
-    expect(status.className).toContain('text-[#7dd3fc]');
+    expect(record.className).toContain('ui-btn-secondary');
+    expect(status.className).toContain('text-[color:var(--color-primary)]');
   });
 
   it('uses themed incorrect-state colors', async () => {

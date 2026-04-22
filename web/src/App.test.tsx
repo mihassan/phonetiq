@@ -209,9 +209,8 @@ describe('App', () => {
     const header = screen.getByTestId('app-header');
     const toggle = screen.getByTestId('mode-toggle');
 
-    expect(header.className).toContain('bg-[#0f1524]/75');
-    expect(header.className).toContain('border-[#7dd3fc]/10');
-    expect(toggle.className).toContain('bg-[#1a2438]/80');
+    expect(header.className).toContain('ui-topbar');
+    expect(toggle.className).toContain('ui-card-muted');
   });
 
   it('uses themed shell root background and text colors', async () => {
@@ -220,8 +219,7 @@ describe('App', () => {
     await screen.findByText(/pair 1 of 2/i);
 
     const shellRoot = screen.getByTestId('app-shell-root');
-    expect(shellRoot.className).toContain('bg-[#0a0e1a]');
-    expect(shellRoot.className).toContain('text-[#e0e8f0]');
+    expect(shellRoot.className).toContain('ui-shell');
   });
 
   it('applies themed container styling to the Practice stage', async () => {
@@ -232,9 +230,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /practice/i }));
 
     const practiceStage = screen.getByTestId('practice-stage');
-    expect(practiceStage.className).toContain('bg-[#0f1524]/90');
-    expect(practiceStage.className).toContain('border-[#7dd3fc]/10');
-    expect(practiceStage.className).toContain('backdrop-blur-sm');
+    expect(practiceStage.className).toContain('ui-stage-panel');
   });
 
   it('applies themed progress and header colors in Practice stage', async () => {
@@ -249,10 +245,10 @@ describe('App', () => {
     const pairMeta = screen.getByTestId('practice-pair-meta');
     const targetSounds = screen.getByTestId('practice-target-sounds');
 
-    expect(progressTrack.className).toContain('bg-[#1a2438]');
-    expect(progressFill.className).toContain('bg-[#7dd3fc]');
-    expect(pairMeta.className).toContain('text-[#a0b4c4]');
-    expect(targetSounds.className).toContain('text-[#7dd3fc]');
+    expect(progressTrack.className).toContain('ui-progress-track');
+    expect(progressFill.className).toContain('ui-progress-fill');
+    expect(pairMeta.className).toContain('ui-meta-label');
+    expect(targetSounds.className).toContain('ui-sound-chip');
   });
 
   it('uses roomier practice-stage body spacing for card balance', async () => {
@@ -337,8 +333,8 @@ describe('App', () => {
     render(<App />);
 
     const emptyState = await screen.findByTestId('empty-state');
-    expect(emptyState.className).toContain('bg-[#0a0e1a]');
-    expect(emptyState.className).toContain('text-[#a0b4c4]');
+    expect(emptyState.className).toContain('ui-shell');
+    expect(emptyState.className).toContain('ui-muted');
 
     expect(await screen.findByText(/no word pairs found/i)).toBeInTheDocument();
   });

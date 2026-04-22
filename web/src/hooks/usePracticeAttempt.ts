@@ -48,6 +48,16 @@ export function usePracticeAttempt({
   const outcomeTimerRef = useRef<ReturnType<typeof setTimeout>>(0 as unknown as ReturnType<typeof setTimeout>);
 
   useEffect(() => {
+    clearTimeout(timerRef.current);
+    clearTimeout(outcomeTimerRef.current);
+    cancelAnimationFrame(animFrameRef.current);
+    setStatus('idle');
+    setTranscript('');
+    setProgress(0);
+    setIsCompleted(false);
+  }, [word, partnerWord]);
+
+  useEffect(() => {
     if (status !== 'recording') {
       setProgress(0);
       return;

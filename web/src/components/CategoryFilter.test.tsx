@@ -39,8 +39,6 @@ describe('CategoryFilter', () => {
     const selected = screen.getByRole('button', { name: /vowel short \(2\)/i });
 
     expect(container.className).toContain('ui-filter-shell');
-    expect(container.className).toContain('bg-[#0f1524]/60');
-    expect(container.className).toContain('border-[#7dd3fc]/10');
     expect(selected.getAttribute('aria-pressed')).toBe('true');
   });
 });

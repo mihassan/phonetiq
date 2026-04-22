@@ -11,9 +11,9 @@ export function AppShell({ header, filters, stage, navigation }: AppShellProps) 
   return (
     <div
       data-testid="app-shell-root"
-      className="ui-shell min-h-screen bg-[#0a0e1a] text-[#e0e8f0] font-sans md:p-12 pb-12 selection:bg-[#1a3a4e] flex flex-col items-center"
+      className="ui-shell min-h-screen font-sans md:p-12 pb-12 selection:bg-[color:var(--overlay-soft)] flex flex-col items-center"
     >
-      <div data-testid="app-shell-header">{header}</div>
+      <div className="w-full flex justify-center" data-testid="app-shell-header">{header}</div>
 
       <div className="w-full max-w-5xl" data-testid="app-shell-filters">
         {filters}

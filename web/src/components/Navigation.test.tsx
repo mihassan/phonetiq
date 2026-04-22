@@ -36,10 +36,8 @@ describe('Navigation', () => {
     const prev = screen.getByRole('button', { name: /previous pair/i });
     const auto = screen.getByRole('button', { name: /play pair audio/i });
 
-    expect(container.className).toContain('bg-[#0f1524]/60');
-    expect(container.className).toContain('border-[#7dd3fc]/10');
-    expect(prev.className).toContain('bg-[#1a2438]');
-    expect(auto.className).toContain('bg-[#7dd3fc]');
-    expect(auto.className).toContain('text-[#001f2e]');
+    expect(container.className).toContain('ui-filter-shell');
+    expect(prev.className).toContain('ui-btn-secondary');
+    expect(auto.className).toContain('ui-btn-primary');
   });
 });

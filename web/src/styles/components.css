@@ -1,20 +1,24 @@
 .ui-shell {
-  background: var(--color-bg);
+  background:
+    radial-gradient(1100px 560px at 5% -10%, color-mix(in srgb, var(--color-primary) 24%, transparent), transparent 62%),
+    radial-gradient(950px 540px at 95% -20%, color-mix(in srgb, var(--color-tertiary) 22%, transparent), transparent 58%),
+    linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg-alt) 100%);
   color: var(--color-text);
 }
 
 .ui-topbar {
-  background: color-mix(in srgb, var(--color-surface) 76%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-primary) 10%, transparent);
-  backdrop-filter: var(--blur-sm);
-  box-shadow: var(--shadow-soft);
+  background: color-mix(in srgb, var(--color-surface-strong) 88%, transparent);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: var(--blur-soft);
+  box-shadow: var(--shadow-soft), var(--shadow-inset);
 }
 
 .ui-stage-panel {
-  background: color-mix(in srgb, var(--color-surface) 90%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-primary) 10%, transparent);
-  backdrop-filter: var(--blur-sm);
-  box-shadow: var(--shadow-soft);
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--color-surface-strong) 82%, transparent), color-mix(in srgb, var(--glass-tint) 22%, var(--color-surface) 78%));
+  border: 1px solid var(--glass-border);
+  backdrop-filter: var(--blur-strong);
+  box-shadow: var(--shadow-panel), var(--shadow-inset);
 }
 
 .ui-progress-track {
@@ -22,7 +26,7 @@
 }
 
 .ui-progress-fill {
-  background: var(--color-primary);
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
 }
 
 .ui-meta-label {
@@ -31,7 +35,8 @@
 
 .ui-sound-chip {
   color: var(--color-primary);
-  background: color-mix(in srgb, var(--color-secondary) 42%, transparent);
+  background: color-mix(in srgb, var(--overlay-soft) 84%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 25%, transparent);
 }
 
 .word-heading {
@@ -57,8 +62,8 @@
 }
 
 .ui-cta-primary {
-  background: var(--color-primary);
-  color: #001f2e;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  color: white;
   box-shadow: var(--shadow-cta);
 }
 
@@ -67,19 +72,187 @@
 }
 
 .ui-filter-shell {
-  background: color-mix(in srgb, var(--color-surface) 68%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-primary) 10%, transparent);
+  background: color-mix(in srgb, var(--color-surface) 76%, transparent);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
-  backdrop-filter: var(--blur-sm);
+  backdrop-filter: var(--blur-soft);
+  box-shadow: var(--shadow-soft), var(--shadow-inset);
+}
+
+.ui-cta-primary,
+.ui-btn-primary,
+.ui-btn-secondary,
+.ui-btn-danger,
+.ui-filter-chip,
+.ui-link,
+.ui-card,
+.ui-card-muted {
+  transition:
+    background-color var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard),
+    box-shadow var(--motion-base) var(--ease-standard),
+    transform var(--motion-fast) var(--ease-standard),
+    filter var(--motion-fast) var(--ease-standard),
+    opacity var(--motion-fast) var(--ease-standard);
+}
+
+.ui-btn-primary:active,
+.ui-btn-secondary:active,
+.ui-btn-danger:active,
+.ui-cta-primary:active {
+  transform: scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-spin,
+  .animate-pulse {
+    animation: none !important;
+  }
 }
 
 .ui-filter-chip {
   color: var(--color-text-muted);
+  border: 1px solid transparent;
 }
 
 .ui-filter-chip[aria-pressed='true'] {
-  background: var(--color-primary);
-  color: #001f2e;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  color: white;
+  border-color: color-mix(in srgb, var(--color-primary) 42%, transparent);
+}
+
+.ui-filter-chip:hover {
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--overlay-soft) 82%, transparent);
+}
+
+.ui-pill {
+  border-radius: var(--radius-pill);
+}
+
+.ui-card {
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-outline) 58%, transparent);
+  box-shadow: var(--shadow-soft), var(--shadow-inset);
+}
+
+.ui-card-muted {
+  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-outline) 40%, transparent);
+}
+
+.ui-input {
+  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-outline) 60%, transparent);
+  color: var(--color-text);
+}
+
+.ui-input::placeholder {
+  color: color-mix(in srgb, var(--color-text-muted) 90%, transparent);
+}
+
+.ui-input:focus-visible {
+  border-color: var(--color-ring);
+  outline: 2px solid color-mix(in srgb, var(--color-ring) 25%, transparent);
+  outline-offset: 1px;
+}
+
+.ui-btn-primary {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  color: white;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent);
+  box-shadow: var(--shadow-cta), var(--shadow-inset);
+}
+
+.ui-btn-primary:hover {
+  filter: brightness(1.05);
+}
+
+.ui-btn-secondary {
+  background: color-mix(in srgb, var(--color-surface) 78%, transparent);
+  color: var(--color-text);
+  border: 1px solid color-mix(in srgb, var(--color-outline) 60%, transparent);
+}
+
+.ui-btn-secondary:hover {
+  background: color-mix(in srgb, var(--color-surface-variant) 78%, transparent);
+}
+
+.ui-btn-danger {
+  background: color-mix(in srgb, var(--color-error) 24%, var(--color-surface) 76%);
+  color: var(--color-text);
+  border: 1px solid color-mix(in srgb, var(--color-error) 38%, transparent);
+}
+
+.ui-muted {
+  color: var(--color-text-muted);
+}
+
+.ui-icon-badge {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-tertiary));
+  color: white;
+  box-shadow: var(--shadow-cta);
+}
+
+.ui-divider-border {
+  border-color: color-mix(in srgb, var(--color-outline) 52%, transparent);
+}
+
+.ui-link {
+  color: var(--color-primary);
+}
+
+.ui-link:hover {
+  color: var(--color-secondary);
+}
+
+.ui-heading-lg {
+  font-size: var(--text-heading-lg);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  font-weight: 900;
+}
+
+.ui-heading-md {
+  font-size: var(--text-heading-md);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  font-weight: 850;
+}
+
+.ui-eyebrow {
+  font-size: var(--text-eyebrow);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: var(--color-text-muted);
+}
+
+.ui-body-sm {
+  font-size: var(--text-body-sm);
+  line-height: 1.45;
+}
+
+.ui-stack-4 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.ui-stack-6 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
 }
 
 .ui-practice-zone-title,

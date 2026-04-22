@@ -63,8 +63,8 @@
 }
 
 .categories-stage-surface {
-  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-primary) 12%, transparent);
+  background: color-mix(in srgb, var(--color-surface-strong) 90%, transparent);
+  border: 1px solid var(--glass-border);
 }
 
 .categories-grid {
@@ -76,4 +76,24 @@
 .categories-card {
   min-height: 188px;
   border-radius: 1.1rem;
+  background: color-mix(in srgb, var(--color-surface) 86%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-outline) 60%, transparent);
+  box-shadow: var(--shadow-soft), var(--shadow-inset);
+}
+
+.categories-card:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 35%, transparent);
+}
+
+.categories-card--selected {
+  background: color-mix(in srgb, var(--overlay-soft) 68%, var(--color-surface) 32%);
+  border-color: color-mix(in srgb, var(--color-primary) 40%, transparent);
+}
+
+.category-ring-track {
+  stroke: color-mix(in srgb, var(--color-outline) 42%, transparent);
+}
+
+.category-ring-fill {
+  stroke: var(--color-primary);
 }

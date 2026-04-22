@@ -17,12 +17,12 @@ export function Navigation({ onPrev, onNext, word1, word2 }: Props) {
   return (
     <div
       data-testid="navigation-controls"
-      className="flex justify-center items-center gap-4 md:gap-6 mt-8 md:mt-12 bg-[#0f1524]/60 border border-[#7dd3fc]/10 rounded-full px-3 py-2"
+      className="ui-filter-shell flex justify-center items-center gap-4 md:gap-6 mt-8 md:mt-12 rounded-full px-3 py-2"
     >
       <button
         onClick={onPrev}
         aria-label="Previous pair"
-        className="w-14 h-14 md:w-16 md:h-16 bg-[#1a2438] rounded-full flex items-center justify-center text-[#e0e8f0] hover:bg-[#202c42] transition-colors shadow-lg shadow-[#7dd3fc]/10"
+        className="ui-btn-secondary w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center transition-colors"
       >
         <ChevronLeft size={24} />
       </button>
@@ -30,7 +30,7 @@ export function Navigation({ onPrev, onNext, word1, word2 }: Props) {
         <button
           onClick={playPair}
           aria-label="Play pair audio"
-          className="h-14 md:h-16 px-8 md:px-10 bg-[#7dd3fc] text-[#001f2e] rounded-full flex items-center gap-3 font-bold md:text-lg hover:bg-[#9bddff] transition-colors shadow-xl shadow-[#7dd3fc]/30"
+          className="ui-btn-primary h-14 md:h-16 px-8 md:px-10 rounded-full flex items-center gap-3 font-bold md:text-lg transition-colors"
         >
         <PlaySquare size={20} fill="currentColor" />
         Play Auto
@@ -39,7 +39,7 @@ export function Navigation({ onPrev, onNext, word1, word2 }: Props) {
       <button
         onClick={onNext}
         aria-label="Next pair"
-        className="w-14 h-14 md:w-16 md:h-16 bg-[#1a2438] rounded-full flex items-center justify-center text-[#e0e8f0] hover:bg-[#202c42] transition-colors shadow-lg shadow-[#7dd3fc]/10"
+        className="ui-btn-secondary w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center transition-colors"
       >
         <ChevronRight size={24} />
       </button>

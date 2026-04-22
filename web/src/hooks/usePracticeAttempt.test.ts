@@ -256,4 +256,36 @@ describe('usePracticeAttempt', () => {
 
     expect(result.current.status).toBe('idle');
   });
+
+  it('resets completion state when the target word changes', async () => {
+    recognizeSpeechMock.mockResolvedValue('ship');
+
+    const { result, rerender } = renderHook(
+      ({ word }: { word: string }) => usePracticeAttempt({ word, onSuccess: vi.fn() }),
+      { initialProps: { word: 'ship' } },
+    );
+
+    await act(async () => {
+      await result.current.handleRecord();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(1500);
+      await Promise.resolve();
+    });
+
+    expect(result.current.isCompleted).toBe(true);
+
+    rerender({ word: 'bit' });
+
+    expect(result.current.status).toBe('idle');
+    expect(result.current.transcript).toBe('');
+    expect(result.current.isCompleted).toBe(false);
+  });
 });
