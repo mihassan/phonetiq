@@ -17,9 +17,9 @@ A web app for practicing English **minimal pair pronunciation** — words that d
 
 ### Mobile
 
-| Learn | Practice | Categories |
-| --- | --- | --- |
-| ![Learn mode mobile](docs/screenshots/learn-mobile.png) | ![Practice mode mobile](docs/screenshots/practice-mobile.png) | ![Categories mode mobile](docs/screenshots/categories-mobile.png) |
+| Learn | Practice | Categories | Profile |
+| --- | --- | --- | --- |
+| ![Learn mode mobile](docs/screenshots/learn-mobile.png) | ![Practice mode mobile](docs/screenshots/practice-mobile.png) | ![Categories mode mobile](docs/screenshots/categories-mobile.png) | ![Profile mode mobile](docs/screenshots/profile-mobile.png) |
 
 ## Features
 
