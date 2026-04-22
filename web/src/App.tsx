@@ -1,4 +1,4 @@
-import { Mic2, Loader2 } from 'lucide-react';
+import { Mic2, Loader2, LogIn, LogOut } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { PracticeCard } from './components/PracticeCard';
 import { Navigation } from './components/Navigation';
@@ -22,6 +22,7 @@ function App() {
   const {
     mode,
     setMode,
+    enterPracticeMode,
     pairs,
     categories,
     dialect,
@@ -86,9 +87,9 @@ function App() {
 
   if (isLoading) {
     return (
-      <div data-testid="loading-state" className="min-h-screen bg-[#0a0e1a] flex flex-col items-center justify-center gap-4">
-        <Loader2 className="w-8 h-8 text-[#7dd3fc] animate-spin" />
-        <div className="text-[#a0b4c4] text-sm font-bold tracking-widest uppercase animate-pulse">
+      <div data-testid="loading-state" className="ui-shell min-h-screen flex flex-col items-center justify-center gap-4">
+        <Loader2 className="w-8 h-8 text-[color:var(--color-primary)] animate-spin" />
+        <div className="ui-muted text-sm font-bold tracking-widest uppercase animate-pulse">
           Loading pairs
         </div>
       </div>
@@ -97,7 +98,7 @@ function App() {
 
   if (pairs.length === 0) {
     return (
-      <div data-testid="empty-state" className="min-h-screen bg-[#0a0e1a] text-[#a0b4c4] flex items-center justify-center">
+      <div data-testid="empty-state" className="ui-shell min-h-screen ui-muted flex items-center justify-center">
         <div className="text-sm font-bold">
           No word pairs found.
         </div>
@@ -110,64 +111,71 @@ function App() {
       header={
         <header
           data-testid="app-header"
-          className="ui-topbar flex justify-between items-center bg-[#0f1524]/75 border border-[#7dd3fc]/10 p-2 md:p-3 pr-2 md:pr-4 pl-4 md:pl-8 rounded-full shadow-lg shadow-[#7dd3fc]/10 backdrop-blur-sm w-[92%] md:w-[680px] max-w-3xl mt-6 md:mt-0 mb-8 md:mb-12"
+          className="ui-topbar flex flex-col p-2 md:p-3 pr-2 md:pr-4 pl-4 md:pl-8 rounded-3xl md:rounded-[28px] w-[92%] md:w-[680px] max-w-3xl mt-6 md:mt-0 mb-8 md:mb-12 gap-3"
         >
-          <div className="flex items-center gap-2 md:gap-3">
-            <div className="w-7 h-7 md:w-9 md:h-9 bg-[#7dd3fc] rounded-lg flex items-center justify-center text-[#001f2e]">
-              <Mic2 size={16} className="md:w-5 md:h-5" />
+          <div className="flex items-center justify-between w-full gap-3">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="ui-icon-badge w-7 h-7 md:w-9 md:h-9 rounded-lg flex items-center justify-center">
+                <Mic2 size={16} className="md:w-5 md:h-5" />
+              </div>
+              <h1 className="ui-heading-md">Phonetiq</h1>
             </div>
-            <h1 className="text-lg md:text-xl font-extrabold tracking-tight text-[#e0e8f0]">Phonetiq</h1>
-          </div>
-          <div data-testid="mode-toggle" className="flex bg-[#1a2438]/80 p-1 md:p-1.5 rounded-full border border-[#7dd3fc]/10">
+
             <button
-              onClick={() => setMode('LEARN')}
-              className={`px-4 md:px-6 py-2 md:py-2.5 rounded-full text-xs md:text-sm font-bold transition-all ${
-                mode === 'LEARN'
-                  ? 'bg-[#0f1524] shadow-md shadow-[#7dd3fc]/10 text-[#e0e8f0]'
-                  : 'text-[#a0b4c4] hover:text-[#e0e8f0]'
-              }`}
+              onClick={isAuthenticated ? logout : login}
+              disabled={isAuthLoading}
+              className="ui-card-muted ml-2 md:ml-3 h-11 px-3 md:px-4 rounded-full text-xs md:text-sm font-bold disabled:opacity-60 inline-flex items-center gap-2 text-[color:var(--color-text)] shrink-0"
+              aria-label={isAuthenticated ? 'Sign out' : 'Sign in'}
             >
-              Learn
-            </button>
-            <button
-              onClick={() => setMode('CATEGORIES')}
-              className={`px-4 md:px-6 py-2 md:py-2.5 rounded-full text-xs md:text-sm font-bold transition-all ${
-                mode === 'CATEGORIES'
-                  ? 'bg-[#0f1524] shadow-md shadow-[#7dd3fc]/10 text-[#e0e8f0]'
-                  : 'text-[#a0b4c4] hover:text-[#e0e8f0]'
-              }`}
-            >
-              Categories
-            </button>
-            <button
-              onClick={() => setMode('PRACTICE')}
-              className={`px-4 md:px-6 py-2 md:py-2.5 rounded-full text-xs md:text-sm font-bold transition-all ${
-                mode === 'PRACTICE'
-                  ? 'bg-[#0f1524] shadow-md shadow-[#7dd3fc]/10 text-[#e0e8f0]'
-                  : 'text-[#a0b4c4] hover:text-[#e0e8f0]'
-              }`}
-            >
-              Practice
-            </button>
-            <button
-              onClick={() => setMode('PROFILE')}
-              className={`px-4 md:px-6 py-2 md:py-2.5 rounded-full text-xs md:text-sm font-bold transition-all ${
-                mode === 'PROFILE'
-                  ? 'bg-[#0f1524] shadow-md shadow-[#7dd3fc]/10 text-[#e0e8f0]'
-                  : 'text-[#a0b4c4] hover:text-[#e0e8f0]'
-              }`}
-            >
-              Profile
+              {isAuthenticated ? <LogOut size={16} /> : <LogIn size={16} />}
+              <span>{isAuthenticated ? 'Sign out' : 'Sign in'}</span>
             </button>
           </div>
 
-          <button
-            onClick={isAuthenticated ? logout : login}
-            disabled={isAuthLoading}
-            className="ml-3 h-10 px-4 rounded-full text-xs md:text-sm font-bold bg-[#1a2438] border border-[#7dd3fc]/20 text-[#e0e8f0] hover:bg-[#202c42] disabled:opacity-60"
-          >
-            {isAuthenticated ? 'Sign out' : 'Sign in'}
-          </button>
+          <div data-testid="mode-toggle" className="ui-card-muted w-full overflow-x-auto p-1 md:p-1.5 rounded-full scrollbar-hide">
+            <div className="flex min-w-max justify-center">
+              <button
+                onClick={() => setMode('LEARN')}
+                className={`min-h-11 px-3 md:px-6 rounded-full text-xs md:text-sm font-bold transition-all ${
+                  mode === 'LEARN'
+                    ? 'ui-btn-primary shadow-md'
+                    : 'ui-muted hover:text-[color:var(--color-text)]'
+                }`}
+              >
+                Learn
+              </button>
+              <button
+                onClick={() => setMode('CATEGORIES')}
+                className={`min-h-11 px-3 md:px-6 rounded-full text-xs md:text-sm font-bold transition-all ${
+                  mode === 'CATEGORIES'
+                    ? 'ui-btn-primary shadow-md'
+                    : 'ui-muted hover:text-[color:var(--color-text)]'
+                }`}
+              >
+                Categories
+              </button>
+              <button
+                onClick={enterPracticeMode}
+                className={`min-h-11 px-3 md:px-6 rounded-full text-xs md:text-sm font-bold transition-all ${
+                  mode === 'PRACTICE'
+                    ? 'ui-btn-primary shadow-md'
+                    : 'ui-muted hover:text-[color:var(--color-text)]'
+                }`}
+              >
+                Practice
+              </button>
+              <button
+                onClick={() => setMode('PROFILE')}
+                className={`min-h-11 px-3 md:px-6 rounded-full text-xs md:text-sm font-bold transition-all ${
+                  mode === 'PROFILE'
+                    ? 'ui-btn-primary shadow-md'
+                    : 'ui-muted hover:text-[color:var(--color-text)]'
+                }`}
+              >
+                Profile
+              </button>
+            </div>
+          </div>
         </header>
       }
       filters={
@@ -210,36 +218,36 @@ function App() {
             onLogout={logout}
           />
         ) : (
-          <main
-            data-testid="practice-stage"
-            className="practice-stage ui-stage-panel w-[92%] md:w-full max-w-5xl bg-[#0f1524]/90 border border-[#7dd3fc]/10 rounded-[32px] md:rounded-[48px] shadow-2xl shadow-[#7dd3fc]/10 backdrop-blur-sm flex flex-col overflow-hidden relative min-h-[560px] md:min-h-[700px] mt-4 md:mt-8"
-          >
-            <div className="flex flex-col">
-              <div data-testid="practice-progress-track" className="ui-progress-track w-full h-1 md:h-1.5 bg-[#1a2438]">
-                <div
-                  data-testid="practice-progress-fill"
-                  className="ui-progress-fill h-full bg-[#7dd3fc] rounded-r-full transition-all duration-500 ease-out"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
+            <main
+              data-testid="practice-stage"
+              className="practice-stage ui-stage-panel w-[92%] md:w-full max-w-5xl rounded-[32px] md:rounded-[48px] flex flex-col overflow-hidden relative min-h-[560px] md:min-h-[700px] mt-4 md:mt-8"
+            >
+              <div className="flex flex-col">
+                <div data-testid="practice-progress-track" className="ui-progress-track w-full h-1 md:h-1.5">
+                  <div
+                    data-testid="practice-progress-fill"
+                    className="ui-progress-fill h-full rounded-r-full transition-all duration-500 ease-out"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
 
               <div className="flex justify-between items-center px-8 md:px-12 pt-6 md:pt-8 pb-5">
                 <div
                   data-testid="practice-pair-meta"
-                  className="ui-meta-label text-[10px] md:text-xs font-extrabold text-[#a0b4c4] uppercase tracking-widest"
+                  className="ui-meta-label ui-eyebrow"
                 >
                   Pair {practicePairNumber} of {practicePairTotal}
                 </div>
                 <button
                   onClick={refreshPracticeBatch}
-                  className="h-8 px-3 rounded-full bg-[#1a2438] border border-[#7dd3fc]/20 text-[10px] md:text-xs font-bold uppercase tracking-wider text-[#7dd3fc] hover:bg-[#202c42]"
+                  className="ui-btn-secondary h-11 px-4 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-wider"
                 >
                   Refresh batch
                 </button>
                 {practicePair.target_sounds && (
                   <div
                     data-testid="practice-target-sounds"
-                    className="ui-sound-chip text-[10px] md:text-sm font-extrabold text-[#7dd3fc] bg-[#1a3a4e]/60 px-2 md:px-3 py-1 md:py-1.5 rounded-md md:rounded-lg tracking-wider"
+                    className="ui-sound-chip text-[10px] md:text-sm font-extrabold px-2 md:px-3 py-1 md:py-1.5 rounded-md md:rounded-lg tracking-wider"
                   >
                     {practicePair.target_sounds}
                   </div>
@@ -252,6 +260,7 @@ function App() {
               className="practice-stage-columns grid grid-cols-1 md:grid-cols-2 items-stretch flex-1 pb-8 md:pb-0 py-8 md:py-6 gap-4 md:gap-0"
             >
               <PracticeCard
+                key={`${practicePair.id}-1`}
                 word={practicePair.word1}
                 isActive={targetNum === 1}
                 isFirstWord={true}
@@ -282,6 +291,7 @@ function App() {
                 }}
               />
               <PracticeCard
+                key={`${practicePair.id}-2`}
                 word={practicePair.word2}
                 isActive={targetNum === 2}
                 isFirstWord={false}

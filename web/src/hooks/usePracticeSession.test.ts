@@ -260,4 +260,62 @@ describe('usePracticeSession', () => {
     expect(result.current.practicePairNumber).toBe(1);
     expect(result.current.practicePairTotal).toBe(2);
   });
+
+  it('keeps target on second word after progress updates in practice mode', async () => {
+    const { result } = renderHook(() => usePracticeSession());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    act(() => {
+      result.current.setMode('PRACTICE');
+    });
+
+    act(() => {
+      result.current.handlePracticeSuccess();
+    });
+
+    expect(result.current.targetNum).toBe(2);
+
+    act(() => {
+      result.current.recordPracticeAttempt({
+        pairId: result.current.currentPracticePair!.id,
+        category: result.current.currentPracticePair!.phoneme_type,
+        targetWord: 1,
+        isCorrect: true,
+      });
+    });
+
+    expect(result.current.targetNum).toBe(2);
+  });
+
+  it('does not reset practice pair number after recording an attempt', async () => {
+    const { result } = renderHook(() => usePracticeSession());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    act(() => {
+      result.current.setMode('PRACTICE');
+    });
+
+    act(() => {
+      result.current.goNext();
+    });
+
+    expect(result.current.practicePairNumber).toBe(2);
+
+    act(() => {
+      result.current.recordPracticeAttempt({
+        pairId: result.current.currentPracticePair!.id,
+        category: result.current.currentPracticePair!.phoneme_type,
+        targetWord: 1,
+        isCorrect: false,
+      });
+    });
+
+    expect(result.current.practicePairNumber).toBe(2);
+  });
 });

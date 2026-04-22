@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { fetchCategories, fetchPairs } from '../lib/api';
 import { buildCategoryProgress, getProfileSummary } from '../lib/progressMetrics';
 import { buildPracticeBatch, buildWeakPairQueue } from '../lib/pairSelection';
@@ -17,7 +17,7 @@ import type {
 } from '../lib/types';
 
 export function usePracticeSession() {
-  const [mode, setMode] = useState<Mode>('LEARN');
+  const [mode, setModeState] = useState<Mode>('LEARN');
   const [pairs, setPairs] = useState<WordPair[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [dialect, setDialect] = useState<Dialect>('all');
@@ -29,6 +29,11 @@ export function usePracticeSession() {
   const [isWeakPracticeMode, setIsWeakPracticeMode] = useState(false);
   const [practiceBatch, setPracticeBatch] = useState<WordPair[]>([]);
   const [practiceBatchIndex, setPracticeBatchIndex] = useState(0);
+  const modeRef = useRef(mode);
+
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
 
   useEffect(() => {
     setIsLoading(true);
@@ -65,15 +70,9 @@ export function usePracticeSession() {
     [pairs, categories, progressStore],
   );
 
-  const refreshPracticeBatch = useCallback(() => {
+  const startStandardPracticeSession = useCallback(() => {
     if (pairs.length === 0) {
       setPracticeBatch([]);
-      setPracticeBatchIndex(0);
-      return;
-    }
-
-    if (isWeakPracticeMode && weakPairQueue.length > 0) {
-      setPracticeBatch(weakPairQueue.slice(0, Math.min(5, weakPairQueue.length)));
       setPracticeBatchIndex(0);
       setTargetNum(1);
       return;
@@ -86,12 +85,42 @@ export function usePracticeSession() {
     setPracticeBatch(nextBatch);
     setPracticeBatchIndex(0);
     setTargetNum(1);
-  }, [pairs, progressStore, isWeakPracticeMode, weakPairQueue]);
+  }, [pairs, progressStore]);
 
-  useEffect(() => {
-    if (mode !== 'PRACTICE') return;
-    refreshPracticeBatch();
-  }, [mode, refreshPracticeBatch]);
+  const enterPracticeMode = useCallback(() => {
+    setIsWeakPracticeMode(false);
+    setModeState('PRACTICE');
+    startStandardPracticeSession();
+  }, [startStandardPracticeSession]);
+
+  const setMode = useCallback((nextMode: Mode) => {
+    const isEnteringPractice = nextMode === 'PRACTICE' && modeRef.current !== 'PRACTICE';
+
+    if (isEnteringPractice) {
+      enterPracticeMode();
+      return;
+    }
+
+    setModeState(nextMode);
+  }, [enterPracticeMode]);
+
+  const refreshPracticeBatch = useCallback(() => {
+    if (pairs.length === 0) {
+      setPracticeBatch([]);
+      setPracticeBatchIndex(0);
+      setTargetNum(1);
+      return;
+    }
+
+    if (isWeakPracticeMode && weakPairQueue.length > 0) {
+      setPracticeBatch(weakPairQueue.slice(0, Math.min(5, weakPairQueue.length)));
+      setPracticeBatchIndex(0);
+      setTargetNum(1);
+      return;
+    }
+
+    startStandardPracticeSession();
+  }, [pairs.length, isWeakPracticeMode, weakPairQueue, startStandardPracticeSession]);
 
   const goNext = useCallback(() => {
     if (mode === 'PRACTICE') {
@@ -159,7 +188,7 @@ export function usePracticeSession() {
     setIsWeakPracticeMode(true);
     setPracticeBatch(weakPairQueue.slice(0, Math.min(5, weakPairQueue.length)));
     setPracticeBatchIndex(0);
-    setMode('PRACTICE');
+    setModeState('PRACTICE');
     setTargetNum(1);
   }, [weakPairQueue]);
 
@@ -185,6 +214,7 @@ export function usePracticeSession() {
   return {
     mode,
     setMode,
+    enterPracticeMode,
     pairs,
     categories,
     dialect,
