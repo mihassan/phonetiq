@@ -13,6 +13,14 @@
   box-shadow: var(--shadow-soft), var(--shadow-inset);
 }
 
+.ui-bottom-nav {
+  background: color-mix(in srgb, var(--color-surface-strong) 95%, transparent);
+  border-top: 1px solid var(--glass-border);
+  backdrop-filter: var(--blur-strong);
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.08);
+  padding-bottom: env(safe-area-inset-bottom, 10px);
+}
+
 .ui-stage-panel {
   background:
     linear-gradient(145deg, color-mix(in srgb, var(--color-surface-strong) 82%, transparent), color-mix(in srgb, var(--glass-tint) 22%, var(--color-surface) 78%));
@@ -255,6 +263,40 @@
   gap: var(--space-6);
 }
 
+.ui-practice-state-recording {
+  background: var(--color-state-recording);
+  box-shadow: 0 0 0 4px var(--color-state-recording-bg);
+  color: white;
+}
+
+.ui-practice-state-incorrect {
+  background: var(--color-state-incorrect-bg);
+  border: 1px solid var(--color-state-incorrect-border);
+  color: var(--color-state-incorrect);
+}
+
+.ui-practice-state-nomatch {
+  background: var(--color-state-nomatch-bg);
+  border: 1px solid var(--color-state-nomatch-border);
+  color: var(--color-state-nomatch);
+}
+
+.ui-practice-state-correct {
+  background: var(--color-surface-variant);
+  color: var(--color-primary);
+}
+
+.ui-practice-state-idle {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  color: white;
+  box-shadow: var(--shadow-cta);
+}
+
+.ui-practice-state-processing {
+  background: var(--color-surface-variant);
+  color: var(--color-primary);
+}
+
 .ui-practice-zone-title,
 .ui-practice-zone-helper,
 .ui-practice-zone-action,
@@ -273,27 +315,27 @@
 }
 
 .ui-practice-zone-title {
-  min-height: 136px;
+  min-height: 96px;
   align-items: center;
 }
 
 .ui-practice-zone-helper {
-  min-height: 24px;
+  min-height: 20px;
   align-items: center;
 }
 
 .ui-practice-zone-action {
-  min-height: 120px;
+  min-height: 92px;
   align-items: center;
 }
 
 .ui-practice-zone-status {
-  min-height: 26px;
+  min-height: 22px;
   align-items: center;
 }
 
 .ui-practice-zone-feedback {
-  min-height: 52px;
+  min-height: 42px;
   align-items: center;
 }
 

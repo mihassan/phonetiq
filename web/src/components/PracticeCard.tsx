@@ -105,39 +105,39 @@ export function PracticeCard({
   // Active state UI map
   const stateMap = {
     idle: {
-      btnBg: 'ui-btn-primary',
+      btnBg: 'ui-practice-state-idle',
       textCol: 'ui-muted',
       icon: <Mic size={24} className="text-white" />,
       label: 'Tap to speak',
     },
     recording: {
-      btnBg: 'bg-[#ff6b6b] shadow-[#ff6b6b]/40',
-      textCol: 'text-[#ffb3b3]',
+      btnBg: 'ui-practice-state-recording',
+      textCol: 'text-[color:var(--color-state-recording)]',
       icon: <Mic size={24} className="text-white animate-pulse" />,
       label: `Listening... ${Math.ceil((RECORD_DURATION / 1000) * (1 - progress))}s`,
     },
     processing: {
-      btnBg: 'ui-btn-secondary',
+      btnBg: 'ui-practice-state-processing',
       textCol: 'text-[color:var(--color-primary)]',
-      icon: <Loader2 size={24} className="text-white animate-spin" />,
+      icon: <Loader2 size={24} className="text-[color:var(--color-primary)] animate-spin" />,
       label: 'Processing...',
     },
     correct: {
-      btnBg: 'ui-btn-secondary',
+      btnBg: 'ui-practice-state-correct',
       textCol: 'text-[color:var(--color-primary)]',
       icon: <Check size={28} className="text-[color:var(--color-primary)]" strokeWidth={3} />,
       label: 'Correct!',
     },
     incorrect: {
-      btnBg: 'bg-[#3d1414] border border-[#ff6b6b]/30',
-      textCol: 'text-[#ffb3b3]',
-      icon: <X size={28} className="text-[#ffb3b3]" strokeWidth={3} />,
+      btnBg: 'ui-practice-state-incorrect',
+      textCol: 'text-[color:var(--color-state-incorrect)]',
+      icon: <X size={28} className="text-[color:var(--color-state-incorrect)]" strokeWidth={3} />,
       label: 'Try again',
     },
     no_match: {
-      btnBg: 'bg-[#3a2b13] border border-[#f6c453]/35',
-      textCol: 'text-[#f6c453]',
-      icon: <X size={28} className="text-[#f6c453]" strokeWidth={3} />,
+      btnBg: 'ui-practice-state-nomatch',
+      textCol: 'text-[color:var(--color-state-nomatch)]',
+      icon: <X size={28} className="text-[color:var(--color-state-nomatch)]" strokeWidth={3} />,
       label: "Didn't catch that",
     },
   };
@@ -174,7 +174,7 @@ export function PracticeCard({
           {/* Recording Rings */}
           {status === 'recording' && (
             <>
-              <div data-testid="practice-recording-ring" className="absolute inset-0 border-4 border-[#ff6b6b]/30 rounded-full"></div>
+              <div data-testid="practice-recording-ring" className="absolute inset-0 border-4 border-[color:var(--color-state-recording-bg)] rounded-full"></div>
               <svg className="absolute inset-0 -rotate-90 w-full h-full" viewBox="0 0 100 100">
                 <circle
                   data-testid="practice-recording-ring-progress"
@@ -182,7 +182,7 @@ export function PracticeCard({
                   cy="50"
                   r={ringRadius}
                   fill="none"
-                  stroke="#ff6b6b"
+                  stroke="var(--color-state-recording)"
                   strokeWidth="4"
                   strokeLinecap="round"
                   strokeDasharray={ringCircumference}
@@ -220,15 +220,15 @@ export function PracticeCard({
             status === 'correct'
               ? 'ui-card'
               : status === 'incorrect'
-                ? 'bg-[#3d1414] border-[#ff6b6b]/30'
-                : 'bg-[#3a2b13] border-[#f6c453]/35'
+                ? 'ui-practice-state-incorrect'
+                : 'ui-practice-state-nomatch'
           }`}>
             <span className={`text-xs font-bold ${
               status === 'correct'
                 ? 'ui-muted'
                 : status === 'incorrect'
-                  ? 'text-[#ffb3b3]'
-                  : 'text-[#f6c453]'
+                  ? 'text-[color:var(--color-state-incorrect)]'
+                  : 'text-[color:var(--color-state-nomatch)]'
             }`}>Heard:</span>
             <span className="text-sm font-black capitalize">&ldquo;{transcript}&rdquo;</span>
           </div>

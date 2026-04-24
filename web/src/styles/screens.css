@@ -69,16 +69,35 @@
 
 .categories-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.25rem;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .categories-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .categories-grid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
 }
 
 .categories-card {
-  min-height: 188px;
+  min-height: 160px;
   border-radius: 1.1rem;
   background: color-mix(in srgb, var(--color-surface) 86%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-outline) 60%, transparent);
   box-shadow: var(--shadow-soft), var(--shadow-inset);
+}
+
+@media (min-width: 768px) {
+  .categories-card {
+    min-height: 188px;
+  }
 }
 
 .categories-card:hover {

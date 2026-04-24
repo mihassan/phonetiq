@@ -38,7 +38,7 @@ describe('CategoryFilter', () => {
     const container = screen.getByTestId('category-filter');
     const selected = screen.getByRole('button', { name: /vowel short \(2\)/i });
 
-    expect(container.className).toContain('ui-filter-shell');
+    expect(container.className).toContain('flex');
     expect(selected.getAttribute('aria-pressed')).toBe('true');
   });
 });

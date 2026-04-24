@@ -10,15 +10,19 @@ export function CategoryFilter({ categories, selected, onSelect }: Props) {
   const total = categories.reduce((sum, cat) => sum + cat.count, 0);
 
   return (
-    <div className="mb-8 md:mb-12">
+    <div className="mb-4 md:mb-8 w-full">
       <div
         data-testid="category-filter"
-        className="ui-filter-shell flex gap-3 overflow-x-auto pb-2 scrollbar-hide px-2 md:px-0 md:flex-wrap md:justify-center rounded-2xl py-3"
+        className="flex gap-2 overflow-x-auto px-4 pb-2 scrollbar-hide snap-x snap-proximity [mask-image:linear-gradient(to_right,transparent,black_16px,black_calc(100%-16px),transparent)] md:flex-wrap md:justify-center md:px-0 md:[mask-image:none]"
       >
         <button
           onClick={() => onSelect(null)}
           aria-pressed={selected === null}
-          className="ui-filter-chip min-h-11 px-5 rounded-full text-xs md:text-sm font-bold whitespace-nowrap transition-all bg-transparent"
+            className={`shrink-0 min-h-10 px-4 rounded-full text-[11px] md:text-sm font-bold whitespace-nowrap transition-all border snap-start ${
+              selected === null
+                ? 'ui-btn-primary border-transparent'
+                : 'ui-card-muted border-[color:var(--color-outline)] hover:border-[color:var(--color-primary)]'
+          }`}
         >
           All ({total})
         </button>
@@ -28,14 +32,16 @@ export function CategoryFilter({ categories, selected, onSelect }: Props) {
             key={cat.phoneme_type}
             onClick={() => onSelect(cat.phoneme_type)}
             aria-pressed={selected === cat.phoneme_type}
-            className="ui-filter-chip min-h-11 px-5 rounded-full text-xs md:text-sm font-bold whitespace-nowrap transition-all bg-transparent"
+              className={`shrink-0 min-h-10 px-4 rounded-full text-[11px] md:text-sm font-bold whitespace-nowrap transition-all border snap-start ${
+                selected === cat.phoneme_type
+                  ? 'ui-btn-primary border-transparent'
+                  : 'ui-card-muted border-[color:var(--color-outline)] hover:border-[color:var(--color-primary)]'
+            }`}
           >
             {cat.phoneme_type.replace(/_/g, ' ')} ({cat.count})
           </button>
         ))}
       </div>
-
-      <p className="ui-muted ui-body-sm md:hidden mt-2 px-2">Swipe to see more categories</p>
     </div>
   );
 }

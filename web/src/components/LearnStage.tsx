@@ -12,7 +12,7 @@ export function LearnStage({ pair, index, totalPairs, progress }: LearnStageProp
   return (
     <main
       data-testid="learn-stage"
-      className="learn-stage ui-stage-panel w-[92%] md:w-full max-w-5xl rounded-[32px] md:rounded-[48px] flex flex-col overflow-hidden relative min-h-[500px] md:min-h-[600px] mt-4 md:mt-8"
+      className="learn-stage ui-stage-panel w-[92%] md:w-full max-w-5xl rounded-[32px] md:rounded-[48px] flex flex-col overflow-hidden relative min-h-[340px] md:min-h-[600px] mt-3 md:mt-8"
     >
       <div className="flex flex-col">
         <div className="ui-progress-track w-full h-1 md:h-1.5">

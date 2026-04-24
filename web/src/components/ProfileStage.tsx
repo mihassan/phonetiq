@@ -20,7 +20,7 @@ export function ProfileStage({
   return (
     <main
       data-testid="profile-stage"
-      className="w-[92%] md:w-full max-w-5xl ui-stage-panel rounded-[32px] md:rounded-[48px] flex flex-col overflow-hidden relative min-h-[500px] md:min-h-[600px] mt-4 md:mt-8 px-8 md:px-12 py-8 md:py-10"
+      className="w-[92%] md:w-full max-w-5xl ui-stage-panel rounded-[32px] md:rounded-[48px] flex flex-col overflow-hidden relative min-h-[360px] md:min-h-[600px] mt-3 md:mt-8 px-5 md:px-12 py-6 md:py-10"
     >
       <div className="ui-stack-6">
         <h2 className="ui-heading-lg">Profile</h2>
@@ -54,30 +54,30 @@ export function ProfileStage({
           )}
         </section>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          <div className="ui-card rounded-2xl px-4 py-4">
-            <p className="ui-eyebrow">Overall accuracy</p>
-            <p className="text-2xl md:text-3xl font-black text-[color:var(--color-primary)] mt-2">{summary.accuracy}%</p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+          <div className="ui-card rounded-2xl px-5 py-6 md:px-8 md:py-8 flex flex-col justify-between col-span-2 md:col-span-3 bg-gradient-to-br from-[color:var(--color-surface)] to-[color:var(--color-surface-variant)] border-[color:var(--color-primary)]/20">
+            <p className="ui-eyebrow text-[color:var(--color-primary)]">Overall accuracy</p>
+            <p className="text-5xl md:text-6xl font-black text-[color:var(--color-primary)] mt-2">{summary.accuracy}%</p>
           </div>
-          <div className="ui-card rounded-2xl px-4 py-4">
+          <div className="ui-card rounded-2xl px-4 py-4 md:px-5 md:py-5 flex flex-col justify-between">
             <p className="ui-eyebrow">Attempts</p>
-            <p className="text-2xl md:text-3xl font-black mt-2">{summary.totalAttempts}</p>
+            <p className="text-3xl md:text-4xl font-black mt-2">{summary.totalAttempts}</p>
           </div>
-          <div className="ui-card rounded-2xl px-4 py-4">
+          <div className="ui-card rounded-2xl px-4 py-4 md:px-5 md:py-5 flex flex-col justify-between">
             <p className="ui-eyebrow">Completed pairs</p>
-            <p className="text-2xl md:text-3xl font-black mt-2">{summary.completedPairs}</p>
+            <p className="text-3xl md:text-4xl font-black mt-2">{summary.completedPairs}</p>
           </div>
-          <div className="ui-card rounded-2xl px-4 py-4">
+          <div className="ui-card rounded-2xl px-4 py-4 md:px-5 md:py-5 flex flex-col justify-between">
             <p className="ui-eyebrow">Current streak</p>
-            <p className="text-2xl md:text-3xl font-black mt-2">{summary.currentStreak}</p>
+            <p className="text-3xl md:text-4xl font-black mt-2">{summary.currentStreak}</p>
           </div>
-          <div className="ui-card rounded-2xl px-4 py-4">
+          <div className="ui-card rounded-2xl px-4 py-4 md:px-5 md:py-5 flex flex-col justify-between">
             <p className="ui-eyebrow">Best streak</p>
-            <p className="text-2xl md:text-3xl font-black mt-2">{summary.bestStreak}</p>
+            <p className="text-3xl md:text-4xl font-black mt-2">{summary.bestStreak}</p>
           </div>
-          <div className="ui-card rounded-2xl px-4 py-4">
+          <div className="ui-card rounded-2xl px-4 py-4 md:px-5 md:py-5 flex flex-col justify-between">
             <p className="ui-eyebrow">Sessions</p>
-            <p className="text-2xl md:text-3xl font-black mt-2">{summary.sessionsCount}</p>
+            <p className="text-3xl md:text-4xl font-black mt-2">{summary.sessionsCount}</p>
           </div>
         </div>
 

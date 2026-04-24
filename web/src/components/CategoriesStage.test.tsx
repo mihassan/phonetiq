@@ -47,13 +47,13 @@ describe('CategoriesStage', () => {
     );
 
     expect(screen.getByText('100%')).toBeInTheDocument();
-    expect(screen.getByText('36 of 36')).toBeInTheDocument();
+    expect(screen.getByText('36 completed')).toBeInTheDocument();
 
     expect(screen.getByText('21%')).toBeInTheDocument();
-    expect(screen.getByText('10 of 48')).toBeInTheDocument();
+    expect(screen.getByText('10 completed')).toBeInTheDocument();
 
     expect(screen.getByText('25%')).toBeInTheDocument();
-    expect(screen.getByText('3 of 12')).toBeInTheDocument();
+    expect(screen.getByText('3 completed')).toBeInTheDocument();
   });
 
   it('filters categories by search query', () => {
@@ -95,7 +95,7 @@ describe('CategoriesStage', () => {
     expect(onSelectCategory).toHaveBeenNthCalledWith(2, null);
   });
 
-  it('uses two-column card layout and renders category chips', () => {
+  it('uses responsive grid layout and renders category chips', () => {
     render(
       <CategoriesStage
         categories={categories}
@@ -106,14 +106,16 @@ describe('CategoriesStage', () => {
     );
 
     const grid = screen.getByTestId('categories-grid');
-    expect(grid.className).toContain('grid-cols-2');
+    expect(grid.className).toContain('grid-cols-1');
+    expect(grid.className).toContain('md:grid-cols-2');
+    expect(grid.className).toContain('lg:grid-cols-3');
 
     const chips = screen.getAllByTestId('category-chip');
     expect(chips).toHaveLength(3);
     expect(chips[0]).toHaveTextContent(/category/i);
   });
 
-  it('uses roomier spacing and balanced odd-card layout', () => {
+  it('uses roomier spacing and balanced layout', () => {
     render(
       <CategoriesStage
         categories={categories}
@@ -127,15 +129,12 @@ describe('CategoriesStage', () => {
     const grid = screen.getByTestId('categories-grid');
     const cards = screen.getAllByTestId('category-card');
 
-    expect(stage.className).toContain('px-8');
-    expect(stage.className).toContain('py-8');
-    expect(grid.className).toContain('gap-6');
+    expect(stage.className).toContain('px-5');
+    expect(stage.className).toContain('py-6');
+    expect(grid.className).toContain('gap-4');
 
     cards.forEach((card) => {
-      expect(card.className).toContain('min-h-[190px]');
+      expect(card.className).toContain('min-h-[160px]');
     });
-
-    expect(cards[cards.length - 1].className).toContain('col-span-2');
-    expect(cards[cards.length - 1].className).toContain('justify-self-center');
   });
 });

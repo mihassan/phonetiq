@@ -15,9 +15,9 @@ export function DialectFilter({ selected, onSelect }: DialectFilterProps) {
   return (
     <div
       data-testid="dialect-filter"
-      className="ui-filter-shell flex items-center justify-center gap-3 mb-4 md:mb-6 rounded-2xl py-2.5 px-3"
+      className="flex items-center justify-center gap-2 mb-3 md:mb-6 w-full px-1 md:px-0"
     >
-      <span className="ui-muted text-[10px] md:text-xs font-extrabold uppercase tracking-widest">
+      <span className="ui-muted text-[10px] md:text-xs font-extrabold uppercase tracking-widest mr-2">
         Dialect
       </span>
 
@@ -27,7 +27,11 @@ export function DialectFilter({ selected, onSelect }: DialectFilterProps) {
           type="button"
           aria-pressed={selected === option.value}
           onClick={() => onSelect(option.value)}
-          className="ui-filter-chip min-h-11 px-4 rounded-full text-xs md:text-sm font-bold transition-all"
+          className={`min-h-9 px-4 rounded-full text-xs md:text-sm font-bold transition-all border ${
+            selected === option.value
+              ? 'ui-btn-primary border-transparent'
+              : 'ui-card-muted border-[color:var(--color-outline)] hover:border-[color:var(--color-primary)]'
+          }`}
         >
           {option.label}
         </button>

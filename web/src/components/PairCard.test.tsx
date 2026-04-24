@@ -42,16 +42,16 @@ describe('PairCard', () => {
     render(<PairCard word="internationalization" isActive={true} isFirstWord={true} />);
 
     const heading = screen.getByTestId('pair-card-heading');
-    expect(heading.className).toContain('text-[44px]');
-    expect(heading.className).toContain('md:text-[64px]');
+    expect(heading.className).toContain('text-[40px]');
+    expect(heading.className).toContain('md:text-[56px]');
   });
 
   it('reduces heading size for medium words common in real data', () => {
     render(<PairCard word="tongue" isActive={true} isFirstWord={true} />);
 
     const heading = screen.getByTestId('pair-card-heading');
-    expect(heading.className).toContain('text-[52px]');
-    expect(heading.className).toContain('md:text-[76px]');
+    expect(heading.className).toContain('text-[48px]');
+    expect(heading.className).toContain('md:text-[68px]');
   });
 
   it('uses partner-word length to keep pair heading sizes symmetric', () => {
@@ -65,7 +65,7 @@ describe('PairCard', () => {
     );
 
     const heading = screen.getByTestId('pair-card-heading');
-    expect(heading.className).toContain('text-[52px]');
-    expect(heading.className).toContain('md:text-[76px]');
+    expect(heading.className).toContain('text-[48px]');
+    expect(heading.className).toContain('md:text-[68px]');
   });
 });

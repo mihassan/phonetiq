@@ -53,7 +53,7 @@ export function PairCard({ word, partnerWord, isActive, isFirstWord }: Props) {
           />
         </button>
         <p data-testid="pair-card-helper-text" className="ui-label-muted text-[10px] md:text-xs font-extrabold uppercase tracking-widest">
-          Tap to speak
+          Tap to listen
         </p>
       </div>
     </div>

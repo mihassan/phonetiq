@@ -97,8 +97,7 @@ describe('PracticeCard', () => {
     expect(screen.getByText(/try again/i)).toBeInTheDocument();
     const heardLabel = screen.getByText(/heard:/i);
     const transcriptPill = heardLabel.closest('div');
-    expect(transcriptPill?.className).toContain('bg-[#3d1414]');
-    expect(transcriptPill?.className).toContain('border-[#ff6b6b]/30');
+    expect(transcriptPill?.className).toContain('ui-practice-state-incorrect');
 
     await act(async () => {
       vi.advanceTimersByTime(2500);
@@ -130,7 +129,7 @@ describe('PracticeCard', () => {
     expect(heading.className).toContain('min-h-[104px]');
     expect(listen.className).toContain('ui-link');
     expect(status.className).toContain('ui-muted');
-    expect(record.className).toContain('ui-btn-primary');
+    expect(record.className).toContain('ui-practice-state-idle');
     expect(card.className).toContain('px-8');
   });
 
@@ -149,8 +148,8 @@ describe('PracticeCard', () => {
     expect(inactiveWord.className).toContain('w-full');
     expect(inactiveWord.className).toContain('text-center');
     expect(inactiveWord.className).toContain('min-h-[104px]');
-    expect(inactiveWord.className).toContain('text-[38px]');
-    expect(inactiveWord.className).toContain('md:text-[52px]');
+    expect(inactiveWord.className).toContain('text-[34px]');
+    expect(inactiveWord.className).toContain('md:text-[48px]');
   });
 
   it('keeps inactive practice card with balanced placeholder slot', () => {
@@ -179,8 +178,8 @@ describe('PracticeCard', () => {
     );
 
     const heading = screen.getByTestId('practice-card-heading');
-    expect(heading.className).toContain('text-[44px]');
-    expect(heading.className).toContain('md:text-[60px]');
+    expect(heading.className).toContain('text-[40px]');
+    expect(heading.className).toContain('md:text-[56px]');
   });
 
   it('uses partner-word length so both practice sides stay visually aligned', () => {
@@ -195,8 +194,8 @@ describe('PracticeCard', () => {
     );
 
     const heading = screen.getByTestId('practice-card-heading');
-    expect(heading.className).toContain('text-[44px]');
-    expect(heading.className).toContain('md:text-[60px]');
+    expect(heading.className).toContain('text-[40px]');
+    expect(heading.className).toContain('md:text-[56px]');
   });
 
   it('uses themed recording-state colors', async () => {
@@ -220,10 +219,10 @@ describe('PracticeCard', () => {
     const ring = screen.getByTestId('practice-recording-ring');
     const ringProgress = screen.getByTestId('practice-recording-ring-progress');
 
-    expect(record.className).toContain('bg-[#ff6b6b]');
-    expect(status.className).toContain('text-[#ffb3b3]');
-    expect(ring.className).toContain('border-[#ff6b6b]/30');
-    expect(ringProgress.getAttribute('stroke')).toBe('#ff6b6b');
+    expect(record.className).toContain('ui-practice-state-recording');
+    expect(status.className).toContain('text-[color:var(--color-state-recording)]');
+    expect(ring.className).toContain('border-[color:var(--color-state-recording-bg)]');
+    expect(ringProgress.getAttribute('stroke')).toBe('var(--color-state-recording)');
   });
 
   it('uses themed processing-state colors', async () => {
@@ -253,7 +252,7 @@ describe('PracticeCard', () => {
     const record = screen.getByRole('button', { name: /record pronunciation/i });
     const status = screen.getByTestId('practice-status-label');
 
-    expect(record.className).toContain('ui-btn-secondary');
+    expect(record.className).toContain('ui-practice-state-processing');
     expect(status.className).toContain('text-[color:var(--color-primary)]');
   });
 
@@ -284,7 +283,7 @@ describe('PracticeCard', () => {
     const record = screen.getByRole('button', { name: /record pronunciation/i });
     const status = screen.getByTestId('practice-status-label');
 
-    expect(record.className).toContain('ui-btn-secondary');
+    expect(record.className).toContain('ui-practice-state-correct');
     expect(status.className).toContain('text-[color:var(--color-primary)]');
   });
 
@@ -315,9 +314,8 @@ describe('PracticeCard', () => {
     const record = screen.getByRole('button', { name: /record pronunciation/i });
     const status = screen.getByTestId('practice-status-label');
 
-    expect(record.className).toContain('bg-[#3d1414]');
-    expect(record.className).toContain('border-[#ff6b6b]/30');
-    expect(status.className).toContain('text-[#ffb3b3]');
+    expect(record.className).toContain('ui-practice-state-incorrect');
+    expect(status.className).toContain('text-[color:var(--color-state-incorrect)]');
   });
 
   it('shows a no-match retry state when speech is unrelated', async () => {
