@@ -2,6 +2,30 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from './App';
 
+function getMobileModeButton(name: RegExp) {
+  const buttons = screen.getAllByRole('button', { name });
+  const mobileButton = buttons.find((button) => button.className.includes('flex-col'));
+
+  if (!mobileButton) {
+    throw new Error(`Missing mobile mode button for ${name.toString()}`);
+  }
+
+  return mobileButton;
+}
+
+function hasHiddenAncestor(element: HTMLElement) {
+  let current: HTMLElement | null = element.parentElement;
+
+  while (current) {
+    if (current.className.split(/\s+/).includes('hidden')) {
+      return true;
+    }
+    current = current.parentElement;
+  }
+
+  return false;
+}
+
 const fetchPairsMock = vi.fn();
 const fetchCategoriesMock = vi.fn();
 
@@ -139,7 +163,7 @@ describe('App', () => {
     expect(screen.getByTestId('learn-stage')).toBeInTheDocument();
     expect(screen.queryByTestId('practice-stage')).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /practice/i }));
+    await user.click(screen.getAllByRole('button', { name: /practice/i })[0]);
 
     expect(screen.getByTestId('practice-stage')).toBeInTheDocument();
     expect(screen.queryByTestId('learn-stage')).not.toBeInTheDocument();
@@ -155,7 +179,7 @@ describe('App', () => {
     expect(learnColumns.className).toContain('grid');
     expect(learnColumns.className).toContain('md:grid-cols-2');
 
-    await user.click(screen.getByRole('button', { name: /practice/i }));
+    await user.click(screen.getAllByRole('button', { name: /practice/i })[0]);
 
     const practiceColumns = screen.getByTestId('practice-stage-body');
     expect(practiceColumns.className).toContain('grid');
@@ -168,7 +192,7 @@ describe('App', () => {
 
     await screen.findByText(/pair 1 of 2/i);
 
-    await user.click(screen.getByRole('button', { name: /categories/i }));
+    await user.click(screen.getAllByRole('button', { name: /categories/i })[0]);
 
     expect(screen.getByTestId('categories-stage')).toBeInTheDocument();
     expect(screen.queryByTestId('learn-stage')).not.toBeInTheDocument();
@@ -182,7 +206,7 @@ describe('App', () => {
 
     await screen.findByText(/pair 1 of 2/i);
 
-    await user.click(screen.getByRole('button', { name: /profile/i }));
+    await user.click(screen.getAllByRole('button', { name: /profile/i })[0]);
 
     expect(screen.getByTestId('profile-stage')).toBeInTheDocument();
     expect(screen.queryByTestId('learn-stage')).not.toBeInTheDocument();
@@ -195,7 +219,7 @@ describe('App', () => {
     render(<App />);
 
     await screen.findByText(/pair 1 of 2/i);
-    await user.click(screen.getByRole('button', { name: /profile/i }));
+    await user.click(screen.getAllByRole('button', { name: /profile/i })[0]);
     await user.click(screen.getByRole('button', { name: /practice weak pairs/i }));
 
     expect(screen.getByTestId('practice-stage')).toBeInTheDocument();
@@ -213,6 +237,35 @@ describe('App', () => {
     expect(toggle.className).toContain('ui-card-muted');
   });
 
+  it('keeps the mobile mode selector outside hidden ancestors and lets it switch screens', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await screen.findByText(/pair 1 of 2/i);
+
+    const learnButton = getMobileModeButton(/^learn$/i);
+    const categoriesButton = getMobileModeButton(/^categories$/i);
+    const practiceButton = getMobileModeButton(/^practice$/i);
+    const profileButton = getMobileModeButton(/^profile$/i);
+
+    expect(hasHiddenAncestor(learnButton)).toBe(false);
+    expect(hasHiddenAncestor(categoriesButton)).toBe(false);
+    expect(hasHiddenAncestor(practiceButton)).toBe(false);
+    expect(hasHiddenAncestor(profileButton)).toBe(false);
+
+    await user.click(categoriesButton);
+    expect(screen.getByTestId('categories-stage')).toBeInTheDocument();
+
+    await user.click(practiceButton);
+    expect(screen.getByTestId('practice-stage')).toBeInTheDocument();
+
+    await user.click(profileButton);
+    expect(screen.getByTestId('profile-stage')).toBeInTheDocument();
+
+    await user.click(learnButton);
+    expect(screen.getByTestId('learn-stage')).toBeInTheDocument();
+  });
+
   it('uses themed shell root background and text colors', async () => {
     render(<App />);
 
@@ -227,7 +280,7 @@ describe('App', () => {
     render(<App />);
 
     await screen.findByText(/pair 1 of 2/i);
-    await user.click(screen.getByRole('button', { name: /practice/i }));
+    await user.click(screen.getAllByRole('button', { name: /practice/i })[0]);
 
     const practiceStage = screen.getByTestId('practice-stage');
     expect(practiceStage.className).toContain('ui-stage-panel');
@@ -238,7 +291,7 @@ describe('App', () => {
     render(<App />);
 
     await screen.findByText(/pair 1 of 2/i);
-    await user.click(screen.getByRole('button', { name: /practice/i }));
+    await user.click(screen.getAllByRole('button', { name: /practice/i })[0]);
 
     const progressTrack = screen.getByTestId('practice-progress-track');
     const progressFill = screen.getByTestId('practice-progress-fill');
@@ -256,7 +309,7 @@ describe('App', () => {
     render(<App />);
 
     await screen.findByText(/pair 1 of 2/i);
-    await user.click(screen.getByRole('button', { name: /practice/i }));
+    await user.click(screen.getAllByRole('button', { name: /practice/i })[0]);
 
     const body = screen.getByTestId('practice-stage-body');
     expect(body.className).toContain('practice-stage-columns');
@@ -269,7 +322,7 @@ describe('App', () => {
     render(<App />);
 
     await screen.findByText(/pair 1 of 2/i);
-    await user.click(screen.getByRole('button', { name: /practice/i }));
+    await user.click(screen.getAllByRole('button', { name: /practice/i })[0]);
 
     expect(screen.getByRole('button', { name: /refresh batch/i })).toBeInTheDocument();
 

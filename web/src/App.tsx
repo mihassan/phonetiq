@@ -8,6 +8,7 @@ import { AppShell } from './components/AppShell';
 import { LearnStage } from './components/LearnStage';
 import { CategoriesStage } from './components/CategoriesStage';
 import { ProfileStage } from './components/ProfileStage';
+import { ModeTabBar } from './components/ModeTabBar';
 import { useAuth } from './hooks/useAuth';
 import { usePracticeSession } from './hooks/usePracticeSession';
 import {
@@ -111,7 +112,7 @@ function App() {
       header={
         <header
           data-testid="app-header"
-          className="ui-topbar flex flex-col p-2 md:p-3 pr-2 md:pr-4 pl-4 md:pl-8 rounded-3xl md:rounded-[28px] w-[92%] md:w-[680px] max-w-3xl mt-6 md:mt-0 mb-8 md:mb-12 gap-3"
+          className="ui-topbar flex flex-col p-2 md:p-3 pr-2 md:pr-4 pl-4 md:pl-8 rounded-3xl md:rounded-[28px] w-[92%] md:w-[680px] max-w-3xl mt-4 md:mt-0 mb-4 md:mb-12 gap-2 md:gap-3"
         >
           <div className="flex items-center justify-between w-full gap-3">
             <div className="flex items-center gap-2 md:gap-3">
@@ -121,65 +122,25 @@ function App() {
               <h1 className="ui-heading-md">Phonetiq</h1>
             </div>
 
-            <button
-              onClick={isAuthenticated ? logout : login}
-              disabled={isAuthLoading}
-              className="ui-card-muted ml-2 md:ml-3 h-11 px-3 md:px-4 rounded-full text-xs md:text-sm font-bold disabled:opacity-60 inline-flex items-center gap-2 text-[color:var(--color-text)] shrink-0"
-              aria-label={isAuthenticated ? 'Sign out' : 'Sign in'}
-            >
-              {isAuthenticated ? <LogOut size={16} /> : <LogIn size={16} />}
-              <span>{isAuthenticated ? 'Sign out' : 'Sign in'}</span>
-            </button>
-          </div>
-
-          <div data-testid="mode-toggle" className="ui-card-muted w-full overflow-x-auto p-1 md:p-1.5 rounded-full scrollbar-hide">
-            <div className="flex min-w-max justify-center">
+            <div className="flex items-center gap-2">
               <button
-                onClick={() => setMode('LEARN')}
-                className={`min-h-11 px-3 md:px-6 rounded-full text-xs md:text-sm font-bold transition-all ${
-                  mode === 'LEARN'
-                    ? 'ui-btn-primary shadow-md'
-                    : 'ui-muted hover:text-[color:var(--color-text)]'
-                }`}
+                onClick={isAuthenticated ? logout : login}
+                disabled={isAuthLoading}
+                className="ui-card-muted ml-2 md:ml-3 h-11 px-3 md:px-4 rounded-full text-xs md:text-sm font-bold disabled:opacity-60 inline-flex items-center gap-2 text-[color:var(--color-text)] shrink-0"
+                aria-label={isAuthenticated ? 'Sign out' : 'Sign in'}
               >
-                Learn
-              </button>
-              <button
-                onClick={() => setMode('CATEGORIES')}
-                className={`min-h-11 px-3 md:px-6 rounded-full text-xs md:text-sm font-bold transition-all ${
-                  mode === 'CATEGORIES'
-                    ? 'ui-btn-primary shadow-md'
-                    : 'ui-muted hover:text-[color:var(--color-text)]'
-                }`}
-              >
-                Categories
-              </button>
-              <button
-                onClick={enterPracticeMode}
-                className={`min-h-11 px-3 md:px-6 rounded-full text-xs md:text-sm font-bold transition-all ${
-                  mode === 'PRACTICE'
-                    ? 'ui-btn-primary shadow-md'
-                    : 'ui-muted hover:text-[color:var(--color-text)]'
-                }`}
-              >
-                Practice
-              </button>
-              <button
-                onClick={() => setMode('PROFILE')}
-                className={`min-h-11 px-3 md:px-6 rounded-full text-xs md:text-sm font-bold transition-all ${
-                  mode === 'PROFILE'
-                    ? 'ui-btn-primary shadow-md'
-                    : 'ui-muted hover:text-[color:var(--color-text)]'
-                }`}
-              >
-                Profile
+                {isAuthenticated ? <LogOut size={16} /> : <LogIn size={16} />}
+                <span className="hidden md:inline">{isAuthenticated ? 'Sign out' : 'Sign in'}</span>
               </button>
             </div>
           </div>
         </header>
       }
       filters={
-        <>
+        <div className="flex flex-col items-center w-full">
+          <div className="w-full max-w-md md:mb-8">
+            <ModeTabBar mode={mode} setMode={setMode} enterPracticeMode={enterPracticeMode} />
+          </div>
           <DialectFilter selected={dialect} onSelect={setDialect} />
           {mode === 'CATEGORIES' || mode === 'PROFILE' ? null : (
             <CategoryFilter
@@ -188,7 +149,7 @@ function App() {
               onSelect={setSelectedCategory}
             />
           )}
-        </>
+        </div>
       }
       stage={
         mode === 'LEARN' ? (
@@ -220,7 +181,7 @@ function App() {
         ) : (
             <main
               data-testid="practice-stage"
-              className="practice-stage ui-stage-panel w-[92%] md:w-full max-w-5xl rounded-[32px] md:rounded-[48px] flex flex-col overflow-hidden relative min-h-[560px] md:min-h-[700px] mt-4 md:mt-8"
+              className="practice-stage ui-stage-panel w-[92%] md:w-full max-w-5xl rounded-[32px] md:rounded-[48px] flex flex-col overflow-hidden relative min-h-[380px] md:min-h-[700px] mt-3 md:mt-8"
             >
               <div className="flex flex-col">
                 <div data-testid="practice-progress-track" className="ui-progress-track w-full h-1 md:h-1.5">
