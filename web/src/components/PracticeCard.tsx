@@ -29,7 +29,7 @@ export function PracticeCard({
   isFirstWord,
   partnerWord,
 }: Props) {
-  const { transcript, status, progress, isCompleted, handleRecord } =
+  const { transcript, status, progress, isCompleted, debugInfo, resetAttempt, sendDebugRecording, handleRecord } =
     usePracticeAttempt({
       word,
       partnerWord,
@@ -39,6 +39,7 @@ export function PracticeCard({
       recordDurationMs: RECORD_DURATION,
     });
   const sizeClass = getPracticeHeadingSizeClass(word, partnerWord);
+  const isDevelopment = import.meta.env.DEV;
 
   const play = () => {
     playWordAudio(audioUrl(word));
@@ -234,6 +235,113 @@ export function PracticeCard({
           </div>
         )}
       </div>
+
+      {isDevelopment && debugInfo && (
+        <div
+          data-testid="practice-debug-panel"
+          className="mt-4 w-full rounded-2xl border ui-divider-border ui-card p-4 text-left"
+        >
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <p className="ui-eyebrow text-[color:var(--color-primary)]">Speech debug</p>
+            <span className="ui-muted text-[10px] font-bold uppercase tracking-widest">
+              {debugInfo.skipReason === 'low_signal' ? 'Low signal skipped' : 'Recognition captured'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 text-xs mb-4">
+            <div>
+              <p className="ui-muted font-bold uppercase tracking-widest mb-1">Duration</p>
+              <p>{Math.round(debugInfo.recording.metrics?.durationMs ?? 0)}ms</p>
+            </div>
+            <div>
+              <p className="ui-muted font-bold uppercase tracking-widest mb-1">Blob size</p>
+              <p>{debugInfo.recording.blobSize} bytes</p>
+            </div>
+            <div>
+              <p className="ui-muted font-bold uppercase tracking-widest mb-1">Peak level</p>
+              <p>{(debugInfo.recording.metrics?.peakLevel ?? 0).toFixed(3)}</p>
+            </div>
+            <div>
+              <p className="ui-muted font-bold uppercase tracking-widest mb-1">Activity</p>
+              <p>{Math.round((debugInfo.recording.metrics?.activityRatio ?? 0) * 100)}%</p>
+            </div>
+            <div>
+              <p className="ui-muted font-bold uppercase tracking-widest mb-1">Leading silence</p>
+              <p>{Math.round(debugInfo.recording.metrics?.leadingSilenceMs ?? 0)}ms</p>
+            </div>
+            <div>
+              <p className="ui-muted font-bold uppercase tracking-widest mb-1">Trailing silence</p>
+              <p>{Math.round(debugInfo.recording.metrics?.trailingSilenceMs ?? 0)}ms</p>
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <p className="ui-muted font-bold uppercase tracking-widest mb-1">Likely issue</p>
+            <p>{debugInfo.recording.metrics?.likelyIssue ?? debugInfo.skipReason ?? (debugInfo.recording.metrics ? 'none detected' : 'analysis unavailable')}</p>
+          </div>
+
+          {debugInfo.recording.objectUrl && (
+            <div className="mb-4">
+              <p className="ui-muted font-bold uppercase tracking-widest mb-1">Captured audio</p>
+              <audio
+                data-testid="practice-debug-audio"
+                controls
+                src={debugInfo.recording.objectUrl}
+                className="w-full"
+              />
+            </div>
+          )}
+
+          <div className="mb-4">
+            <p className="ui-muted font-bold uppercase tracking-widest mb-1">Raw AI transcript</p>
+            <p data-testid="practice-debug-raw-transcript" className="font-bold break-words">
+              {debugInfo.recognition?.rawTranscript || '—'}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 text-xs mb-4">
+            <div>
+              <p className="ui-muted font-bold uppercase tracking-widest mb-1">Normalized transcript</p>
+              <p>{debugInfo.recognition?.normalizedTranscript || '—'}</p>
+            </div>
+            <div>
+              <p className="ui-muted font-bold uppercase tracking-widest mb-1">Prompt used</p>
+              <p className="break-words">{debugInfo.recognition?.prompt || '—'}</p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 mb-4">
+            {debugInfo.skipReason === 'low_signal' && (
+              <button
+                type="button"
+                onClick={() => void sendDebugRecording()}
+                className="ui-btn-secondary min-h-10 px-4 rounded-full text-xs font-bold"
+              >
+                Send anyway
+              </button>
+            )}
+
+            {(status === 'incorrect' || status === 'no_match') && (
+              <button
+                type="button"
+                onClick={resetAttempt}
+                className="ui-btn-secondary min-h-10 px-4 rounded-full text-xs font-bold"
+              >
+                Try again
+              </button>
+            )}
+          </div>
+
+          {debugInfo.recognition && (
+            <details className="text-xs">
+              <summary className="cursor-pointer font-bold">Raw AI response</summary>
+              <pre className="mt-2 overflow-auto whitespace-pre-wrap break-words ui-muted">
+                {JSON.stringify(debugInfo.recognition, null, 2)}
+              </pre>
+            </details>
+          )}
+        </div>
+      )}
     </div>
   );
 }

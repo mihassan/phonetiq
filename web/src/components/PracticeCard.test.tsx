@@ -17,11 +17,31 @@ vi.mock('../lib/api', () => ({
   audioUrl: (word: string) => `/api/audio/${word}`,
 }));
 
+function createRecordingResult(overrides?: Record<string, unknown>) {
+  return {
+    blob: new Blob(['audio'], { type: 'audio/webm' }),
+    objectUrl: 'blob:debug-recording',
+    mimeType: 'audio/webm',
+    metrics: {
+      durationMs: 3000,
+      averageLevel: 0.12,
+      peakLevel: 0.42,
+      activityRatio: 0.58,
+      speechStartMs: 220,
+      speechEndMs: 2140,
+      leadingSilenceMs: 220,
+      trailingSilenceMs: 860,
+      likelyIssue: null,
+    },
+    ...overrides,
+  };
+}
+
 describe('PracticeCard', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     startRecordingMock.mockResolvedValue(undefined);
-    stopRecordingMock.mockResolvedValue(new Blob(['audio'], { type: 'audio/webm' }));
+    stopRecordingMock.mockResolvedValue(createRecordingResult());
   });
 
   afterEach(() => {
@@ -94,7 +114,7 @@ describe('PracticeCard', () => {
       await Promise.resolve();
     });
 
-    expect(screen.getByText(/try again/i)).toBeInTheDocument();
+    expect(screen.getByTestId('practice-status-label')).toHaveTextContent(/try again/i);
     const heardLabel = screen.getByText(/heard:/i);
     const transcriptPill = heardLabel.closest('div');
     expect(transcriptPill?.className).toContain('ui-practice-state-incorrect');
@@ -348,5 +368,88 @@ describe('PracticeCard', () => {
 
     expect(screen.getByText(/didn't catch that/i)).toBeInTheDocument();
     expect(screen.getByText(/bonjour/i)).toBeInTheDocument();
+  });
+
+  it('shows a development debug panel with recorded audio and raw ai details', async () => {
+    recognizeSpeechMock.mockResolvedValue({
+      transcript: 'ship',
+      matchType: 'exact',
+      matchedWord: 'ship',
+      debug: {
+        rawTranscript: 'Ship',
+        normalizedTranscript: 'ship',
+      },
+    });
+
+    render(
+      <PracticeCard
+        word="ship"
+        isActive={true}
+        onSuccess={vi.fn()}
+        isFirstWord={true}
+        partnerWord="sheep"
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /record pronunciation/i }));
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(screen.getByTestId('practice-debug-panel')).toBeInTheDocument();
+    expect(screen.getByText(/raw ai transcript/i)).toBeInTheDocument();
+    expect(screen.getByTestId('practice-debug-raw-transcript')).toHaveTextContent('Ship');
+    expect(screen.getByTestId('practice-debug-audio')).toHaveAttribute('src', 'blob:debug-recording');
+    expect(screen.getByText(/normalized transcript/i)).toBeInTheDocument();
+    expect(screen.getByText(/prompt used/i)).toBeInTheDocument();
+    expect(screen.getByText(/raw ai response/i)).toBeInTheDocument();
+  });
+
+  it('offers send-anyway and retry controls for low-signal debug sessions', async () => {
+    stopRecordingMock.mockResolvedValue(
+      createRecordingResult({
+        metrics: {
+          durationMs: 3000,
+          averageLevel: 0.002,
+          peakLevel: 0.006,
+          activityRatio: 0.01,
+          speechStartMs: null,
+          speechEndMs: null,
+          leadingSilenceMs: 3000,
+          trailingSilenceMs: 3000,
+          likelyIssue: 'low_signal',
+        },
+      }),
+    );
+
+    render(
+      <PracticeCard
+        word="ship"
+        isActive={true}
+        onSuccess={vi.fn()}
+        isFirstWord={true}
+        partnerWord="sheep"
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /record pronunciation/i }));
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(screen.getByRole('button', { name: /send anyway/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
   });
 });
