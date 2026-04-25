@@ -16,11 +16,31 @@ vi.mock('../lib/api', () => ({
   recognizeSpeech: (...args: unknown[]) => recognizeSpeechMock(...args),
 }));
 
+function createRecordingResult(overrides?: Record<string, unknown>) {
+  return {
+    blob: new Blob(['audio'], { type: 'audio/webm' }),
+    objectUrl: 'blob:debug-recording',
+    mimeType: 'audio/webm',
+    metrics: {
+      durationMs: 3000,
+      averageLevel: 0.12,
+      peakLevel: 0.42,
+      activityRatio: 0.58,
+      speechStartMs: 220,
+      speechEndMs: 2140,
+      leadingSilenceMs: 220,
+      trailingSilenceMs: 860,
+      likelyIssue: null,
+    },
+    ...overrides,
+  };
+}
+
 describe('usePracticeAttempt', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     startRecordingMock.mockResolvedValue(undefined);
-    stopRecordingMock.mockResolvedValue(new Blob(['audio'], { type: 'audio/webm' }));
+    stopRecordingMock.mockResolvedValue(createRecordingResult());
   });
 
   afterEach(() => {
@@ -223,10 +243,11 @@ describe('usePracticeAttempt', () => {
       await Promise.resolve();
     });
 
-    expect(recognizeSpeechMock).toHaveBeenCalledWith(expect.any(Blob), {
+    expect(recognizeSpeechMock).toHaveBeenCalledWith(expect.anything(), {
       candidate1: 'ship',
       candidate2: 'sheep',
       dialect: 'uk_only',
+      debug: true,
     });
   });
 
@@ -255,6 +276,131 @@ describe('usePracticeAttempt', () => {
     });
 
     expect(result.current.status).toBe('idle');
+  });
+
+  it('skips recognition for low-signal recordings and exposes the debug reason', async () => {
+    stopRecordingMock.mockResolvedValue(
+      createRecordingResult({
+        metrics: {
+          durationMs: 3000,
+          averageLevel: 0.002,
+          peakLevel: 0.006,
+          activityRatio: 0.01,
+          speechStartMs: null,
+          speechEndMs: null,
+          leadingSilenceMs: 3000,
+          trailingSilenceMs: 3000,
+          likelyIssue: 'low_signal',
+        },
+      }),
+    );
+
+    const { result } = renderHook(() =>
+      usePracticeAttempt({ word: 'ship', partnerWord: 'sheep', onSuccess: vi.fn() }),
+    );
+
+    await act(async () => {
+      await result.current.handleRecord();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(recognizeSpeechMock).not.toHaveBeenCalled();
+    expect(result.current.status).toBe('no_match');
+    expect(result.current.debugInfo?.skipReason).toBe('low_signal');
+    expect(result.current.debugInfo?.recording.metrics?.likelyIssue).toBe('low_signal');
+  });
+
+  it('passes debug mode to recognition and stores the raw recognition details', async () => {
+    recognizeSpeechMock.mockResolvedValue({
+      transcript: 'ship',
+      matchType: 'exact',
+      matchedWord: 'ship',
+      debug: {
+        rawTranscript: 'Ship',
+        normalizedTranscript: 'ship',
+      },
+    });
+
+    const { result } = renderHook(() =>
+      usePracticeAttempt({ word: 'ship', partnerWord: 'sheep', onSuccess: vi.fn() }),
+    );
+
+    await act(async () => {
+      await result.current.handleRecord();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(recognizeSpeechMock).toHaveBeenCalledWith(expect.anything(), {
+      candidate1: 'ship',
+      candidate2: 'sheep',
+      dialect: undefined,
+      debug: true,
+    });
+    expect(result.current.debugInfo?.recognition?.rawTranscript).toBe('Ship');
+    expect(result.current.debugInfo?.recording.objectUrl).toBe('blob:debug-recording');
+  });
+
+  it('allows a low-signal recording to be force-sent in development debug flow', async () => {
+    stopRecordingMock.mockResolvedValue(
+      createRecordingResult({
+        metrics: {
+          durationMs: 3000,
+          averageLevel: 0.002,
+          peakLevel: 0.006,
+          activityRatio: 0.01,
+          speechStartMs: null,
+          speechEndMs: null,
+          leadingSilenceMs: 3000,
+          trailingSilenceMs: 3000,
+          likelyIssue: 'low_signal',
+        },
+      }),
+    );
+    recognizeSpeechMock.mockResolvedValue({
+      transcript: 'ship',
+      matchType: 'exact',
+      matchedWord: 'ship',
+      debug: {
+        rawTranscript: 'Ship',
+        normalizedTranscript: 'ship',
+      },
+    });
+
+    const { result } = renderHook(() =>
+      usePracticeAttempt({ word: 'ship', partnerWord: 'sheep', onSuccess: vi.fn() }),
+    );
+
+    await act(async () => {
+      await result.current.handleRecord();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(result.current.debugInfo?.skipReason).toBe('low_signal');
+
+    await act(async () => {
+      await result.current.sendDebugRecording();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(recognizeSpeechMock).toHaveBeenCalledTimes(1);
+    expect(result.current.debugInfo?.recognition?.rawTranscript).toBe('Ship');
+    expect(result.current.debugInfo?.skipReason).toBeUndefined();
   });
 
   it('resets completion state when the target word changes', async () => {

@@ -37,17 +37,26 @@ export interface RecognizeSpeechResult {
   transcript: string;
   matchedWord: string | null;
   matchType: 'exact' | 'token' | 'fuzzy' | 'no_match' | 'freeform';
+  debug?: {
+    rawTranscript: string;
+    normalizedTranscript: string;
+    audioBytes?: number;
+    prompt?: string;
+    rawResult?: Record<string, unknown>;
+    matching?: Record<string, unknown>;
+  } | null;
 }
 
 export async function recognizeSpeech(
   audioBlob: Blob,
-  options?: { candidate1?: string; candidate2?: string; dialect?: string },
+  options?: { candidate1?: string; candidate2?: string; dialect?: string; debug?: boolean },
 ): Promise<RecognizeSpeechResult> {
   const formData = new FormData();
   formData.append('audio', audioBlob, 'recording.webm');
   if (options?.candidate1) formData.append('candidate1', options.candidate1);
   if (options?.candidate2) formData.append('candidate2', options.candidate2);
   if (options?.dialect) formData.append('dialect', options.dialect);
+  if (options?.debug) formData.append('debug', '1');
 
   const res = await fetch(`${API_BASE}/recognize`, {
     method: 'POST',
@@ -61,5 +70,6 @@ export async function recognizeSpeech(
     transcript: data.transcript || '',
     matchedWord: data.matchedWord ?? null,
     matchType: data.matchType ?? 'freeform',
+    debug: data.debug ?? null,
   };
 }
