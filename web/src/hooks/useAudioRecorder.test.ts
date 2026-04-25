@@ -64,12 +64,12 @@ describe('useAudioRecorder', () => {
 
     expect(result.current.isRecording).toBe(true);
 
-    let blob: Blob = new Blob();
+    let recording = { blob: new Blob() } as Awaited<ReturnType<typeof result.current.stopRecording>>;
     await act(async () => {
-      blob = await result.current.stopRecording();
+      recording = await result.current.stopRecording();
     });
 
-    expect(blob.size).toBeGreaterThan(0);
+    expect(recording.blob.size).toBeGreaterThan(0);
   });
 
   it('should NOT have an internal auto-stop timer (hook should be dumb)', () => {
