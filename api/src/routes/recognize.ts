@@ -49,49 +49,74 @@ function matchTranscriptToCandidates(
   transcript: string,
   candidate1?: string,
   candidate2?: string,
-): { matchedWord: string | null; matchType: MatchType } {
+): {
+  matchedWord: string | null;
+  matchType: MatchType;
+  debug: Record<string, unknown>;
+} {
   if (!candidate1 || !candidate2) {
-    return { matchedWord: null, matchType: 'freeform' };
+    return {
+      matchedWord: null,
+      matchType: 'freeform',
+      debug: {
+        normalizedTranscript: normalizeText(transcript),
+        candidate1: candidate1 ?? null,
+        candidate2: candidate2 ?? null,
+      },
+    };
   }
 
   const c1 = normalizeText(candidate1);
   const c2 = normalizeText(candidate2);
   const normalized = normalizeText(transcript);
   const tokens = normalized.split(' ').filter(Boolean);
-
-  if (!normalized) {
-    return { matchedWord: null, matchType: 'no_match' };
-  }
-
-  if (normalized === c1) return { matchedWord: candidate1, matchType: 'exact' };
-  if (normalized === c2) return { matchedWord: candidate2, matchType: 'exact' };
-
   const hasC1Token = tokens.includes(c1);
   const hasC2Token = tokens.includes(c2);
-
-  if (hasC1Token && !hasC2Token) return { matchedWord: candidate1, matchType: 'token' };
-  if (hasC2Token && !hasC1Token) return { matchedWord: candidate2, matchType: 'token' };
-
   const distance1 = levenshtein(normalized, c1);
   const distance2 = levenshtein(normalized, c2);
   const bestDistance = Math.min(distance1, distance2);
   const distanceGap = Math.abs(distance1 - distance2);
 
-  if (bestDistance <= 1 && distanceGap >= 1) {
-    return distance1 < distance2
-      ? { matchedWord: candidate1, matchType: 'fuzzy' }
-      : { matchedWord: candidate2, matchType: 'fuzzy' };
+  const debug = {
+    normalizedTranscript: normalized,
+    tokens,
+    candidate1: c1,
+    candidate2: c2,
+    hasCandidate1Token: hasC1Token,
+    hasCandidate2Token: hasC2Token,
+    distance1,
+    distance2,
+    bestDistance,
+    distanceGap,
+  };
+
+  if (!normalized) {
+    return { matchedWord: null, matchType: 'no_match', debug };
   }
 
-  return { matchedWord: null, matchType: 'no_match' };
+  if (normalized === c1) return { matchedWord: candidate1, matchType: 'exact', debug };
+  if (normalized === c2) return { matchedWord: candidate2, matchType: 'exact', debug };
+
+  if (hasC1Token && !hasC2Token) return { matchedWord: candidate1, matchType: 'token', debug };
+  if (hasC2Token && !hasC1Token) return { matchedWord: candidate2, matchType: 'token', debug };
+
+  if (bestDistance <= 1 && distanceGap >= 1) {
+    return distance1 < distance2
+      ? { matchedWord: candidate1, matchType: 'fuzzy', debug }
+      : { matchedWord: candidate2, matchType: 'fuzzy', debug };
+  }
+
+  return { matchedWord: null, matchType: 'no_match', debug };
 }
 
 // POST /api/recognize - Transcribe audio blob using Workers AI (Whisper)
 recognizeRoutes.post('/', async (c) => {
   const contentType = c.req.header('content-type') || '';
+  const origin = c.req.header('origin') || '';
   let candidate1: string | undefined;
   let candidate2: string | undefined;
   let dialect: string | undefined;
+  let shouldDebug = false;
 
   let audioBytes: ArrayBuffer;
 
@@ -101,6 +126,7 @@ recognizeRoutes.post('/', async (c) => {
     candidate1 = String(formData.get('candidate1') || '').trim() || undefined;
     candidate2 = String(formData.get('candidate2') || '').trim() || undefined;
     dialect = String(formData.get('dialect') || '').trim() || undefined;
+    shouldDebug = String(formData.get('debug') || '').trim() === '1';
 
     if (!file || !(file instanceof File)) {
       return c.json({ error: 'Missing "audio" file in form data' }, 400);
@@ -114,7 +140,6 @@ recognizeRoutes.post('/', async (c) => {
     return c.json({ error: 'Empty audio payload' }, 400);
   }
 
-  // Max 1MB audio
   if (audioBytes.byteLength > 1_048_576) {
     return c.json({ error: 'Audio too large (max 1MB)' }, 413);
   }
@@ -131,25 +156,43 @@ recognizeRoutes.post('/', async (c) => {
             ? 'The speaker will say one short English word in Australian English.'
             : 'The speaker will say one short English word in common international English.';
 
+    const prompt =
+      candidate1 && candidate2
+        ? `${dialectPrompt} The expected options are: ${candidate1} or ${candidate2}.`
+        : dialectPrompt;
+
     const result = await c.env.AI.run('@cf/openai/whisper-large-v3-turbo', {
       audio: base64Audio,
       task: 'transcribe',
       language: 'en',
       vad_filter: true,
-      initial_prompt:
-        candidate1 && candidate2
-          ? `${dialectPrompt} The expected options are: ${candidate1} or ${candidate2}.`
-          : dialectPrompt,
+      initial_prompt: prompt,
     } as Record<string, unknown>);
 
-    const transcript = ((result as Record<string, unknown>).text as string || '').toLowerCase().trim();
-    const { matchedWord, matchType } = matchTranscriptToCandidates(
-      transcript,
+    const rawResult = result as Record<string, unknown>;
+    const rawTranscript = (rawResult.text as string || '').trim();
+    const transcript = rawTranscript.toLowerCase().trim();
+    const { matchedWord, matchType, debug } = matchTranscriptToCandidates(
+      rawTranscript,
       candidate1,
       candidate2,
     );
 
-    return c.json({ transcript, matchedWord, matchType });
+    return c.json({
+      transcript,
+      matchedWord,
+      matchType,
+      debug: shouldDebug && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)
+        ? {
+            rawTranscript,
+            normalizedTranscript: normalizeText(rawTranscript),
+            audioBytes: audioBytes.byteLength,
+            prompt,
+            matching: debug,
+            rawResult,
+          }
+        : null,
+    });
   } catch (err) {
     console.error('Whisper AI error:', err);
     return c.json({ error: 'Speech recognition failed' }, 500);
