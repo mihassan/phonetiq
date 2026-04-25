@@ -2,6 +2,9 @@ node_modules/
 dist/
 .wrangler/
 .audio-cache/
+.env
+.env.*
+!.env.example
 .dev.vars
 *.local
 .DS_Store

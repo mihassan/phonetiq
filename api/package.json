@@ -4,14 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "wrangler": "node ./scripts/wrangler-with-env.mjs",
+    "dev": "npm run wrangler -- dev",
+    "deploy": "npm run wrangler -- deploy",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
-    "db:migrate:local": "wrangler d1 migrations apply phonetiq-db --local",
-    "db:migrate:remote": "wrangler d1 migrations apply phonetiq-db --remote",
-    "db:seed:local": "wrangler d1 execute phonetiq-db --local --file=./src/db/seed.sql",
-    "db:seed:remote": "wrangler d1 execute phonetiq-db --local --file=./src/db/seed.sql"
+    "db:migrate:local": "npm run wrangler -- d1 migrations apply phonetiq-db --local",
+    "db:migrate:remote": "npm run wrangler -- d1 migrations apply phonetiq-db --remote",
+    "db:seed:local": "npm run wrangler -- d1 execute phonetiq-db --local --file=./src/db/seed.sql",
+    "db:seed:remote": "npm run wrangler -- d1 execute phonetiq-db --local --file=./src/db/seed.sql"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",
