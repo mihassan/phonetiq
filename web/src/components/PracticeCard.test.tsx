@@ -90,6 +90,39 @@ describe('PracticeCard', () => {
     expect(onSuccess).toHaveBeenCalledTimes(1);
   });
 
+  it('shows a starting-mic state until the recorder is actually ready', async () => {
+    let resolveStart!: () => void;
+    startRecordingMock.mockReturnValue(
+      new Promise<void>((resolve) => {
+        resolveStart = resolve;
+      }),
+    );
+
+    render(
+      <PracticeCard
+        word="ship"
+        isActive={true}
+        onSuccess={vi.fn()}
+        isFirstWord={true}
+        partnerWord="sheep"
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /record pronunciation/i }));
+      await Promise.resolve();
+    });
+
+    expect(screen.getByTestId('practice-status-label')).toHaveTextContent(/starting mic/i);
+
+    await act(async () => {
+      resolveStart();
+      await Promise.resolve();
+    });
+
+    expect(screen.getByTestId('practice-status-label')).toHaveTextContent(/listening/i);
+  });
+
   it('shows try again for incorrect transcript and returns to idle state', async () => {
     recognizeSpeechMock.mockResolvedValue('shape');
 
@@ -451,5 +484,46 @@ describe('PracticeCard', () => {
 
     expect(screen.getByRole('button', { name: /send anyway/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
+  });
+
+  it('labels noise-skipped debug captures accurately', async () => {
+    stopRecordingMock.mockResolvedValue(
+      createRecordingResult({
+        metrics: {
+          durationMs: 3000,
+          averageLevel: 0.08,
+          peakLevel: 0.1,
+          activityRatio: 0.98,
+          speechStartMs: 0,
+          speechEndMs: 3000,
+          leadingSilenceMs: 0,
+          trailingSilenceMs: 0,
+          likelyIssue: 'possible_noise',
+        },
+      }),
+    );
+
+    render(
+      <PracticeCard
+        word="ship"
+        isActive={true}
+        onSuccess={vi.fn()}
+        isFirstWord={true}
+        partnerWord="sheep"
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /record pronunciation/i }));
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(screen.getByText(/noise skipped/i)).toBeInTheDocument();
   });
 });

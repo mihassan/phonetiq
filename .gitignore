@@ -9,4 +9,5 @@ dist/
 *.local
 .DS_Store
 .playwright-mcp/
+graphify-out/
 *.log

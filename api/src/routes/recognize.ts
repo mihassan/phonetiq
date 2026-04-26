@@ -5,6 +5,50 @@ export const recognizeRoutes = new Hono<{ Bindings: Env }>();
 
 type MatchType = 'exact' | 'token' | 'fuzzy' | 'no_match' | 'freeform';
 
+function isLocalDebugRequest(origin: string, shouldDebug: boolean) {
+  return shouldDebug && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
+}
+
+function serializeAiError(err: unknown) {
+  const debug: Record<string, unknown> = {};
+
+  if (err instanceof Error) {
+    debug.name = err.name;
+    debug.message = err.message;
+  }
+
+  if (err && typeof err === 'object') {
+    const errorLike = err as Record<string, unknown>;
+
+    for (const key of ['status', 'code', 'type']) {
+      const value = errorLike[key];
+      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        debug[key] = value;
+      }
+    }
+
+    const cause = errorLike.cause;
+    if (cause instanceof Error) {
+      debug.cause = {
+        name: cause.name,
+        message: cause.message,
+      };
+    } else if (
+      typeof cause === 'string' ||
+      typeof cause === 'number' ||
+      typeof cause === 'boolean'
+    ) {
+      debug.cause = cause;
+    }
+  }
+
+  if (Object.keys(debug).length === 0) {
+    debug.message = 'Unknown speech recognition failure';
+  }
+
+  return debug;
+}
+
 function arrayBufferToBase64(buffer: ArrayBuffer) {
   const bytes = new Uint8Array(buffer);
   const chunkSize = 0x8000;
@@ -117,6 +161,7 @@ recognizeRoutes.post('/', async (c) => {
   let candidate2: string | undefined;
   let dialect: string | undefined;
   let shouldDebug = false;
+  let prompt = '';
 
   let audioBytes: ArrayBuffer;
 
@@ -156,7 +201,7 @@ recognizeRoutes.post('/', async (c) => {
             ? 'The speaker will say one short English word in Australian English.'
             : 'The speaker will say one short English word in common international English.';
 
-    const prompt =
+    prompt =
       candidate1 && candidate2
         ? `${dialectPrompt} The expected options are: ${candidate1} or ${candidate2}.`
         : dialectPrompt;
@@ -182,7 +227,7 @@ recognizeRoutes.post('/', async (c) => {
       transcript,
       matchedWord,
       matchType,
-      debug: shouldDebug && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)
+      debug: isLocalDebugRequest(origin, shouldDebug)
         ? {
             rawTranscript,
             normalizedTranscript: normalizeText(rawTranscript),
@@ -195,6 +240,20 @@ recognizeRoutes.post('/', async (c) => {
     });
   } catch (err) {
     console.error('Whisper AI error:', err);
-    return c.json({ error: 'Speech recognition failed' }, 500);
+
+    return c.json({
+      error: 'Speech recognition failed',
+      debug: isLocalDebugRequest(origin, shouldDebug)
+        ? {
+            rawTranscript: '',
+            normalizedTranscript: '',
+            audioBytes: audioBytes.byteLength,
+            prompt,
+            rawResult: {
+              error: serializeAiError(err),
+            },
+          }
+        : null,
+    }, 500);
   }
 });

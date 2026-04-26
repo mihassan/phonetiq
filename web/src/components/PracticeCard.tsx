@@ -111,6 +111,12 @@ export function PracticeCard({
       icon: <Mic size={24} className="text-white" />,
       label: 'Tap to speak',
     },
+    arming: {
+      btnBg: 'ui-practice-state-processing',
+      textCol: 'text-[color:var(--color-primary)]',
+      icon: <Loader2 size={24} className="text-[color:var(--color-primary)] animate-spin" />,
+      label: 'Starting mic...',
+    },
     recording: {
       btnBg: 'ui-practice-state-recording',
       textCol: 'text-[color:var(--color-state-recording)]',
@@ -244,7 +250,11 @@ export function PracticeCard({
           <div className="flex items-center justify-between gap-3 mb-3">
             <p className="ui-eyebrow text-[color:var(--color-primary)]">Speech debug</p>
             <span className="ui-muted text-[10px] font-bold uppercase tracking-widest">
-              {debugInfo.skipReason === 'low_signal' ? 'Low signal skipped' : 'Recognition captured'}
+              {debugInfo.skipReason === 'low_signal'
+                ? 'Low signal skipped'
+                : debugInfo.skipReason === 'possible_noise'
+                  ? 'Noise skipped'
+                  : 'Recognition captured'}
             </span>
           </div>
 

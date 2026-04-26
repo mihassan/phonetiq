@@ -1,5 +1,10 @@
-import { renderHook, act } from '@testing-library/react';
-import { useAudioRecorder } from './useAudioRecorder';
+import {
+  buildRecordingMetrics,
+  getSpeechWindow,
+  trimBlobToSpeechWindow,
+  trimChunksToWindow,
+  waitForRecorderReadiness,
+} from './useAudioRecorder';
 
 // Mock MediaRecorder
 let instances: MockMediaRecorder[] = [];
@@ -33,8 +38,52 @@ class MockMediaRecorder {
   }
 }
 
+class MockAnalyserNode {
+  fftSize = 2048;
+  smoothingTimeConstant = 0.2;
+
+  connect() {}
+  disconnect() {}
+  getByteTimeDomainData(buffer: Uint8Array) {
+    buffer.fill(128);
+  }
+}
+
+class MockAudioContext {
+  sampleRate = 16000;
+
+  createAnalyser() {
+    return new MockAnalyserNode();
+  }
+
+  createMediaStreamSource() {
+    return { connect() {} };
+  }
+
+  resume() {
+    return Promise.resolve();
+  }
+
+  close() {
+    return Promise.resolve();
+  }
+
+  decodeAudioData() {
+    const channel = new Float32Array(16000);
+    channel.fill(0.5, 3200, 11200);
+    return Promise.resolve({
+      sampleRate: 16000,
+      numberOfChannels: 1,
+      length: 16000,
+      getChannelData: () => channel,
+    } as unknown as AudioBuffer);
+  }
+}
+
 // @ts-expect-error mock
 globalThis.MediaRecorder = MockMediaRecorder;
+// @ts-expect-error mock
+globalThis.AudioContext = MockAudioContext;
 
 const mockGetUserMedia = vi.fn().mockResolvedValue({
   getTracks: () => [{ stop: vi.fn() }],
@@ -55,51 +104,115 @@ describe('useAudioRecorder', () => {
     vi.useRealTimers();
   });
 
-  it('returns a non-empty blob when stopRecording is called while still recording', async () => {
-    const { result } = renderHook(() => useAudioRecorder());
+  it('detects speech against a noisy baseline instead of treating the whole clip as active', () => {
+    const samples = [
+      ...Array.from({ length: 8 }, (_, index) => ({ elapsedMs: index * 100, level: 0.042 })),
+      ...Array.from({ length: 6 }, (_, index) => ({ elapsedMs: 800 + index * 100, level: 0.12 })),
+      ...Array.from({ length: 6 }, (_, index) => ({ elapsedMs: 1400 + index * 100, level: 0.042 })),
+    ];
 
-    await act(async () => {
-      await result.current.startRecording();
-    });
+    const metrics = buildRecordingMetrics(samples, 2000);
 
-    expect(result.current.isRecording).toBe(true);
-
-    let recording = { blob: new Blob() } as Awaited<ReturnType<typeof result.current.stopRecording>>;
-    await act(async () => {
-      recording = await result.current.stopRecording();
-    });
-
-    expect(recording.blob.size).toBeGreaterThan(0);
+    expect(metrics.speechStartMs).toBe(800);
+    expect(metrics.speechEndMs).toBe(1300);
+    expect(metrics.leadingSilenceMs).toBe(800);
+    expect(metrics.trailingSilenceMs).toBe(700);
   });
 
-  it('should NOT have an internal auto-stop timer (hook should be dumb)', () => {
-    // The hook currently has a setTimeout(3000) that auto-stops.
-    // This is the root cause of the race condition.
-    // After fix: no internal timer, caller controls timing.
+  it('classifies flat high-activity captures as possible noise', () => {
+    const samples = [
+      ...Array.from({ length: 4 }, (_, index) => ({ elapsedMs: index * 100, level: 0.02 })),
+      ...Array.from({ length: 16 }, (_, index) => ({
+        elapsedMs: 400 + index * 100,
+        level: 0.08 + (index % 2) * 0.005,
+      })),
+    ];
 
-    // We can verify by checking the source: start recording, advance 3100ms,
-    // and the recorder should still be in 'recording' state.
-    // But since we can't easily test source, we test behavior:
+    const metrics = buildRecordingMetrics(samples, 2000);
 
-    const { result } = renderHook(() => useAudioRecorder());
+    expect(metrics.likelyIssue).toBe('possible_noise');
+  });
 
-    let startPromise: Promise<void>;
-    act(() => {
-      startPromise = result.current.startRecording();
+  it('returns a padded speech window that trims long leading and trailing silence', () => {
+    const window = getSpeechWindow({
+      durationMs: 3000,
+      averageLevel: 0.08,
+      peakLevel: 0.18,
+      activityRatio: 0.22,
+      speechStartMs: 900,
+      speechEndMs: 1600,
+      leadingSilenceMs: 900,
+      trailingSilenceMs: 1400,
+      likelyIssue: 'long_trailing_silence',
     });
 
-    return startPromise!.then(() => {
-      const recorder = instances[0];
-      expect(recorder.state).toBe('recording');
-
-      // Advance past the buggy 3000ms auto-stop
-      act(() => {
-        vi.advanceTimersByTime(3100);
-      });
-
-      // After fix, recorder should STILL be recording (caller hasn't stopped it)
-      // BUG: the internal setTimeout stops it
-      expect(recorder.state).toBe('recording');
+    expect(window).toEqual({
+      startMs: 700,
+      endMs: 1900,
     });
   });
+
+  it('keeps only the chunk range around the detected speech window', () => {
+    const trimmed = trimChunksToWindow(
+      Array.from({ length: 10 }, (_, index) => new Blob([`chunk-${index}`], { type: 'audio/webm' })),
+      { startMs: 700, endMs: 1900 },
+      3000,
+    );
+
+    expect(trimmed).toHaveLength(5);
+  });
+
+  it('trims decoded audio down to the detected speech window', async () => {
+    const trimmed = await trimBlobToSpeechWindow(
+      new Blob(['audio-data'], { type: 'audio/webm' }),
+      { startMs: 200, endMs: 700 },
+    );
+
+    expect(trimmed?.type).toBe('audio/wav');
+    expect(trimmed?.size).toBeGreaterThan(44);
+  });
+
+  it('waits for warm-up and recorder readiness before resolving', async () => {
+    let resolveReady!: () => void;
+    const readyPromise = new Promise<void>((resolve) => {
+      resolveReady = resolve;
+    });
+    let resolved = false;
+
+    const pending = waitForRecorderReadiness(readyPromise, {
+      warmupMs: 500,
+      readyTimeoutMs: 1500,
+    }).then(() => {
+      resolved = true;
+    });
+
+    await vi.advanceTimersByTimeAsync(499);
+    expect(resolved).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(resolved).toBe(false);
+
+    resolveReady();
+    await pending;
+    expect(resolved).toBe(true);
+  });
+
+  it('falls back after the recorder readiness timeout', async () => {
+    let resolved = false;
+
+    const pending = waitForRecorderReadiness(new Promise<void>(() => {}), {
+      warmupMs: 500,
+      readyTimeoutMs: 1500,
+    }).then(() => {
+      resolved = true;
+    });
+
+    await vi.advanceTimersByTimeAsync(1999);
+    expect(resolved).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(1);
+    await pending;
+    expect(resolved).toBe(true);
+  });
+
 });

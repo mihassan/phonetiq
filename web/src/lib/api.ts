@@ -47,6 +47,26 @@ export interface RecognizeSpeechResult {
   } | null;
 }
 
+type SpeechRecognitionFailure = Error & {
+  status?: number;
+  debug?: RecognizeSpeechResult['debug'];
+  body?: unknown;
+};
+
+async function readErrorBody(res: Response) {
+  const text = await res.text();
+
+  if (!text) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    return text;
+  }
+}
+
 export async function recognizeSpeech(
   audioBlob: Blob,
   options?: { candidate1?: string; candidate2?: string; dialect?: string; debug?: boolean },
@@ -63,7 +83,21 @@ export async function recognizeSpeech(
     body: formData,
   });
 
-  if (!res.ok) throw new Error('Speech recognition failed');
+  if (!res.ok) {
+    const body = await readErrorBody(res);
+    const errorMessage =
+      body && typeof body === 'object' && typeof body.error === 'string'
+        ? body.error
+        : 'Speech recognition failed';
+    const error = new Error(errorMessage) as SpeechRecognitionFailure;
+    error.status = res.status;
+    error.body = body;
+    if (body && typeof body === 'object' && 'debug' in body) {
+      error.debug = (body.debug as RecognizeSpeechResult['debug']) ?? null;
+    }
+    throw error;
+  }
+
   const data = await res.json();
 
   return {

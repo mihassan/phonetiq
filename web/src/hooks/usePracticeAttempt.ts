@@ -8,6 +8,7 @@ import { recognizeSpeech, type RecognizeSpeechResult } from '../lib/api';
 
 export type PracticeStatus =
   | 'idle'
+  | 'arming'
   | 'recording'
   | 'processing'
   | 'correct'
@@ -15,7 +16,7 @@ export type PracticeStatus =
   | 'no_match';
 
 type MatchType = 'exact' | 'token' | 'fuzzy' | 'no_match' | 'freeform';
-type DebugSkipReason = 'low_signal';
+type DebugSkipReason = 'low_signal' | 'possible_noise';
 
 export interface PracticeAttemptDebugInfo {
   recording: {
@@ -43,6 +44,39 @@ interface UsePracticeAttemptOptions {
   incorrectDelayMs?: number;
 }
 
+function extractRecognitionDebug(error: unknown): RecognizeSpeechResult['debug'] {
+  if (error && typeof error === 'object') {
+    const errorLike = error as {
+      debug?: RecognizeSpeechResult['debug'];
+      status?: number;
+      body?: unknown;
+      message?: string;
+    };
+
+    if (errorLike.debug) {
+      return errorLike.debug;
+    }
+
+    return {
+      rawTranscript: '',
+      normalizedTranscript: '',
+      rawResult: {
+        error: errorLike.message || 'Speech recognition failed',
+        status: errorLike.status,
+        body: errorLike.body ?? null,
+      },
+    };
+  }
+
+  return {
+    rawTranscript: '',
+    normalizedTranscript: '',
+    rawResult: {
+      error: 'Speech recognition failed',
+    },
+  };
+}
+
 function revokeObjectUrl(url: string | null | undefined) {
   if (url && typeof URL.revokeObjectURL === 'function') {
     URL.revokeObjectURL(url);
@@ -50,11 +84,20 @@ function revokeObjectUrl(url: string | null | undefined) {
 }
 
 function shouldSkipRecognition(metrics: RecordingMetrics | null) {
+  if (!metrics) {
+    return false;
+  }
+
   return (
     metrics?.likelyIssue === 'low_signal' ||
+    metrics?.likelyIssue === 'possible_noise' ||
     ((metrics?.speechStartMs == null || (metrics?.activityRatio ?? 0) < 0.04) &&
       (metrics?.peakLevel ?? 0) < 0.02)
   );
+}
+
+function getSkipReason(metrics: RecordingMetrics | null): DebugSkipReason {
+  return metrics?.likelyIssue === 'possible_noise' ? 'possible_noise' : 'low_signal';
 }
 
 export function usePracticeAttempt({
@@ -170,13 +213,7 @@ export function usePracticeAttempt({
     } catch (error) {
       setDebugInfo({
         ...nextDebugInfo,
-        recognition: {
-          rawTranscript: '',
-          normalizedTranscript: '',
-          rawResult: {
-            error: error instanceof Error ? error.message : 'Speech recognition failed',
-          },
-        },
+        recognition: extractRecognitionDebug(error),
       });
       setStatus('no_match');
     }
@@ -216,9 +253,10 @@ export function usePracticeAttempt({
     clearTimeout(timerRef.current);
     clearTimeout(outcomeTimerRef.current);
 
-    setStatus('recording');
+    setStatus('arming');
     setTranscript('');
     await startRecording();
+    setStatus('recording');
 
     timerRef.current = setTimeout(async () => {
       const recording = await stopRecording();
@@ -250,7 +288,7 @@ export function usePracticeAttempt({
         setStatus('no_match');
         setDebugInfo({
           ...nextDebugInfo,
-          skipReason: 'low_signal',
+          skipReason: getSkipReason(recording.metrics),
         });
         if (!import.meta.env.DEV) {
           outcomeTimerRef.current = setTimeout(() => {

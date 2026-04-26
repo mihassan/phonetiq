@@ -251,6 +251,58 @@ describe('usePracticeAttempt', () => {
     });
   });
 
+  it('still runs recognition when recorder metrics are unavailable', async () => {
+    stopRecordingMock.mockResolvedValue(
+      createRecordingResult({
+        metrics: null,
+      }),
+    );
+    recognizeSpeechMock.mockResolvedValue({ transcript: 'ship', matchType: 'exact', matchedWord: 'ship' });
+
+    const { result } = renderHook(() =>
+      usePracticeAttempt({ word: 'ship', partnerWord: 'sheep', onSuccess: vi.fn() }),
+    );
+
+    await act(async () => {
+      await result.current.handleRecord();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(recognizeSpeechMock).toHaveBeenCalledTimes(1);
+    expect(result.current.status).toBe('correct');
+  });
+
+  it('stays in an arming state until the microphone is actually ready', async () => {
+    let resolveStart!: () => void;
+    startRecordingMock.mockReturnValue(
+      new Promise<void>((resolve) => {
+        resolveStart = resolve;
+      }),
+    );
+
+    const { result } = renderHook(() =>
+      usePracticeAttempt({ word: 'ship', partnerWord: 'sheep', onSuccess: vi.fn() }),
+    );
+
+    act(() => {
+      void result.current.handleRecord();
+    });
+
+    expect(result.current.status).toBe('arming');
+
+    await act(async () => {
+      resolveStart();
+      await Promise.resolve();
+    });
+
+    expect(result.current.status).toBe('recording');
+  });
+
   it('uses no-match state and returns to idle', async () => {
     recognizeSpeechMock.mockResolvedValue({ transcript: 'bonjour', matchType: 'no_match', matchedWord: null });
 
@@ -313,6 +365,42 @@ describe('usePracticeAttempt', () => {
     expect(result.current.status).toBe('no_match');
     expect(result.current.debugInfo?.skipReason).toBe('low_signal');
     expect(result.current.debugInfo?.recording.metrics?.likelyIssue).toBe('low_signal');
+  });
+
+  it('skips recognition when the capture looks dominated by environmental noise', async () => {
+    stopRecordingMock.mockResolvedValue(
+      createRecordingResult({
+        metrics: {
+          durationMs: 3000,
+          averageLevel: 0.08,
+          peakLevel: 0.1,
+          activityRatio: 0.98,
+          speechStartMs: 0,
+          speechEndMs: 3000,
+          leadingSilenceMs: 0,
+          trailingSilenceMs: 0,
+          likelyIssue: 'possible_noise',
+        },
+      }),
+    );
+
+    const { result } = renderHook(() =>
+      usePracticeAttempt({ word: 'ship', partnerWord: 'sheep', onSuccess: vi.fn() }),
+    );
+
+    await act(async () => {
+      await result.current.handleRecord();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(recognizeSpeechMock).not.toHaveBeenCalled();
+    expect(result.current.status).toBe('no_match');
+    expect(result.current.debugInfo?.skipReason).toBe('possible_noise');
   });
 
   it('passes debug mode to recognition and stores the raw recognition details', async () => {
@@ -401,6 +489,48 @@ describe('usePracticeAttempt', () => {
     expect(recognizeSpeechMock).toHaveBeenCalledTimes(1);
     expect(result.current.debugInfo?.recognition?.rawTranscript).toBe('Ship');
     expect(result.current.debugInfo?.skipReason).toBeUndefined();
+  });
+
+  it('preserves API debug details when recognition fails with a server error', async () => {
+    recognizeSpeechMock.mockRejectedValue(
+      Object.assign(new Error('Speech recognition failed'), {
+        status: 500,
+        debug: {
+          rawTranscript: '',
+          normalizedTranscript: '',
+          prompt: 'The speaker will say one short English word in British English.',
+          rawResult: {
+            error: {
+              name: 'InferenceUpstreamError',
+              message: 'error code: 1031',
+            },
+          },
+        },
+      }),
+    );
+
+    const { result } = renderHook(() =>
+      usePracticeAttempt({ word: 'ship', partnerWord: 'sheep', onSuccess: vi.fn() }),
+    );
+
+    await act(async () => {
+      await result.current.handleRecord();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(result.current.status).toBe('no_match');
+    expect(result.current.debugInfo?.recognition?.prompt).toContain('British English');
+    expect(result.current.debugInfo?.recognition?.rawResult).toEqual({
+      error: {
+        name: 'InferenceUpstreamError',
+        message: 'error code: 1031',
+      },
+    });
   });
 
   it('resets completion state when the target word changes', async () => {
