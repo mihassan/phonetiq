@@ -67,6 +67,17 @@ The `dialect_filter` column ensures the app only presents relevant pairs based o
 *   **Solution:** The universally supported HTML5 `MediaRecorder` API captures audio on the frontend.
 *   **Workflow:** User taps the mic button → 3-second recording with visual countdown (SVG progress ring) → audio blob sent to `POST /api/recognize` with the two candidate words and selected dialect → Worker sends base64 audio to **Cloudflare Workers AI (`@cf/openai/whisper-large-v3-turbo`)** with `language=en`, `vad_filter=true`, and dialect-aware prompt context → backend maps transcript to candidate 1 / candidate 2 / `no_match` → structured result returned to frontend.
 
+#### Robust Audio Processing (New)
+To handle real-world recording conditions, the frontend now includes:
+
+1.  **Arming State:** Shows "Starting mic..." while waiting for the microphone to warm up and capture the first audio chunk
+2.  **Wait for Recorder Readiness:** 500ms warm-up delay + waits for first non-empty data chunk before considering the recorder "ready" (with 1500ms timeout fallback)
+3.  **Noise Detection:** Analyzes recording metrics to detect flat, high-activity captures (likely environmental noise like fans/AC). Classifies as `possible_noise` when activity ratio > 0.75 with low peak-to-average ratio.
+4.  **Speech Window Trimming:** Uses audio level sampling to detect the actual speech region, then trims leading/trailing silence before sending to Whisper
+5.  **Analyser Fallback:** If Web Audio API analyser is unavailable, gracefully continues with reduced metrics
+
+This dramatically improves recognition reliability in non-ideal recording environments.
+
 ## Practice Session Personalization
 *   **Local Progress Store:** Practice outcomes are persisted in browser storage (attempts, correctness, completions, streaks, weak-pair signals, timestamps).
 *   **Adaptive Batch Sessions:** Practice mode runs refreshable batches instead of global index jumps. Default batch size is 15 with a fixed weak-pair quota of 5; remaining items are filled from unseen then medium-weak pairs.

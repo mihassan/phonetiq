@@ -4,14 +4,46 @@
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare)](https://workers.cloudflare.com/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)](https://www.typescriptlang.org/)
+[![Tests](https://img.shields.io/badge/Tests-109%20passing-42b883?logo=vitest)](https://vitest.dev/)
 
 **Live:** [phonetiq.mihassan.com](https://phonetiq.mihassan.com) | **API:** [api.phonetiq.mihassan.com](https://api.phonetiq.mihassan.com)
 
 A web app for practicing English **minimal pair pronunciation** — words that differ by only one sound, like *ship* vs *sheep*. Built entirely on the Cloudflare stack.
 
-**Learn Mode** — hear the correct pronunciation of each word via pre-generated TTS audio.
-**Practice Mode** — complete refreshable adaptive sessions (15 pairs) and get instant AI feedback from candidate-constrained speech recognition.
-**Profile Mode** — review key stats, weak pairs/categories, and launch weak-pair practice.
+## Why Phonetiq?
+
+Most pronunciation apps use browser-native speech recognition which is flaky across browsers (no Firefox support, buggy Safari). Phonetiq solves this with:
+
+- **Universal compatibility** — Uses HTML5 `MediaRecorder` + Cloudflare Workers AI (Whisper) instead of browser APIs
+- **Smart audio processing** — Handles mic startup delay, environmental noise, and trailing silence automatically
+- **Candidate-constrained recognition** — Whisper knows exactly which words to expect, dramatically improving accuracy
+
+**Learn Mode** — hear the correct pronunciation of each word via pre-generated TTS audio.  
+**Practice Mode** — get instant AI feedback with adaptive sessions that focus on your weak pairs.  
+**Profile Mode** — track your progress and target areas that need work.
+
+## Cool Features
+
+### 🎯 Intelligent Speech Recognition
+- **Arming state** — UI shows "Starting mic..." while waiting for microphone to warm up
+- **Noise detection** — Automatically skips recordings that sound like environmental noise (fan, AC, background chatter)
+- **Speech window trimming** — Strips leading/trailing silence to send only the actual speech to Whisper
+- **Robust mic handling** — Waits for first audio chunk before starting capture, with timeout fallback
+
+### 📊 Adaptive Learning
+- **Weak-pair prioritization** — Each session includes 5 pairs you're struggling with
+- **Smart batching** — 15-pair sessions with unseen and medium-weak pair fill
+- **Progress tracking** — Accuracy, streaks, completions, and weak-area analysis
+
+### 🌐 Dialect-Aware
+- Filter pairs by dialect (`Common`, `UK`, `US`)
+- Whisper receives dialect-specific prompts for better recognition
+- Currently: 170 "common" pairs + 16 UK-exclusive pairs
+
+### 🔒 Production-Ready
+- **Two-tier rate limiting** — 10 req/min for AI (protects costs), 100 req/min for general API
+- **Google OAuth** — Optional account sync for cross-device progress
+- **Dark "Glacier" theme** — Beautiful, accessible dark mode UI
 
 ## Screenshots
 
@@ -25,13 +57,15 @@ A web app for practicing English **minimal pair pronunciation** — words that d
 
 - 186 curated word pairs across 9 phoneme categories (vowels, consonants, fricatives, affricates, liquids, nasals, sibilants, approximants)
 - Dialect-aware pair filtering (`Common`=`all`, `UK`=`uk_only`, `US`=`us_only` support in schema)
+- **Smart speech recognition** with mic warm-up, noise detection, and silence trimming
 - Adaptive Practice sessions: 15-pair batches with 5 weak-pair quota + unseen/medium-weak filler
 - Local progress tracking (attempts, accuracy, completions, streaks, weak-pair signals)
 - Profile stage with key stats + weak-pair practice action
 - Cross-platform speech recognition using `MediaRecorder` + Workers AI (`@cf/openai/whisper-large-v3-turbo`)
 - Candidate-constrained recognition (2 target words) with explicit `no_match` fallback
-- Category filtering, progress ring countdown, and responsive mobile-friendly UI
+- Development debug panel showing recording metrics, audio levels, and AI responses
 - Two-tier rate limiting to protect the AI endpoint from abuse
+- Optional Google OAuth for cloud progress sync
 
 ## Tech Stack
 

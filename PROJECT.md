@@ -14,12 +14,13 @@
 - **GitHub:** https://github.com/mihassan/phonetiq
 
 ## Key Technical Decisions
-1. **API-Driven Data:** Word pairs are stored in D1, not hardcoded. The frontend fetches dynamically with optional category and dialect filters.
-2. **Audio Reliability (TTS):** Pre-generated `.m4a` audio files stored in R2. Generated locally using macOS `say` command via `scripts/generate-audio.sh`. Served by Worker via `GET /api/audio/:word`.
-3. **Speech Recognition (STT):** Frontend uses `MediaRecorder` API to capture audio blobs. Sent to `POST /api/recognize`, transcribed by `@cf/openai/whisper-large-v3-turbo` with English + VAD settings, candidate-word hints, and explicit `no_match` handling.
-4. **Dialect Awareness:** Word pairs use `dialect_filter` (`all`, `us_only`, `uk_only`). UI label `Common` maps to `all`. STT receives selected dialect and uses dialect-specific prompt context.
-5. **Progress & Personalization:** Local progress is persisted in browser storage. Practice uses refreshable 15-pair batches (5 weak-pair quota + unseen/medium-weak fill). Profile stage shows key stats and weak areas.
-6. **CI/CD:** GitHub Actions for both deployments (not Cloudflare Pages Git integration, which requires Direct Upload projects to be recreated). Single `CLOUDFLARE_API_TOKEN` secret shared by both workflows.
+1.  **API-Driven Data:** Word pairs are stored in D1, not hardcoded. The frontend fetches dynamically with optional category and dialect filters.
+2.  **Audio Reliability (TTS):** Pre-generated `.m4a` audio files stored in R2. Generated locally using macOS `say` command via `scripts/generate-audio.sh`. Served by Worker via `GET /api/audio/:word`.
+3.  **Speech Recognition (STT):** Frontend uses `MediaRecorder` API to capture audio blobs. Sent to `POST /api/recognize`, transcribed by `@cf/openai/whisper-large-v3-turbo` with English + VAD settings, candidate-word hints, and explicit `no_match` handling.
+4.  **Robust Audio Processing:** The frontend includes mic warm-up waiting, noise detection (classifies `possible_noise` at activity ratio > 0.75), and speech window trimming (removes leading/trailing silence) for reliable recognition in real-world conditions.
+5.  **Dialect Awareness:** Word pairs use `dialect_filter` (`all`, `us_only`, `uk_only`). UI label `Common` maps to `all`. STT receives selected dialect and uses dialect-specific prompt context.
+6.  **Progress & Personalization:** Local progress is persisted in browser storage. Practice uses refreshable 15-pair batches (5 weak-pair quota + unseen/medium-weak fill). Profile stage shows key stats and weak areas.
+7.  **CI/CD:** GitHub Actions for both deployments (not Cloudflare Pages Git integration, which requires Direct Upload projects to be recreated). Single `CLOUDFLARE_API_TOKEN` secret shared by both workflows.
 
 ## Commands Reference
 ### API (`api/`)
@@ -50,7 +51,7 @@
 - `GET /api/pairs?category=&dialect=&difficulty=&limit=&offset=` - List word pairs
 - `GET /api/pairs/categories` - List categories with counts
 - `GET /api/audio/:word` - Serve audio from R2
-- `POST /api/recognize` - Candidate-constrained speech recognition via Whisper AI (`large-v3-turbo`) with dialect-aware prompt context
+- `POST /api/recognize` - Candidate-constrained speech recognition via Whisper AI (`large-v3-turbo`) with dialect-aware prompt context. Returns detailed debug info in local dev mode including raw transcript, normalized transcript, matching details, and AI response. Automatically maps results to `exact` / `token` / `fuzzy` / `no_match` / `freeform` match types.
 
 ## Wrangler Bindings (api/wrangler.toml)
 - `DB` - D1 database `phonetiq-db`
