@@ -7,6 +7,7 @@ import type {
   WeakPairSummary,
   WordPair,
 } from './types';
+import { scorePairForPractice } from './pairSelection';
 
 function safePercent(correct: number, attempts: number) {
   if (attempts <= 0) return 0;
@@ -63,10 +64,8 @@ export function buildWeakPairs(
     .map((pair) => {
       const attempts = getPairAttempts(store, pair.id);
       const correct = getPairCorrect(store, pair.id);
-      const pairProgress = store.pairs[String(pair.id)];
       const accuracy = safePercent(correct, attempts);
-      const recentIncorrect = pairProgress?.recentIncorrectCount ?? 0;
-      const weaknessScore = recentIncorrect * 15 + (100 - accuracy) + Math.max(0, 6 - attempts) * 6;
+      const weaknessScore = scorePairForPractice(pair, store);
 
       return {
         pair,

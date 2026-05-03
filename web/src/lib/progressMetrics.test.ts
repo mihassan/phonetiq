@@ -5,6 +5,7 @@ import {
   getOverallAccuracy,
   getProfileSummary,
 } from './progressMetrics';
+import { scorePairForPractice } from './pairSelection';
 import type { Category, ProgressStore, WordPair } from './types';
 
 const pairs: WordPair[] = [
@@ -106,5 +107,15 @@ describe('progressMetrics', () => {
     expect(summary.bestStreak).toBe(4);
     expect(summary.weakPairs[0].pair.id).toBe(2);
     expect(summary.weakCategories[0].category).toBe('fricative');
+  });
+
+  it('buildWeakPairs ranks pairs in the same order as scorePairForPractice', () => {
+    const weakPairs = buildWeakPairs(pairs, store, 2);
+
+    expect(weakPairs[0].pair.id).toBe(2);
+    expect(weakPairs[1].pair.id).toBe(1);
+
+    expect(weakPairs[0].weaknessScore).toBe(scorePairForPractice(pairs[1], store));
+    expect(weakPairs[1].weaknessScore).toBe(scorePairForPractice(pairs[0], store));
   });
 });
