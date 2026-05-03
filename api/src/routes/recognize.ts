@@ -3,7 +3,46 @@ import type { Env } from '../index';
 
 export const recognizeRoutes = new Hono<{ Bindings: Env }>();
 
-type MatchType = 'exact' | 'token' | 'fuzzy' | 'no_match' | 'freeform';
+export type MatchType = 'exact' | 'token' | 'fuzzy' | 'no_match' | 'freeform';
+
+export interface MatchResult {
+  matchedWord: string | null;
+  matchType: MatchType;
+  debug: Record<string, unknown>;
+}
+
+function isFoundationV2Enabled(env: Env): boolean {
+  const raw = env.RECOGNITION_FOUNDATION_V2;
+  if (typeof raw !== 'string') return false;
+  return raw.trim().toLowerCase() === 'true';
+}
+
+export function buildDialectPrompt(dialect: string | undefined): string {
+  if (dialect === 'uk_only') {
+    return 'The speaker will say one short English word in British English.';
+  }
+  if (dialect === 'us_only') {
+    return 'The speaker will say one short English word in American English.';
+  }
+  if (dialect === 'au_only') {
+    return 'The speaker will say one short English word in Australian English.';
+  }
+  return 'The speaker will say one short English word in common international English.';
+}
+
+export function buildInitialPrompt(
+  dialect: string | undefined,
+  candidate1: string | undefined,
+  candidate2: string | undefined,
+  foundationV2: boolean,
+): string {
+  const dialectPrompt = buildDialectPrompt(dialect);
+  if (foundationV2) return dialectPrompt;
+  if (candidate1 && candidate2) {
+    return `${dialectPrompt} The expected options are: ${candidate1} or ${candidate2}.`;
+  }
+  return dialectPrompt;
+}
 
 function isLocalDebugRequest(origin: string, shouldDebug: boolean) {
   return shouldDebug && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
@@ -89,15 +128,12 @@ function levenshtein(a: string, b: string) {
   return dp[a.length][b.length];
 }
 
-function matchTranscriptToCandidates(
+export function matchTranscriptToCandidates(
   transcript: string,
-  candidate1?: string,
-  candidate2?: string,
-): {
-  matchedWord: string | null;
-  matchType: MatchType;
-  debug: Record<string, unknown>;
-} {
+  candidate1: string | undefined,
+  candidate2: string | undefined,
+  strict: boolean,
+): MatchResult {
   if (!candidate1 || !candidate2) {
     return {
       matchedWord: null,
@@ -106,6 +142,7 @@ function matchTranscriptToCandidates(
         normalizedTranscript: normalizeText(transcript),
         candidate1: candidate1 ?? null,
         candidate2: candidate2 ?? null,
+        strict,
       },
     };
   }
@@ -132,6 +169,7 @@ function matchTranscriptToCandidates(
     distance2,
     bestDistance,
     distanceGap,
+    strict,
   };
 
   if (!normalized) {
@@ -144,7 +182,7 @@ function matchTranscriptToCandidates(
   if (hasC1Token && !hasC2Token) return { matchedWord: candidate1, matchType: 'token', debug };
   if (hasC2Token && !hasC1Token) return { matchedWord: candidate2, matchType: 'token', debug };
 
-  if (bestDistance <= 1 && distanceGap >= 1) {
+  if (!strict && bestDistance <= 1 && distanceGap >= 1) {
     return distance1 < distance2
       ? { matchedWord: candidate1, matchType: 'fuzzy', debug }
       : { matchedWord: candidate2, matchType: 'fuzzy', debug };
@@ -191,20 +229,9 @@ recognizeRoutes.post('/', async (c) => {
 
   try {
     const base64Audio = arrayBufferToBase64(audioBytes);
+    const foundationV2 = isFoundationV2Enabled(c.env);
 
-    const dialectPrompt =
-      dialect === 'uk_only'
-        ? 'The speaker will say one short English word in British English.'
-        : dialect === 'us_only'
-          ? 'The speaker will say one short English word in American English.'
-          : dialect === 'au_only'
-            ? 'The speaker will say one short English word in Australian English.'
-            : 'The speaker will say one short English word in common international English.';
-
-    prompt =
-      candidate1 && candidate2
-        ? `${dialectPrompt} The expected options are: ${candidate1} or ${candidate2}.`
-        : dialectPrompt;
+    prompt = buildInitialPrompt(dialect, candidate1, candidate2, foundationV2);
 
     const result = await c.env.AI.run('@cf/openai/whisper-large-v3-turbo', {
       audio: base64Audio,
@@ -221,6 +248,7 @@ recognizeRoutes.post('/', async (c) => {
       rawTranscript,
       candidate1,
       candidate2,
+      foundationV2,
     );
 
     return c.json({
@@ -233,6 +261,7 @@ recognizeRoutes.post('/', async (c) => {
             normalizedTranscript: normalizeText(rawTranscript),
             audioBytes: audioBytes.byteLength,
             prompt,
+            foundationV2,
             matching: debug,
             rawResult,
           }
