@@ -8,7 +8,7 @@ interface BuildPracticeBatchOptions {
 
 function getAttemptsAndCorrect(pairId: number, store: ProgressStore) {
   const progress = store.pairs[String(pairId)];
-  if (!progress) return { attempts: 0, correct: 0, recentIncorrect: 0, successStreak: 0 };
+  if (!progress) return { attempts: 0, correct: 0, recentIncorrect: 0, successStreak: 0, lastSeenAt: null };
 
   const attempts = progress.word1Attempts + progress.word2Attempts;
   const correct = progress.word1Correct + progress.word2Correct;
@@ -18,19 +18,29 @@ function getAttemptsAndCorrect(pairId: number, store: ProgressStore) {
     correct,
     recentIncorrect: progress.recentIncorrectCount,
     successStreak: progress.successStreak,
+    lastSeenAt: progress.lastSeenAt ?? null,
   };
 }
 
-export function scorePairForPractice(pair: WordPair, store: ProgressStore) {
-  const { attempts, correct, recentIncorrect, successStreak } = getAttemptsAndCorrect(pair.id, store);
+const DECAY_THRESHOLD_MS = 7 * 24 * 60 * 60 * 1000;
+
+export function scorePairForPractice(pair: WordPair, store: ProgressStore, now?: string) {
+  const { attempts, correct, recentIncorrect, successStreak, lastSeenAt } =
+    getAttemptsAndCorrect(pair.id, store);
 
   if (attempts === 0) {
     return 48;
   }
 
+  const nowMs = now ? new Date(now).getTime() : Date.now();
+  const isStale = lastSeenAt
+    ? nowMs - new Date(lastSeenAt).getTime() > DECAY_THRESHOLD_MS
+    : false;
+  const effectiveRecentIncorrect = isStale ? Math.floor(recentIncorrect / 2) : recentIncorrect;
+
   const accuracy = correct / attempts;
   const accuracyPenalty = (1 - accuracy) * 60;
-  const mistakeBoost = Math.min(30, recentIncorrect * 8);
+  const mistakeBoost = Math.min(30, effectiveRecentIncorrect * 8);
   const freshnessBoost = Math.max(0, 16 - attempts * 2);
   const masteryPenalty = successStreak >= 3 ? 18 : 0;
 

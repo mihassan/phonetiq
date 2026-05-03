@@ -169,3 +169,53 @@ describe('pairSelection', () => {
     expect(weakIncluded.length).toBeGreaterThanOrEqual(3);
   });
 });
+
+describe('time-based decay in scorePairForPractice', () => {
+  const staleDate = '2026-04-01T00:00:00.000Z';
+  const recentDate = '2026-04-28T00:00:00.000Z';
+  const now = '2026-05-03T00:00:00.000Z';
+
+  const staleProgress: ProgressStore = {
+    ...progress,
+    pairs: {
+      '2': {
+        ...progress.pairs['2'],
+        recentIncorrectCount: 4,
+        lastSeenAt: staleDate,
+      },
+    },
+  };
+
+  const recentProgress: ProgressStore = {
+    ...progress,
+    pairs: {
+      '2': {
+        ...progress.pairs['2'],
+        recentIncorrectCount: 4,
+        lastSeenAt: recentDate,
+      },
+    },
+  };
+
+  it('decays recentIncorrectCount when lastSeenAt is >7 days ago', () => {
+    const staleScore = scorePairForPractice(pairs[1], staleProgress, now);
+    const recentScore = scorePairForPractice(pairs[1], recentProgress, now);
+
+    expect(staleScore).toBeLessThan(recentScore);
+  });
+
+  it('does not decay when lastSeenAt is within 7 days', () => {
+    const score = scorePairForPractice(pairs[1], recentProgress, now);
+    const scoreNoNow = scorePairForPractice(pairs[1], recentProgress);
+
+    expect(score).toBe(scoreNoNow);
+  });
+
+  it('halves recentIncorrectCount (floor) for stale pairs — difference is exactly mistakeBoost delta', () => {
+    const staleScore = scorePairForPractice(pairs[1], staleProgress, now);
+    const recentScore = scorePairForPractice(pairs[1], recentProgress, now);
+
+    // recentIncorrect=4: mistakeBoost(4)=min(30,32)=30, mistakeBoost(2)=min(30,16)=16 → delta=14
+    expect(recentScore - staleScore).toBe(14);
+  });
+});
