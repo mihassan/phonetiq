@@ -330,6 +330,85 @@ describe('usePracticeAttempt', () => {
     expect(result.current.status).toBe('idle');
   });
 
+  it('exposes noMatchHint when frame_sentence mode has a transcript but no frame match', async () => {
+    recognizeSpeechMock.mockResolvedValue({
+      transcript: 'cat',
+      matchType: 'no_match',
+      matchedWord: null,
+      debug: null,
+    });
+    const onAttemptEvaluated = vi.fn();
+
+    const { result } = renderHook(() =>
+      usePracticeAttempt({
+        word: 'cat',
+        onSuccess: vi.fn(),
+        experimentMode: 'frame_sentence',
+        onAttemptEvaluated,
+      }),
+    );
+
+    await act(async () => { await result.current.handleRecord(); });
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(result.current.status).toBe('no_match');
+    expect(result.current.noMatchHint).toBe('use_frame');
+  });
+
+  it('noMatchHint is null when transcript is empty in frame_sentence mode', async () => {
+    recognizeSpeechMock.mockResolvedValue({
+      transcript: '',
+      matchType: 'no_match',
+      matchedWord: null,
+      debug: null,
+    });
+
+    const { result } = renderHook(() =>
+      usePracticeAttempt({
+        word: 'cat',
+        onSuccess: vi.fn(),
+        experimentMode: 'frame_sentence',
+      }),
+    );
+
+    await act(async () => { await result.current.handleRecord(); });
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(result.current.status).toBe('no_match');
+    expect(result.current.noMatchHint).toBeNull();
+  });
+
+  it('noMatchHint is null in standard mode even with a transcript', async () => {
+    recognizeSpeechMock.mockResolvedValue({
+      transcript: 'cot',
+      matchType: 'no_match',
+      matchedWord: null,
+      debug: null,
+    });
+
+    const { result } = renderHook(() =>
+      usePracticeAttempt({ word: 'cat', onSuccess: vi.fn() }),
+    );
+
+    await act(async () => { await result.current.handleRecord(); });
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(result.current.status).toBe('no_match');
+    expect(result.current.noMatchHint).toBeNull();
+  });
+
   it('skips recognition for low-signal recordings and exposes the debug reason', async () => {
     stopRecordingMock.mockResolvedValue(
       createRecordingResult({

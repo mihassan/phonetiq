@@ -119,6 +119,7 @@ export function usePracticeAttempt({
   const [progress, setProgress] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
   const [debugInfo, setDebugInfo] = useState<PracticeAttemptDebugInfo | null>(null);
+  const [noMatchHint, setNoMatchHint] = useState<'use_frame' | null>(null);
 
   const animFrameRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
@@ -138,6 +139,7 @@ export function usePracticeAttempt({
     setProgress(0);
     setIsCompleted(false);
     setDebugInfo(null);
+    setNoMatchHint(null);
     lastRecordingRef.current = null;
   }, [word, partnerWord]);
 
@@ -145,6 +147,7 @@ export function usePracticeAttempt({
     clearTimeout(outcomeTimerRef.current);
     setStatus('idle');
     setTranscript('');
+    setNoMatchHint(null);
   }, []);
 
   const runRecognition = useCallback(async (
@@ -182,9 +185,13 @@ export function usePracticeAttempt({
           transcript: text,
           matchType: 'no_match',
         });
+        const hint =
+          experimentMode === 'frame_sentence' && text.length > 0 ? 'use_frame' : null;
+        setNoMatchHint(hint);
         setStatus('no_match');
         outcomeTimerRef.current = setTimeout(() => {
           setStatus('idle');
+          setNoMatchHint(null);
         }, incorrectDelayMs);
         return;
       }
@@ -218,6 +225,7 @@ export function usePracticeAttempt({
         ...nextDebugInfo,
         recognition: extractRecognitionDebug(error),
       });
+      setNoMatchHint(null);
       setStatus('no_match');
     }
   }, [dialect, experimentMode, incorrectDelayMs, onAttemptEvaluated, onSuccess, partnerWord, successDelayMs, word]);
@@ -332,6 +340,7 @@ export function usePracticeAttempt({
     progress,
     isCompleted,
     debugInfo,
+    noMatchHint,
     resetAttempt,
     sendDebugRecording,
     handleRecord,
