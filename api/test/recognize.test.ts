@@ -6,6 +6,9 @@ import {
   buildTwoPassPrompt,
   extractFirstContentWord,
   runTwoPassRecognition,
+  matchRepetition,
+  extractFrameWord,
+  matchFrameSentence,
 } from '../src/routes/recognize';
 
 describe('buildDialectPrompt', () => {
@@ -219,5 +222,101 @@ describe('runTwoPassRecognition', () => {
     const ai = makeAi('desert', 'desert');
     const result = await runTwoPassRecognition(ai, '', 'Dialect.', 'desert', 'dessert');
     expect(result.matchResult.debug.twoPass).toBe(true);
+  });
+});
+
+describe('matchRepetition — E1', () => {
+  it('matches candidate1 when it appears ≥2 times and leads by ≥2', () => {
+    const r = matchRepetition('ship ship ship', 'ship', 'sheep');
+    expect(r.matchedWord).toBe('ship');
+    expect(r.matchType).toBe('token');
+  });
+
+  it('matches candidate2 when it appears ≥2 times and leads by ≥2', () => {
+    const r = matchRepetition('sheep sheep sheep', 'ship', 'sheep');
+    expect(r.matchedWord).toBe('sheep');
+    expect(r.matchType).toBe('token');
+  });
+
+  it('no_match when counts are equal', () => {
+    const r = matchRepetition('ship sheep ship sheep', 'ship', 'sheep');
+    expect(r.matchedWord).toBeNull();
+    expect(r.matchType).toBe('no_match');
+  });
+
+  it('no_match when dominant count < 2', () => {
+    const r = matchRepetition('ship hello world', 'ship', 'sheep');
+    expect(r.matchedWord).toBeNull();
+    expect(r.matchType).toBe('no_match');
+  });
+
+  it('no_match when lead is only 1', () => {
+    // ship=2, sheep=1 → lead=1, not ≥2
+    const r = matchRepetition('ship sheep ship', 'ship', 'sheep');
+    expect(r.matchedWord).toBeNull();
+    expect(r.matchType).toBe('no_match');
+  });
+
+  it('is case-insensitive', () => {
+    const r = matchRepetition('Ship SHIP ship', 'ship', 'sheep');
+    expect(r.matchedWord).toBe('ship');
+  });
+
+  it('includes debug info', () => {
+    const r = matchRepetition('cat cat cat', 'cat', 'cut');
+    expect(r.debug).toMatchObject({ experiment: 'repetition', count1: 3, count2: 0 });
+  });
+});
+
+describe('extractFrameWord — E2', () => {
+  it('extracts word after "the word is"', () => {
+    expect(extractFrameWord('the word is desert')).toBe('desert');
+  });
+
+  it('is case-insensitive', () => {
+    expect(extractFrameWord('The Word Is Desert')).toBe('desert');
+  });
+
+  it('handles punctuation attached to extracted word', () => {
+    // normalizeText strips punctuation — "desert." → "desert"
+    expect(extractFrameWord('the word is desert.')).toBe('desert');
+  });
+
+  it('returns null when frame not present', () => {
+    expect(extractFrameWord('desert desert desert')).toBeNull();
+  });
+
+  it('returns null for empty string', () => {
+    expect(extractFrameWord('')).toBeNull();
+  });
+});
+
+describe('matchFrameSentence — E2', () => {
+  it('resolves to candidate1 via exact match after extraction', () => {
+    const r = matchFrameSentence('the word is ship', 'ship', 'sheep', false);
+    expect(r.matchedWord).toBe('ship');
+    expect(r.matchType).toBe('exact');
+  });
+
+  it('resolves to candidate2 via exact match after extraction', () => {
+    const r = matchFrameSentence('The word is sheep.', 'ship', 'sheep', false);
+    expect(r.matchedWord).toBe('sheep');
+  });
+
+  it('no_match when frame is absent', () => {
+    const r = matchFrameSentence('I said sheep', 'ship', 'sheep', false);
+    expect(r.matchedWord).toBeNull();
+    expect(r.matchType).toBe('no_match');
+  });
+
+  it('no_match when extracted word does not match either candidate', () => {
+    const r = matchFrameSentence('the word is cat', 'ship', 'sheep', false);
+    expect(r.matchedWord).toBeNull();
+    expect(r.matchType).toBe('no_match');
+  });
+
+  it('includes experiment key in debug', () => {
+    const r = matchFrameSentence('the word is ship', 'ship', 'sheep', false);
+    expect(r.debug).toMatchObject({ experiment: 'frame_sentence' });
   });
 });

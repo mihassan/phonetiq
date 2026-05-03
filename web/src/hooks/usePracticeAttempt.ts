@@ -33,6 +33,7 @@ interface UsePracticeAttemptOptions {
   word: string;
   partnerWord?: string;
   dialect?: string;
+  experimentMode?: 'repetition' | 'frame_sentence';
   onSuccess: () => void;
   onAttemptEvaluated?: (result: {
     isCorrect: boolean;
@@ -104,6 +105,7 @@ export function usePracticeAttempt({
   word,
   partnerWord,
   dialect,
+  experimentMode,
   onSuccess,
   onAttemptEvaluated,
   recordDurationMs = 3000,
@@ -156,6 +158,7 @@ export function usePracticeAttempt({
         candidate2: partnerWord ?? word,
         dialect,
         debug: import.meta.env.DEV,
+        experiment: experimentMode,
       });
       const recognition =
         typeof rawRecognition === 'string'
@@ -217,7 +220,7 @@ export function usePracticeAttempt({
       });
       setStatus('no_match');
     }
-  }, [dialect, incorrectDelayMs, onAttemptEvaluated, onSuccess, partnerWord, successDelayMs, word]);
+  }, [dialect, experimentMode, incorrectDelayMs, onAttemptEvaluated, onSuccess, partnerWord, successDelayMs, word]);
 
   const sendDebugRecording = useCallback(async () => {
     const recording = lastRecordingRef.current;

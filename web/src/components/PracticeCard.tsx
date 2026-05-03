@@ -4,7 +4,8 @@ import { playWordAudio } from '../lib/audioPlayback';
 import { usePracticeAttempt } from '../hooks/usePracticeAttempt';
 import { getPracticeHeadingSizeClass } from '../lib/wordSizing';
 
-const RECORD_DURATION = 3000;
+const RECORD_DURATION_DEFAULT = 3000;
+const RECORD_DURATION_REPETITION = 8000;
 
 interface Props {
   word: string;
@@ -18,6 +19,7 @@ interface Props {
   dialect?: string;
   isFirstWord: boolean;
   partnerWord: string;
+  experimentMode?: 'repetition' | 'frame_sentence';
 }
 
 export function PracticeCard({
@@ -28,15 +30,20 @@ export function PracticeCard({
   dialect,
   isFirstWord,
   partnerWord,
+  experimentMode,
 }: Props) {
+  const recordDuration =
+    experimentMode === 'repetition' ? RECORD_DURATION_REPETITION : RECORD_DURATION_DEFAULT;
+
   const { transcript, status, progress, isCompleted, debugInfo, resetAttempt, sendDebugRecording, handleRecord } =
     usePracticeAttempt({
       word,
       partnerWord,
       dialect,
+      experimentMode,
       onSuccess,
       onAttemptEvaluated,
-      recordDurationMs: RECORD_DURATION,
+      recordDurationMs: recordDuration,
     });
   const sizeClass = getPracticeHeadingSizeClass(word, partnerWord);
   const isDevelopment = import.meta.env.DEV;
@@ -121,7 +128,7 @@ export function PracticeCard({
       btnBg: 'ui-practice-state-recording',
       textCol: 'text-[color:var(--color-state-recording)]',
       icon: <Mic size={24} className="text-white animate-pulse" />,
-      label: `Listening... ${Math.ceil((RECORD_DURATION / 1000) * (1 - progress))}s`,
+      label: `Listening... ${Math.ceil((recordDuration / 1000) * (1 - progress))}s`,
     },
     processing: {
       btnBg: 'ui-practice-state-processing',
@@ -173,6 +180,16 @@ export function PracticeCard({
         >
           <Play size={14} fill="currentColor" /> Listen first
         </button>
+        {experimentMode === 'repetition' && (
+          <p className="ui-muted text-[11px] md:text-xs font-semibold mt-1">
+            Say the word 3 times
+          </p>
+        )}
+        {experimentMode === 'frame_sentence' && (
+          <p className="ui-muted text-[11px] md:text-xs font-semibold mt-1">
+            Say: &ldquo;The word is {word}&rdquo;
+          </p>
+        )}
       </div>
 
       <div className="ui-practice-zone-action">

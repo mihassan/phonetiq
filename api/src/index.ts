@@ -21,6 +21,8 @@ export type Env = {
   CORS_ALLOWED_ORIGINS?: string;
   RECOGNITION_FOUNDATION_V2?: string;
   EXPERIMENT_TWO_PASS?: string;
+  EXPERIMENT_REPETITION?: string;
+  EXPERIMENT_FRAME_SENTENCE?: string;
 };
 
 const app = new Hono<{ Bindings: Env }>();

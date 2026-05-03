@@ -23,6 +23,79 @@ export function isTwoPassEnabled(env: Env): boolean {
   return raw.trim().toLowerCase() === 'true';
 }
 
+export function isRepetitionEnabled(env: Env): boolean {
+  const raw = env.EXPERIMENT_REPETITION;
+  if (typeof raw !== 'string') return false;
+  return raw.trim().toLowerCase() === 'true';
+}
+
+export function isFrameSentenceEnabled(env: Env): boolean {
+  const raw = env.EXPERIMENT_FRAME_SENTENCE;
+  if (typeof raw !== 'string') return false;
+  return raw.trim().toLowerCase() === 'true';
+}
+
+export type ExperimentMode = 'repetition' | 'frame_sentence' | null;
+
+export function matchRepetition(
+  transcript: string,
+  candidate1: string,
+  candidate2: string,
+): MatchResult {
+  const c1 = normalizeText(candidate1);
+  const c2 = normalizeText(candidate2);
+  const tokens = normalizeText(transcript).split(' ').filter(Boolean);
+
+  const count1 = tokens.filter((t) => t === c1).length;
+  const count2 = tokens.filter((t) => t === c2).length;
+
+  const debug: Record<string, unknown> = {
+    experiment: 'repetition',
+    tokens,
+    candidate1: c1,
+    candidate2: c2,
+    count1,
+    count2,
+  };
+
+  if (count1 >= 2 && count1 - count2 >= 2) {
+    return { matchedWord: candidate1, matchType: 'token', debug };
+  }
+  if (count2 >= 2 && count2 - count1 >= 2) {
+    return { matchedWord: candidate2, matchType: 'token', debug };
+  }
+  return { matchedWord: null, matchType: 'no_match', debug };
+}
+
+const FRAME_SENTENCE_RE = /\bthe\s+word\s+is\s+(\S+)/i;
+
+export function extractFrameWord(transcript: string): string | null {
+  const m = FRAME_SENTENCE_RE.exec(transcript);
+  if (!m) return null;
+  return normalizeText(m[1]) || null;
+}
+
+export function matchFrameSentence(
+  transcript: string,
+  candidate1: string,
+  candidate2: string,
+  strict: boolean,
+): MatchResult {
+  const extracted = extractFrameWord(transcript);
+  const debug: Record<string, unknown> = {
+    experiment: 'frame_sentence',
+    rawTranscript: transcript,
+    extractedWord: extracted,
+  };
+
+  if (!extracted) {
+    return { matchedWord: null, matchType: 'no_match', debug };
+  }
+
+  const inner = matchTranscriptToCandidates(extracted, candidate1, candidate2, strict);
+  return { matchedWord: inner.matchedWord, matchType: inner.matchType, debug: { ...debug, ...inner.debug } };
+}
+
 export function buildTwoPassPrompt(dialectPrompt: string, candidate: string): string {
   return `${dialectPrompt} The speaker said the word ${candidate}.`;
 }
@@ -309,6 +382,7 @@ recognizeRoutes.post('/', async (c) => {
   let candidate2: string | undefined;
   let dialect: string | undefined;
   let shouldDebug = false;
+  let requestedExperiment: ExperimentMode = null;
   let prompt = '';
 
   let audioBytes: ArrayBuffer;
@@ -320,6 +394,7 @@ recognizeRoutes.post('/', async (c) => {
     candidate2 = String(formData.get('candidate2') || '').trim() || undefined;
     dialect = String(formData.get('dialect') || '').trim() || undefined;
     shouldDebug = String(formData.get('debug') || '').trim() === '1';
+    requestedExperiment = (String(formData.get('experiment') || '').trim() || null) as ExperimentMode;
 
     if (!file || !(file instanceof File)) {
       return c.json({ error: 'Missing "audio" file in form data' }, 400);
@@ -341,6 +416,11 @@ recognizeRoutes.post('/', async (c) => {
     const base64Audio = arrayBufferToBase64(audioBytes);
     const foundationV2 = isFoundationV2Enabled(c.env);
 
+    const activeExperiment: ExperimentMode =
+      requestedExperiment === 'repetition' && isRepetitionEnabled(c.env) ? 'repetition' :
+      requestedExperiment === 'frame_sentence' && isFrameSentenceEnabled(c.env) ? 'frame_sentence' :
+      null;
+
     prompt = buildInitialPrompt(dialect, candidate1, candidate2, foundationV2);
 
     const result = await c.env.AI.run('@cf/openai/whisper-large-v3-turbo', {
@@ -354,12 +434,18 @@ recognizeRoutes.post('/', async (c) => {
     const rawResult = result as Record<string, unknown>;
     const rawTranscript = (rawResult.text as string || '').trim();
     const transcript = rawTranscript.toLowerCase().trim();
-    let { matchedWord, matchType, debug } = matchTranscriptToCandidates(
-      rawTranscript,
-      candidate1,
-      candidate2,
-      foundationV2,
-    );
+
+    let matchedWord: string | null;
+    let matchType: MatchType;
+    let debug: Record<string, unknown>;
+
+    if (activeExperiment === 'repetition' && candidate1 && candidate2) {
+      ({ matchedWord, matchType, debug } = matchRepetition(rawTranscript, candidate1, candidate2));
+    } else if (activeExperiment === 'frame_sentence' && candidate1 && candidate2) {
+      ({ matchedWord, matchType, debug } = matchFrameSentence(rawTranscript, candidate1, candidate2, foundationV2));
+    } else {
+      ({ matchedWord, matchType, debug } = matchTranscriptToCandidates(rawTranscript, candidate1, candidate2, foundationV2));
+    }
 
     let twoPassDebug: Record<string, unknown> | null = null;
 
@@ -394,6 +480,7 @@ recognizeRoutes.post('/', async (c) => {
             audioBytes: audioBytes.byteLength,
             prompt,
             foundationV2,
+            experiment: activeExperiment,
             matching: debug,
             twoPass: twoPassDebug,
             rawResult,

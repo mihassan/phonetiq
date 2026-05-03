@@ -20,6 +20,12 @@ import {
 function App() {
   const { user, isAuthenticated, isLoading: isAuthLoading, login, logout } = useAuth();
 
+  const experimentMode = ((): 'repetition' | 'frame_sentence' | undefined => {
+    const raw = import.meta.env.VITE_EXPERIMENT_MODE;
+    if (raw === 'repetition' || raw === 'frame_sentence') return raw;
+    return undefined;
+  })();
+
   const {
     mode,
     setMode,
@@ -227,6 +233,7 @@ function App() {
                 isFirstWord={true}
                 partnerWord={practicePair.word2}
                 dialect={dialect}
+                experimentMode={experimentMode}
                 onSuccess={handlePracticeSuccess}
                 onAttemptEvaluated={({ isCorrect, matchType }) => {
                   if (matchType === 'no_match') return;
@@ -258,6 +265,7 @@ function App() {
                 isFirstWord={false}
                 partnerWord={practicePair.word1}
                 dialect={dialect}
+                experimentMode={experimentMode}
                 onSuccess={handlePracticeSuccess}
                 onAttemptEvaluated={({ isCorrect, matchType }) => {
                   if (matchType === 'no_match') return;

@@ -69,7 +69,7 @@ async function readErrorBody(res: Response) {
 
 export async function recognizeSpeech(
   audioBlob: Blob,
-  options?: { candidate1?: string; candidate2?: string; dialect?: string; debug?: boolean },
+  options?: { candidate1?: string; candidate2?: string; dialect?: string; debug?: boolean; experiment?: 'repetition' | 'frame_sentence' },
 ): Promise<RecognizeSpeechResult> {
   const formData = new FormData();
   formData.append('audio', audioBlob, 'recording.webm');
@@ -77,6 +77,7 @@ export async function recognizeSpeech(
   if (options?.candidate2) formData.append('candidate2', options.candidate2);
   if (options?.dialect) formData.append('dialect', options.dialect);
   if (options?.debug) formData.append('debug', '1');
+  if (options?.experiment) formData.append('experiment', options.experiment);
 
   const res = await fetch(`${API_BASE}/recognize`, {
     method: 'POST',
