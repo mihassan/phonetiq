@@ -76,6 +76,16 @@ To handle real-world recording conditions, the frontend now includes:
 4.  **Speech Window Trimming:** Uses audio level sampling to detect the actual speech region, then trims leading/trailing silence before sending to Whisper
 5.  **Analyser Fallback:** If Web Audio API analyser is unavailable, gracefully continues with reduced metrics
 
+#### Audio DSP Pipeline
+Applied in `encodeWavSegment` (always-on, no flag required):
+
+1.  **16 kHz resample** — Whisper is trained on 16 kHz; downsampling before upload reduces payload size and removes content above Nyquist for the model
+2.  **80 Hz high-pass filter** — Removes low-frequency rumble (desk vibration, HVAC) that can confuse VAD
+3.  **−18 dBFS loudness normalisation** — Brings quiet recordings up to a consistent level, reducing no-match from soft speech
+
+#### Frame-Sentence Experiment (E2 — Production)
+Users are prompted to say *"The word is X"* instead of just *X*. The backend extracts the target word from the sentence context before matching. Eval result: **97% correct** (+21 pp vs 76% baseline), 0 no-match. Enabled via `EXPERIMENT_FRAME_SENTENCE=true` (Worker) and `VITE_EXPERIMENT_MODE=frame_sentence` (frontend).
+
 This dramatically improves recognition reliability in non-ideal recording environments.
 
 ## Practice Session Personalization

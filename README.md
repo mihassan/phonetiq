@@ -4,7 +4,7 @@
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare)](https://workers.cloudflare.com/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)](https://www.typescriptlang.org/)
-[![Tests](https://img.shields.io/badge/Tests-109%20passing-42b883?logo=vitest)](https://vitest.dev/)
+[![Tests](https://img.shields.io/badge/Tests-173%20passing-42b883?logo=vitest)](https://vitest.dev/)
 
 **Live:** [phonetiq.mihassan.com](https://phonetiq.mihassan.com) | **API:** [api.phonetiq.mihassan.com](https://api.phonetiq.mihassan.com)
 
@@ -29,6 +29,8 @@ Most pronunciation apps use browser-native speech recognition which is flaky acr
 - **Noise detection** — Automatically skips recordings that sound like environmental noise (fan, AC, background chatter)
 - **Speech window trimming** — Strips leading/trailing silence to send only the actual speech to Whisper
 - **Robust mic handling** — Waits for first audio chunk before starting capture, with timeout fallback
+- **Audio DSP** — 16 kHz resample, 80 Hz high-pass filter, and −18 dBFS loudness normalisation applied before upload
+- **Frame-sentence mode** — Production uses "The word is X" framing, lifting recognition accuracy from 76 % to 97 %
 
 ### 📊 Adaptive Learning
 - **Weak-pair prioritization** — Each session includes 5 pairs you're struggling with
@@ -90,12 +92,23 @@ Phonetiq/
       routes/
         pairs.ts              # GET /api/pairs, GET /api/pairs/categories
         audio.ts              # GET /api/audio/:word (serves from R2)
-        recognize.ts          # POST /api/recognize (dialect-aware Whisper STT)
+        recognize.ts          # POST /api/recognize (dialect-aware Whisper STT + experiments)
+        auth.ts               # GET /api/auth/login, /callback, /logout (Google OAuth)
+        me.ts                 # GET /api/me (current user from session)
+        progress.ts           # GET/POST /api/progress (cloud progress sync)
+      lib/
+        auth.ts               # Session auth primitive
+        session.ts            # Signed-cookie helpers
+        googleOAuth.ts        # OAuth URL, token exchange, profile fetch
       db/
         schema.ts             # Drizzle ORM schema
         seed.sql              # 186 word pairs seed data
+    scripts/
+      run-eval.ts             # Baseline recognition eval harness (34 WAV fixtures)
+      run-eval-experiment.ts  # E1/E2 experiment eval harness
+      wrangler-with-env.mjs   # Wrangler wrapper that injects local env
     drizzle/                  # Generated SQL migrations
-    wrangler.toml             # Bindings: D1, R2, AI, Rate Limiters
+    wrangler.toml             # Bindings: D1, R2, AI, Rate Limiters, feature flags
   web/                        # React SPA (Vite)
     src/
       App.tsx                 # Main app with Learn/Categories/Practice/Profile modes
@@ -107,13 +120,18 @@ Phonetiq/
         CategoryFilter.tsx    # Category filter pills
         DialectFilter.tsx     # Dialect selector pills
       hooks/
-        useAudioRecorder.ts   # MediaRecorder wrapper
+        useAudioRecorder.ts   # MediaRecorder wrapper (with DSP pipeline)
         usePracticeSession.ts # Session state (batch practice + progress)
+        usePracticeAttempt.ts # Recording lifecycle: idle→recording→processing→result
+        useAuth.ts            # Login/logout/current-user state
       lib/
         api.ts                # API client functions
+        authApi.ts            # Auth + cloud-sync API calls
         pairSelection.ts      # Adaptive batch selection helpers
         progressStorage.ts    # Local progress persistence
         progressMetrics.ts    # Derived stats (profile/categories)
+        audioPlayback.ts      # Audio playback sequencing helpers
+        wordSizing.ts         # Word display sizing helpers
         types.ts              # Shared TypeScript types
   scripts/
     generate-audio.sh         # TTS audio generation + R2 upload
@@ -168,7 +186,7 @@ Start both the API worker and the frontend dev server:
 
 ```bash
 # Terminal 1: API (port 8787)
-cd api && npx wrangler dev
+cd api && npm run dev
 
 # Terminal 2: Frontend (port 5173, proxies /api to 8787)
 cd web && npm run dev
@@ -179,7 +197,11 @@ Open http://localhost:5173 in your browser.
 ### Running tests
 
 ```bash
+# Web (123 tests)
 cd web && npm test
+
+# API (50 tests)
+cd api && npm test
 ```
 
 ## Deployment
@@ -211,10 +233,10 @@ Upload the 338 `.m4a` files from `.audio-cache/` to the `phonetiq-audio` R2 buck
 
 ```bash
 # Deploy API Worker
-cd api && npx wrangler deploy
+cd api && npm run deploy
 
 # Build and deploy frontend
-cd web && VITE_API_URL=https://api.phonetiq.mihassan.com npm run build
+cd web && VITE_API_URL=https://api.phonetiq.mihassan.com VITE_EXPERIMENT_MODE=frame_sentence npm run build
 npx wrangler pages deploy dist --project-name phonetiq
 ```
 

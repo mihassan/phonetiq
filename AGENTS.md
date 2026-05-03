@@ -55,11 +55,13 @@ Phonetiq/
 ## CONVENTIONS
 - Two deployable apps; root is coordination/docs only.
 - Frontend keeps business logic in hooks/lib, not in components.
-- Tests sit next to implementation as `*.test.ts(x)`; Vitest runs only in `web/`.
+- Tests sit next to implementation as `*.test.ts(x)`; Vitest runs in both `web/` (123 tests) and `api/` (50 tests).
 - Tailwind v4 is CSS-import driven: `web/src/index.css` imports `tokens.css`, `components.css`, `screens.css`.
 - Frontend API base is `VITE_API_URL + '/api'`; local dev falls back to Vite proxy.
 - Worker routes are mounted centrally in `api/src/index.ts`; route files export `*Routes` Hono instances.
 - Progress is local-first; signed-session cloud sync layers on top rather than replacing local state.
+- Recognition experiments are gated by Worker vars (`EXPERIMENT_*`) and a frontend build var (`VITE_EXPERIMENT_MODE`).
+- E2 frame-sentence is the active production experiment; do not remove `matchFrameSentence` or `extractFrameWord` from `recognize.ts`.
 
 ## ANTI-PATTERNS (THIS PROJECT)
 - Do not treat `.audio-cache/`, `.wrangler/`, or `api/.wrangler/` state as source code.
@@ -84,7 +86,13 @@ cd web && npm test
 
 # api
 cd api && npm run dev
+cd api && npm run dev:twopass    # E4 two-pass (port 8789)
+cd api && npm run dev:repetition # E1 repetition (port 8790)
+cd api && npm run dev:frame      # E2 frame-sentence (port 8791)
 cd api && npm run typecheck
+cd api && npm test
+cd api && npm run eval           # baseline recognition eval
+cd api && npm run eval:fast:frame # E2 eval (no rate-limit delay)
 cd api && npm run db:migrate:local
 cd api && npm run db:seed:local
 cd api && npm run deploy
@@ -99,6 +107,8 @@ cd api && npm run deploy
 - Local audio generation is macOS-only because `scripts/generate-audio.sh` uses `say`.
 - Worker rate limiting is intentionally asymmetric: AI endpoint 10 req/min/IP, general API 100 req/min/IP.
 - TypeScript LSP is configured but not installed in this environment; use direct reads/grep/AST search when symbol tooling is unavailable.
+- Eval ports: baseline=8787, v2=8788, twopass=8789, repetition=8790, frame=8791.
+- `EXPERIMENT_FRAME_SENTENCE` is `"true"` in production; all other experiment flags are `"false"`.
 
 ## graphify
 

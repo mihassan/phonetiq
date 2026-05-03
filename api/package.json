@@ -27,7 +27,7 @@
     "db:migrate:local": "npm run wrangler -- d1 migrations apply phonetiq-db --local",
     "db:migrate:remote": "npm run wrangler -- d1 migrations apply phonetiq-db --remote",
     "db:seed:local": "npm run wrangler -- d1 execute phonetiq-db --local --file=./src/db/seed.sql",
-    "db:seed:remote": "npm run wrangler -- d1 execute phonetiq-db --local --file=./src/db/seed.sql"
+    "db:seed:remote": "npm run wrangler -- d1 execute phonetiq-db --remote --file=./src/db/seed.sql"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",

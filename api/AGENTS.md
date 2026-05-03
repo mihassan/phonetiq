@@ -10,9 +10,11 @@ api/
 ├── src/routes/            # Route groups by domain
 ├── src/lib/               # Session auth + Google OAuth helpers
 ├── src/db/                # Drizzle schema + seed SQL
+├── scripts/               # Eval harnesses (run-eval.ts, run-eval-experiment.ts) + wrangler-with-env.mjs
+├── test/                  # Vitest tests + WAV fixtures (recognition-eval/)
 ├── drizzle/               # SQL migrations
 ├── wrangler.toml          # Bindings, vars, routes, rate limits
-└── package.json           # Dev/deploy/db scripts
+└── package.json           # Dev/deploy/db/eval scripts
 ```
 
 ## WHERE TO LOOK
@@ -21,7 +23,7 @@ api/
 | Middleware / route registration | `src/index.ts` | CORS allowlist + AI/general rate limit tiers |
 | Pair/category reads | `src/routes/pairs.ts` | Query/filter behavior |
 | Audio serving | `src/routes/audio.ts` | R2 `.m4a` fetch path |
-| Speech recognition | `src/routes/recognize.ts` | Whisper call + transcript matching |
+| Speech recognition | `src/routes/recognize.ts` | Whisper call + transcript matching + E1/E2/E4 experiments |
 | OAuth login/logout | `src/routes/auth.ts` | Redirect flow and session creation |
 | Current user | `src/routes/me.ts` | Session-backed user response |
 | Cloud progress sync | `src/routes/progress.ts` | Import/update/merge logic |
@@ -30,7 +32,9 @@ api/
 | Google OAuth helpers | `src/lib/googleOAuth.ts` | Auth URL, token exchange, profile fetch |
 | Persistent model | `src/db/schema.ts` | Drizzle table definitions |
 | Seed data | `src/db/seed.sql` | Word-pair dataset |
-| Infra bindings | `wrangler.toml` | D1, R2, AI, origins, custom domain |
+| Infra bindings | `wrangler.toml` | D1, R2, AI, origins, custom domain, experiment flags |
+| Baseline eval harness | `scripts/run-eval.ts` | 34 WAV fixtures; `npm run eval` / `eval:fast` |
+| Experiment eval harness | `scripts/run-eval-experiment.ts` | E1/E2 WAV fixtures; `npm run eval:frame` etc. |
 
 ## CONVENTIONS
 - `src/index.ts` is the only place routes are mounted; route files export `const *Routes = new Hono...`.

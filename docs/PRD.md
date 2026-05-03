@@ -25,14 +25,13 @@ ESL/EFL learners, speech therapy users, and pronunciation-focused self-learners 
 * Categories mode with real progress summaries
 * Profile mode with key stats and weak-pair practice action
 * Local-only persistence of performance data (browser storage)
+* Optional Google OAuth for account creation and cross-device progress sync
 
 ### Future Roadmap
-* Account-based sync for cross-device progress
 * Stronger dialect coverage and curated `au_only` dataset (AU UI only after meaningful dataset)
 * Classroom/teacher custom lists and assignments
 * More advanced review scheduling and personalized practice plans
 * STT quality analytics/tuning dashboards
 
 ### Out of Scope (current)
-* Authentication and cloud-synced user profiles
 * Teacher admin tooling and multi-user class management

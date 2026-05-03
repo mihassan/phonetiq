@@ -25,7 +25,17 @@
 ## Commands Reference
 ### API (`api/`)
 - `npm run dev` - Start Worker dev server (port 8787)
+- `npm run dev:v2` - Start with `RECOGNITION_FOUNDATION_V2=true` (port 8788)
+- `npm run dev:twopass` - Start with `EXPERIMENT_TWO_PASS=true` (port 8789)
+- `npm run dev:repetition` - Start with `EXPERIMENT_REPETITION=true` (port 8790)
+- `npm run dev:frame` - Start with `EXPERIMENT_FRAME_SENTENCE=true` (port 8791)
 - `npm run typecheck` - TypeScript check
+- `npm test` - Run Vitest tests (50 tests)
+- `npm run eval` - Baseline recognition eval (34 WAV fixtures, 7 s delay)
+- `npm run eval:fast` - Baseline eval (no delay)
+- `npm run eval:twopass` - E4 two-pass eval (port 8789)
+- `npm run eval:repetition` - E1 repetition eval (port 8790)
+- `npm run eval:frame` - E2 frame-sentence eval (port 8791)
 - `npm run db:generate` - Generate Drizzle migration SQL
 - `npm run db:migrate:local` - Apply migrations to local D1
 - `npm run db:seed:local` - Seed word pairs to local D1
@@ -34,7 +44,7 @@
 ### Web (`web/`)
 - `npm run dev` - Start Vite dev server (port 5173, proxies /api to 8787)
 - `npm run build` - Typecheck + production build (outputs to `web/dist/`)
-- `npm test` - Run Vitest tests
+- `npm test` - Run Vitest tests (123 tests)
 
 ### Scripts
 - `./scripts/generate-audio.sh` - Generate TTS audio + upload to local R2
@@ -51,7 +61,13 @@
 - `GET /api/pairs?category=&dialect=&difficulty=&limit=&offset=` - List word pairs
 - `GET /api/pairs/categories` - List categories with counts
 - `GET /api/audio/:word` - Serve audio from R2
-- `POST /api/recognize` - Candidate-constrained speech recognition via Whisper AI (`large-v3-turbo`) with dialect-aware prompt context. Returns detailed debug info in local dev mode including raw transcript, normalized transcript, matching details, and AI response. Automatically maps results to `exact` / `token` / `fuzzy` / `no_match` / `freeform` match types.
+- `POST /api/recognize` - Candidate-constrained speech recognition via Whisper AI (`large-v3-turbo`) with dialect-aware prompt context. Accepts optional `experiment` field (`repetition` | `frame_sentence`) to switch recognition strategy. Returns detailed debug info in local dev mode including raw transcript, normalized transcript, matching details, and AI response. Automatically maps results to `exact` / `token` / `fuzzy` / `no_match` / `freeform` match types.
+- `GET /api/auth/login` - Initiate Google OAuth flow
+- `GET /api/auth/callback` - OAuth callback, sets signed session cookie
+- `GET /api/auth/logout` - Clear session
+- `GET /api/me` - Return current user from session
+- `GET /api/progress` - Fetch cloud-synced progress
+- `POST /api/progress` - Upload/merge local progress to cloud
 
 ## Wrangler Bindings (api/wrangler.toml)
 - `DB` - D1 database `phonetiq-db`
@@ -60,12 +76,19 @@
 - `AI_RATE_LIMITER` - Rate limit: 10 req/min per IP (protects Whisper AI endpoint)
 - `API_RATE_LIMITER` - Rate limit: 100 req/min per IP (protects all API routes)
 
+## Worker Feature Flags (api/wrangler.toml `[vars]`)
+- `RECOGNITION_FOUNDATION_V2` - `"false"` — no-biasing strict match mode (eval: 35%, kept off)
+- `EXPERIMENT_TWO_PASS` - `"false"` — two-pass Whisper fallback (eval: 79%, ready to enable)
+- `EXPERIMENT_REPETITION` - `"false"` — say-word-3x mode E1 (eval: 79%, VAD collapse risk, off)
+- `EXPERIMENT_FRAME_SENTENCE` - `"true"` — "The word is X" framing E2 (eval: 97%, **production**)
+
 ## Custom Domains (api/wrangler.toml)
 - `api.phonetiq.mihassan.com` - Worker custom domain (auto-creates DNS record)
 - `phonetiq.mihassan.com` - Pages custom domain (CNAME to `phonetiq.pages.dev`)
 
 ## Environment Variables
 - `VITE_API_URL` - (Frontend, production only) Base URL for the API Worker (e.g., `https://api.phonetiq.mihassan.com`). The code appends `/api` automatically. Defaults to `/api` in local dev via Vite proxy.
+- `VITE_EXPERIMENT_MODE` - (Frontend, production only) Active experiment mode. Currently `frame_sentence` in production. Passed to `PracticeCard` to control helper text and recording duration.
 
 ## GitHub Secrets
 - `CLOUDFLARE_API_TOKEN` - API token with Workers Scripts Edit + Cloudflare Pages Edit permissions
