@@ -34,7 +34,9 @@ const DELAY_MS = process.argv.includes('--delay-ms')
   ? parseInt(process.argv[process.argv.indexOf('--delay-ms') + 1], 10)
   : 0;
 
-const RATE_LIMIT_BATCH = 8;
+const LABEL = process.argv.includes('--label')
+  ? process.argv[process.argv.indexOf('--label') + 1]
+  : 'BASELINE (biasing prompt + fuzzy match)';
 
 interface EvalPair {
   word1: string;
@@ -115,7 +117,7 @@ async function recognize(
   };
 }
 
-function printTable(results: EvalResult[], label: string) {
+const RATE_LIMIT_BATCH = 8;
   const total = results.length;
   const correct = results.filter((r) => r.correct).length;
   const wrong = results.filter((r) => !r.correct && r.matchType !== 'no_match' && r.matchType !== 'freeform').length;
@@ -227,11 +229,7 @@ async function main() {
     }
   }
 
-  const flagState = process.env['RECOGNITION_FOUNDATION_V2'] === 'true'
-    ? 'FOUNDATION-V2 ON  (no biasing, strict match)'
-    : 'BASELINE        (biasing prompt + fuzzy match)';
-
-  printTable(results, flagState);
+  printTable(results, LABEL);
   console.log();
 }
 
