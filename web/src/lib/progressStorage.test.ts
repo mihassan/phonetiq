@@ -58,16 +58,18 @@ describe('progressStorage', () => {
     expect(afterIncorrect.currentStreak).toBe(0);
   });
 
-  it('increments pair completion when both words are correct', () => {
+  it('increments pair completion when both words are correct and successStreak reaches 3', () => {
     updateProgressForAttempt(makeEvent({ targetWord: 1, isCorrect: true }));
+    updateProgressForAttempt(makeEvent({ targetWord: 2, isCorrect: true, timestamp: '2026-04-20T12:00:03.000Z' }));
     const store = updateProgressForAttempt(
       makeEvent({
-        targetWord: 2,
+        targetWord: 1,
         isCorrect: true,
-        timestamp: '2026-04-20T12:00:03.000Z',
+        timestamp: '2026-04-20T12:00:06.000Z',
       }),
     );
 
+    expect(store.pairs['1'].successStreak).toBe(3);
     expect(store.pairs['1'].pairCompletions).toBe(1);
     expect(store.completedPairIds).toContain(1);
   });
@@ -103,5 +105,62 @@ describe('progressStorage', () => {
     const loaded = loadProgressStore();
     expect(loaded.totalAttempts).toBe(8);
     expect(loaded.completedPairIds).toEqual([1, 2]);
+  });
+});
+
+describe('pairCompletions mastery threshold', () => {
+  beforeEach(() => {
+    resetProgressStore();
+  });
+
+  it('does NOT mark complete when both words have a correct but successStreak < 3', () => {
+    const seedStore = loadProgressStore();
+    seedStore.pairs['99'] = {
+      pairId: 99,
+      category: 'vowel_short',
+      dialect: 'all',
+      word1Attempts: 2,
+      word1Correct: 1,
+      word2Attempts: 1,
+      word2Correct: 0,
+      pairCompletions: 0,
+      exposureCount: 3,
+      recentIncorrectCount: 0,
+      successStreak: 1,
+      lastSeenAt: new Date().toISOString(),
+      lastCorrectAt: null,
+    };
+    saveProgressStore(seedStore);
+
+    const result = updateProgressForAttempt(makeEvent({ pairId: 99, targetWord: 2, isCorrect: true }));
+
+    expect(result.pairs['99'].pairCompletions).toBe(0);
+    expect(result.completedPairIds).not.toContain(99);
+  });
+
+  it('marks complete when both words have a correct and successStreak reaches 3', () => {
+    const seedStore = loadProgressStore();
+    seedStore.pairs['99'] = {
+      pairId: 99,
+      category: 'vowel_short',
+      dialect: 'all',
+      word1Attempts: 3,
+      word1Correct: 2,
+      word2Attempts: 2,
+      word2Correct: 1,
+      pairCompletions: 0,
+      exposureCount: 5,
+      recentIncorrectCount: 0,
+      successStreak: 2,
+      lastSeenAt: new Date().toISOString(),
+      lastCorrectAt: null,
+    };
+    saveProgressStore(seedStore);
+
+    const result = updateProgressForAttempt(makeEvent({ pairId: 99, targetWord: 2, isCorrect: true }));
+
+    expect(result.pairs['99'].successStreak).toBe(3);
+    expect(result.pairs['99'].pairCompletions).toBe(1);
+    expect(result.completedPairIds).toContain(99);
   });
 });

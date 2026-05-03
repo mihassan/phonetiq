@@ -147,7 +147,7 @@ export function updateProgressForAttempt(event: ProgressAttemptEvent): ProgressS
     pair.recentIncorrectCount += 1;
   }
 
-  if (pair.word1Correct > 0 && pair.word2Correct > 0) {
+  if (pair.word1Correct > 0 && pair.word2Correct > 0 && pair.successStreak >= 3) {
     if (pair.pairCompletions === 0) {
       store.completedPairIds = Array.from(new Set([...store.completedPairIds, event.pairId]));
     }
