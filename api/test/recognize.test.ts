@@ -3,6 +3,9 @@ import {
   buildDialectPrompt,
   buildInitialPrompt,
   matchTranscriptToCandidates,
+  buildTwoPassPrompt,
+  extractFirstContentWord,
+  runTwoPassRecognition,
 } from '../src/routes/recognize';
 
 describe('buildDialectPrompt', () => {
@@ -128,5 +131,93 @@ describe('matchTranscriptToCandidates', () => {
       expect(strict.debug.strict).toBe(true);
       expect(legacy.debug.strict).toBe(false);
     });
+  });
+});
+
+describe('buildTwoPassPrompt', () => {
+  it('includes the dialect prompt verbatim', () => {
+    const dialectPrompt = 'The speaker will say one short English word in British English.';
+    const result = buildTwoPassPrompt(dialectPrompt, 'desert');
+    expect(result).toContain(dialectPrompt);
+  });
+
+  it('includes "The speaker said the word X" phrasing', () => {
+    const result = buildTwoPassPrompt('Dialect.', 'dessert');
+    expect(result).toContain('The speaker said the word dessert');
+  });
+});
+
+describe('extractFirstContentWord', () => {
+  it('returns the single word from a one-word transcript', () => {
+    expect(extractFirstContentWord('desert')).toBe('desert');
+  });
+
+  it('skips stopwords and returns the first content word', () => {
+    expect(extractFirstContentWord('The word is desert')).toBe('desert');
+  });
+
+  it('handles punctuation via normalizeText', () => {
+    expect(extractFirstContentWord('Desert.')).toBe('desert');
+  });
+
+  it('returns empty string for empty input', () => {
+    expect(extractFirstContentWord('')).toBe('');
+  });
+
+  it('returns first token when all tokens are stopwords', () => {
+    expect(extractFirstContentWord('the a an')).toBe('the');
+  });
+});
+
+describe('runTwoPassRecognition', () => {
+  function makeAi(transcriptA: string, transcriptB: string): Ai {
+    let callCount = 0;
+    return {
+      run: () => {
+        callCount += 1;
+        return Promise.resolve({ text: callCount === 1 ? transcriptA : transcriptB });
+      },
+    } as unknown as Ai;
+  }
+
+  it('returns candidate1 when both passes agree on candidate1', async () => {
+    const ai = makeAi('desert', 'desert');
+    const result = await runTwoPassRecognition(ai, '', 'Dialect.', 'desert', 'dessert');
+    expect(result.matchResult.matchedWord).toBe('desert');
+    expect(result.matchResult.matchType).toBe('token');
+  });
+
+  it('returns candidate2 when both passes agree on candidate2', async () => {
+    const ai = makeAi('dessert', 'dessert');
+    const result = await runTwoPassRecognition(ai, '', 'Dialect.', 'desert', 'dessert');
+    expect(result.matchResult.matchedWord).toBe('dessert');
+    expect(result.matchResult.matchType).toBe('token');
+  });
+
+  it('returns no_match when passes disagree', async () => {
+    const ai = makeAi('desert', 'dessert');
+    const result = await runTwoPassRecognition(ai, '', 'Dialect.', 'desert', 'dessert');
+    expect(result.matchResult.matchedWord).toBeNull();
+    expect(result.matchResult.matchType).toBe('no_match');
+  });
+
+  it('returns no_match when both passes return unknown word', async () => {
+    const ai = makeAi('something', 'else');
+    const result = await runTwoPassRecognition(ai, '', 'Dialect.', 'desert', 'dessert');
+    expect(result.matchResult.matchedWord).toBeNull();
+    expect(result.matchResult.matchType).toBe('no_match');
+  });
+
+  it('exposes passAWord and passBWord in the result', async () => {
+    const ai = makeAi('desert', 'desert');
+    const result = await runTwoPassRecognition(ai, '', 'Dialect.', 'desert', 'dessert');
+    expect(result.passAWord).toBe('desert');
+    expect(result.passBWord).toBe('desert');
+  });
+
+  it('sets twoPass: true in debug', async () => {
+    const ai = makeAi('desert', 'desert');
+    const result = await runTwoPassRecognition(ai, '', 'Dialect.', 'desert', 'dessert');
+    expect(result.matchResult.debug.twoPass).toBe(true);
   });
 });

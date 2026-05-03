@@ -20,6 +20,7 @@ export type Env = {
   OAUTH_REDIRECT_URI?: string;
   CORS_ALLOWED_ORIGINS?: string;
   RECOGNITION_FOUNDATION_V2?: string;
+  EXPERIMENT_TWO_PASS?: string;
 };
 
 const app = new Hono<{ Bindings: Env }>();

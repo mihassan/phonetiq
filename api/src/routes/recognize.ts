@@ -17,6 +17,116 @@ function isFoundationV2Enabled(env: Env): boolean {
   return raw.trim().toLowerCase() === 'true';
 }
 
+export function isTwoPassEnabled(env: Env): boolean {
+  const raw = env.EXPERIMENT_TWO_PASS;
+  if (typeof raw !== 'string') return false;
+  return raw.trim().toLowerCase() === 'true';
+}
+
+export function buildTwoPassPrompt(dialectPrompt: string, candidate: string): string {
+  return `${dialectPrompt} The speaker said the word ${candidate}.`;
+}
+
+// Stopwords to strip when extracting the first content word from a Whisper transcript.
+const STOPWORDS = new Set([
+  'the', 'a', 'an', 'is', 'was', 'are', 'were', 'i', 'my', 'me', 'we', 'our',
+  'it', 'its', 'this', 'that', 'in', 'on', 'at', 'of', 'to', 'and', 'or',
+  'said', 'say', 'word',
+]);
+
+export function extractFirstContentWord(transcript: string): string {
+  const tokens = normalizeText(transcript).split(' ').filter(Boolean);
+  for (const token of tokens) {
+    if (!STOPWORDS.has(token)) return token;
+  }
+  return tokens[0] ?? '';
+}
+
+export interface TwoPassResult {
+  matchResult: MatchResult;
+  passATranscript: string;
+  passBTranscript: string;
+  passAWord: string;
+  passBWord: string;
+}
+
+export async function runTwoPassRecognition(
+  ai: Ai,
+  base64Audio: string,
+  dialectPrompt: string,
+  candidate1: string,
+  candidate2: string,
+): Promise<TwoPassResult> {
+  const promptA = buildTwoPassPrompt(dialectPrompt, candidate1);
+  const promptB = buildTwoPassPrompt(dialectPrompt, candidate2);
+
+  const [resultA, resultB] = await Promise.all([
+    ai.run('@cf/openai/whisper-large-v3-turbo', {
+      audio: base64Audio,
+      task: 'transcribe',
+      language: 'en',
+      vad_filter: true,
+      initial_prompt: promptA,
+    } as Record<string, unknown>),
+    ai.run('@cf/openai/whisper-large-v3-turbo', {
+      audio: base64Audio,
+      task: 'transcribe',
+      language: 'en',
+      vad_filter: true,
+      initial_prompt: promptB,
+    } as Record<string, unknown>),
+  ]);
+
+  const transcriptA = ((resultA as Record<string, unknown>).text as string || '').trim();
+  const transcriptB = ((resultB as Record<string, unknown>).text as string || '').trim();
+
+  const wordA = extractFirstContentWord(transcriptA);
+  const wordB = extractFirstContentWord(transcriptB);
+
+  const c1 = normalizeText(candidate1);
+  const c2 = normalizeText(candidate2);
+
+  const debug: Record<string, unknown> = {
+    twoPass: true,
+    passAPrompt: promptA,
+    passBPrompt: promptB,
+    passATranscript: transcriptA,
+    passBTranscript: transcriptB,
+    passAWord: wordA,
+    passBWord: wordB,
+    candidate1: c1,
+    candidate2: c2,
+  };
+
+  if (wordA === c1 && wordB === c1) {
+    return {
+      matchResult: { matchedWord: candidate1, matchType: 'token', debug },
+      passATranscript: transcriptA,
+      passBTranscript: transcriptB,
+      passAWord: wordA,
+      passBWord: wordB,
+    };
+  }
+
+  if (wordA === c2 && wordB === c2) {
+    return {
+      matchResult: { matchedWord: candidate2, matchType: 'token', debug },
+      passATranscript: transcriptA,
+      passBTranscript: transcriptB,
+      passAWord: wordA,
+      passBWord: wordB,
+    };
+  }
+
+  return {
+    matchResult: { matchedWord: null, matchType: 'no_match', debug },
+    passATranscript: transcriptA,
+    passBTranscript: transcriptB,
+    passAWord: wordA,
+    passBWord: wordB,
+  };
+}
+
 export function buildDialectPrompt(dialect: string | undefined): string {
   if (dialect === 'uk_only') {
     return 'The speaker will say one short English word in British English.';
@@ -244,12 +354,34 @@ recognizeRoutes.post('/', async (c) => {
     const rawResult = result as Record<string, unknown>;
     const rawTranscript = (rawResult.text as string || '').trim();
     const transcript = rawTranscript.toLowerCase().trim();
-    const { matchedWord, matchType, debug } = matchTranscriptToCandidates(
+    let { matchedWord, matchType, debug } = matchTranscriptToCandidates(
       rawTranscript,
       candidate1,
       candidate2,
       foundationV2,
     );
+
+    let twoPassDebug: Record<string, unknown> | null = null;
+
+    if (
+      matchType === 'no_match' &&
+      audioBytes.byteLength >= 8192 &&
+      candidate1 &&
+      candidate2 &&
+      isTwoPassEnabled(c.env)
+    ) {
+      const dialectPrompt = buildDialectPrompt(dialect);
+      const twoPassResult = await runTwoPassRecognition(
+        c.env.AI,
+        base64Audio,
+        dialectPrompt,
+        candidate1,
+        candidate2,
+      );
+      matchedWord = twoPassResult.matchResult.matchedWord;
+      matchType = twoPassResult.matchResult.matchType;
+      twoPassDebug = twoPassResult.matchResult.debug;
+    }
 
     return c.json({
       transcript,
@@ -263,6 +395,7 @@ recognizeRoutes.post('/', async (c) => {
             prompt,
             foundationV2,
             matching: debug,
+            twoPass: twoPassDebug,
             rawResult,
           }
         : null,
