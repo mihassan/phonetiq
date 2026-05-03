@@ -113,8 +113,12 @@ Phonetiq/
     src/
       App.tsx                 # Main app with Learn/Categories/Practice/Profile modes
       components/
+        AppShell.tsx          # Top-level layout shell
+        ModeTabBar.tsx        # Bottom tab bar (Learn/Practice/Categories/Profile)
         PairCard.tsx          # Learn mode: word display + audio playback
         PracticeCard.tsx      # Practice mode: record + STT + feedback
+        LearnStage.tsx        # Learn stage container
+        CategoriesStage.tsx   # Categories stage with progress summaries
         ProfileStage.tsx      # Profile mode: key stats + weak areas/actions
         Navigation.tsx        # Prev/Next navigation
         CategoryFilter.tsx    # Category filter pills

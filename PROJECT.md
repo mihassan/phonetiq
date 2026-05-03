@@ -45,6 +45,8 @@
 - `npm run dev` - Start Vite dev server (port 5173, proxies /api to 8787)
 - `npm run build` - Typecheck + production build (outputs to `web/dist/`)
 - `npm test` - Run Vitest tests (123 tests)
+- `npm run lint` - ESLint check
+- `npm run preview` - Preview production build locally
 
 ### Scripts
 - `./scripts/generate-audio.sh` - Generate TTS audio + upload to local R2
@@ -93,3 +95,8 @@
 ## GitHub Secrets
 - `CLOUDFLARE_API_TOKEN` - API token with Workers Scripts Edit + Cloudflare Pages Edit permissions
 - `CLOUDFLARE_ACCOUNT_ID` - Cloudflare account ID (`3bea2e6d6f93b5cc822b36b69958d4cd`)
+
+## Cloudflare Worker Secrets
+These must be set via `wrangler secret put <NAME>` — they are **not** in `wrangler.toml`:
+- `GOOGLE_CLIENT_SECRET` - Google OAuth app secret (from Google Cloud Console)
+- `SESSION_SECRET` - Random secret used to sign session cookies (min 32 chars)
