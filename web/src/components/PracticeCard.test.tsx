@@ -403,6 +403,72 @@ describe('PracticeCard', () => {
     expect(screen.getByText(/bonjour/i)).toBeInTheDocument();
   });
 
+  it('shows targeted hint label when frame_sentence no_match has a transcript', async () => {
+    recognizeSpeechMock.mockResolvedValue({
+      transcript: 'cat',
+      matchType: 'no_match',
+      matchedWord: null,
+      debug: null,
+    });
+
+    render(
+      <PracticeCard
+        word="cat"
+        isActive={true}
+        onSuccess={vi.fn()}
+        isFirstWord={true}
+        partnerWord="cut"
+        experimentMode="frame_sentence"
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /record pronunciation/i }));
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(screen.getByTestId('practice-status-label')).toHaveTextContent('Try: "The word is cat"');
+  });
+
+  it('shows generic Didn\'t catch that for no_match with empty transcript in frame_sentence', async () => {
+    recognizeSpeechMock.mockResolvedValue({
+      transcript: '',
+      matchType: 'no_match',
+      matchedWord: null,
+      debug: null,
+    });
+
+    render(
+      <PracticeCard
+        word="cat"
+        isActive={true}
+        onSuccess={vi.fn()}
+        isFirstWord={true}
+        partnerWord="cut"
+        experimentMode="frame_sentence"
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /record pronunciation/i }));
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(screen.getByTestId('practice-status-label')).toHaveTextContent("Didn't catch that");
+  });
+
   it('shows a development debug panel with recorded audio and raw ai details', async () => {
     recognizeSpeechMock.mockResolvedValue({
       transcript: 'ship',
@@ -525,5 +591,76 @@ describe('PracticeCard', () => {
     });
 
     expect(screen.getByText(/noise skipped/i)).toBeInTheDocument();
+  });
+});
+
+describe('frame_sentence first-use tip', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('shows the tip on first render in frame_sentence mode', () => {
+    render(
+      <PracticeCard
+        word="cat"
+        isActive={true}
+        onSuccess={vi.fn()}
+        isFirstWord={true}
+        partnerWord="cut"
+        experimentMode="frame_sentence"
+      />,
+    );
+    expect(screen.getByTestId('frame-tip')).toBeInTheDocument();
+  });
+
+  it('hides tip after clicking Got it and sets localStorage flag', async () => {
+    render(
+      <PracticeCard
+        word="cat"
+        isActive={true}
+        onSuccess={vi.fn()}
+        isFirstWord={true}
+        partnerWord="cut"
+        experimentMode="frame_sentence"
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /got it/i }));
+    });
+
+    expect(screen.queryByTestId('frame-tip')).not.toBeInTheDocument();
+    expect(localStorage.getItem('phonetiq:seenFrameTip')).toBe('1');
+  });
+
+  it('does not show tip when localStorage flag is already set', () => {
+    localStorage.setItem('phonetiq:seenFrameTip', '1');
+
+    render(
+      <PracticeCard
+        word="cat"
+        isActive={true}
+        onSuccess={vi.fn()}
+        isFirstWord={true}
+        partnerWord="cut"
+        experimentMode="frame_sentence"
+      />,
+    );
+
+    expect(screen.queryByTestId('frame-tip')).not.toBeInTheDocument();
+  });
+
+  it('does not show tip in standard mode', () => {
+    render(
+      <PracticeCard
+        word="cat"
+        isActive={true}
+        onSuccess={vi.fn()}
+        isFirstWord={true}
+        partnerWord="cut"
+      />,
+    );
+
+    expect(screen.queryByTestId('frame-tip')).not.toBeInTheDocument();
   });
 });

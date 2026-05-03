@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { Mic, Check, X, Loader2, Play } from 'lucide-react';
 import { audioUrl } from '../lib/api';
 import { playWordAudio } from '../lib/audioPlayback';
 import { usePracticeAttempt } from '../hooks/usePracticeAttempt';
 import { getPracticeHeadingSizeClass } from '../lib/wordSizing';
+
+const FRAME_TIP_KEY = 'phonetiq:seenFrameTip';
 
 const RECORD_DURATION_DEFAULT = 3000;
 const RECORD_DURATION_REPETITION = 8000;
@@ -35,7 +38,7 @@ export function PracticeCard({
   const recordDuration =
     experimentMode === 'repetition' ? RECORD_DURATION_REPETITION : RECORD_DURATION_DEFAULT;
 
-  const { transcript, status, progress, isCompleted, debugInfo, resetAttempt, sendDebugRecording, handleRecord } =
+  const { transcript, status, progress, isCompleted, debugInfo, resetAttempt, sendDebugRecording, handleRecord, noMatchHint } =
     usePracticeAttempt({
       word,
       partnerWord,
@@ -47,6 +50,15 @@ export function PracticeCard({
     });
   const sizeClass = getPracticeHeadingSizeClass(word, partnerWord);
   const isDevelopment = import.meta.env.DEV;
+
+  const [showFrameTip, setShowFrameTip] = useState(
+    experimentMode === 'frame_sentence' && !localStorage.getItem(FRAME_TIP_KEY),
+  );
+
+  const dismissFrameTip = () => {
+    localStorage.setItem(FRAME_TIP_KEY, '1');
+    setShowFrameTip(false);
+  };
 
   const play = () => {
     playWordAudio(audioUrl(word));
@@ -156,6 +168,13 @@ export function PracticeCard({
     },
   };
 
+  if (status === 'no_match' && noMatchHint === 'use_frame') {
+    stateMap.no_match = {
+      ...stateMap.no_match,
+      label: `Try: "The word is ${word}"`,
+    };
+  }
+
   const ui = stateMap[status];
 
   return (
@@ -189,6 +208,24 @@ export function PracticeCard({
           <p className="ui-muted text-[11px] md:text-xs font-semibold mt-1">
             Say: &ldquo;The word is {word}&rdquo;
           </p>
+        )}
+        {showFrameTip && (
+          <div
+            data-testid="frame-tip"
+            className="mt-2 px-3 py-2 rounded-xl border ui-divider-border ui-card text-[11px] md:text-xs flex items-start gap-2 max-w-[220px]"
+          >
+            <span className="shrink-0 mt-px">💡</span>
+            <span className="ui-muted font-medium leading-snug flex-1">
+              Say the full sentence, not just the word.
+            </span>
+            <button
+              onClick={dismissFrameTip}
+              aria-label="Got it"
+              className="shrink-0 ui-link font-bold text-[11px] md:text-xs"
+            >
+              Got it
+            </button>
+          </div>
         )}
       </div>
 
