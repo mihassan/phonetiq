@@ -118,6 +118,8 @@ async function recognize(
 }
 
 const RATE_LIMIT_BATCH = 8;
+
+function printTable(results: EvalResult[], label: string) {
   const total = results.length;
   const correct = results.filter((r) => r.correct).length;
   const wrong = results.filter((r) => !r.correct && r.matchType !== 'no_match' && r.matchType !== 'freeform').length;
