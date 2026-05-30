@@ -27,8 +27,8 @@ export function usePracticeSession() {
   const [mode, setModeState] = useState<Mode>('LEARN');
   const [pairs, setPairs] = useState<WordPair[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [dialect, setDialect] = useState<Dialect>('all');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [dialect, setDialectState] = useState<Dialect>('all');
+  const [selectedCategory, setSelectedCategoryState] = useState<string | null>(null);
   const [index, setIndex] = useState(0);
   const [targetNum, setTargetNum] = useState<1 | 2>(1);
   const [isLoading, setIsLoading] = useState(true);
@@ -43,22 +43,57 @@ export function usePracticeSession() {
     modeRef.current = mode;
   }, [mode]);
 
-  useEffect(() => {
-    setIsLoading(true);
+  const resetNavigationState = useCallback(() => {
     setIndex(0);
     setTargetNum(1);
     setPracticeBatch([]);
     setPracticeBatchIndex(0);
+  }, []);
 
-    fetchCategories({ dialect }).then((data) => setCategories(data.categories));
+  const setDialect = useCallback((nextDialect: Dialect) => {
+    setIsLoading(true);
+    setIsWeakPracticeMode(false);
+    setSelectedCategoryState(null);
+    resetNavigationState();
+    setDialectState(nextDialect);
+  }, [resetNavigationState]);
 
-    fetchPairs({
-      category: selectedCategory || undefined,
-      dialect,
-      limit: 200,
-    })
-      .then((data) => setPairs(data.pairs))
-      .finally(() => setIsLoading(false));
+  const setSelectedCategory = useCallback((nextCategory: string | null) => {
+    setIsLoading(true);
+    setIsWeakPracticeMode(false);
+    resetNavigationState();
+    setSelectedCategoryState(nextCategory);
+  }, [resetNavigationState]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadSessionData = async () => {
+      try {
+        const [categoryData, pairData] = await Promise.all([
+          fetchCategories({ dialect }),
+          fetchPairs({
+            category: selectedCategory || undefined,
+            dialect,
+            limit: 200,
+          }),
+        ]);
+
+        if (cancelled) return;
+        setCategories(categoryData.categories);
+        setPairs(pairData.pairs);
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadSessionData();
+
+    return () => {
+      cancelled = true;
+    };
   }, [selectedCategory, dialect]);
 
   const currentPair = pairs[index];

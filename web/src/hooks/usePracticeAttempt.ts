@@ -29,6 +29,16 @@ export interface PracticeAttemptDebugInfo {
   recognition?: RecognizeSpeechResult['debug'];
 }
 
+interface AttemptState {
+  key: string;
+  transcript: string;
+  status: PracticeStatus;
+  progress: number;
+  isCompleted: boolean;
+  debugInfo: PracticeAttemptDebugInfo | null;
+  noMatchHint: 'use_frame' | null;
+}
+
 interface UsePracticeAttemptOptions {
   word: string;
   partnerWord?: string;
@@ -101,6 +111,18 @@ function getSkipReason(metrics: RecordingMetrics | null): DebugSkipReason {
   return metrics?.likelyIssue === 'possible_noise' ? 'possible_noise' : 'low_signal';
 }
 
+function buildInitialAttemptState(key: string): AttemptState {
+  return {
+    key,
+    transcript: '',
+    status: 'idle',
+    progress: 0,
+    isCompleted: false,
+    debugInfo: null,
+    noMatchHint: null,
+  };
+}
+
 export function usePracticeAttempt({
   word,
   partnerWord,
@@ -112,14 +134,12 @@ export function usePracticeAttempt({
   successDelayMs = 1500,
   incorrectDelayMs = 2500,
 }: UsePracticeAttemptOptions) {
+  const sessionKey = `${word}::${partnerWord ?? ''}`;
   const { startRecording, stopRecording } = useAudioRecorder();
 
-  const [transcript, setTranscript] = useState('');
-  const [status, setStatus] = useState<PracticeStatus>('idle');
-  const [progress, setProgress] = useState(0);
-  const [isCompleted, setIsCompleted] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<PracticeAttemptDebugInfo | null>(null);
-  const [noMatchHint, setNoMatchHint] = useState<'use_frame' | null>(null);
+  const [attemptState, setAttemptState] = useState<AttemptState>(() =>
+    buildInitialAttemptState(sessionKey),
+  );
 
   const animFrameRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
@@ -127,6 +147,22 @@ export function usePracticeAttempt({
   const outcomeTimerRef = useRef<ReturnType<typeof setTimeout>>(0 as unknown as ReturnType<typeof setTimeout>);
   const debugUrlRef = useRef<string | null>(null);
   const lastRecordingRef = useRef<RecordingResult | null>(null);
+  const activeSessionKeyRef = useRef(sessionKey);
+
+  const currentState =
+    attemptState.key === sessionKey ? attemptState : buildInitialAttemptState(sessionKey);
+
+  const patchAttemptState = useCallback(
+    (targetKey: string, patch: Partial<Omit<AttemptState, 'key'>>) => {
+      setAttemptState((prev) => {
+        if (prev.key !== targetKey) {
+          return { ...buildInitialAttemptState(targetKey), ...patch, key: targetKey };
+        }
+        return { ...prev, ...patch, key: targetKey };
+      });
+    },
+    [],
+  );
 
   useEffect(() => {
     clearTimeout(timerRef.current);
@@ -134,27 +170,29 @@ export function usePracticeAttempt({
     cancelAnimationFrame(animFrameRef.current);
     revokeObjectUrl(debugUrlRef.current);
     debugUrlRef.current = null;
-    setStatus('idle');
-    setTranscript('');
-    setProgress(0);
-    setIsCompleted(false);
-    setDebugInfo(null);
-    setNoMatchHint(null);
     lastRecordingRef.current = null;
-  }, [word, partnerWord]);
+    activeSessionKeyRef.current = sessionKey;
+  }, [sessionKey]);
 
   const resetAttempt = useCallback(() => {
     clearTimeout(outcomeTimerRef.current);
-    setStatus('idle');
-    setTranscript('');
-    setNoMatchHint(null);
-  }, []);
+    patchAttemptState(sessionKey, {
+      status: 'idle',
+      transcript: '',
+      progress: 0,
+      noMatchHint: null,
+    });
+  }, [patchAttemptState, sessionKey]);
 
   const runRecognition = useCallback(async (
+    attemptKey: string,
     recording: RecordingResult,
     nextDebugInfo: PracticeAttemptDebugInfo,
   ) => {
-    setStatus('processing');
+    patchAttemptState(attemptKey, {
+      status: 'processing',
+      progress: 0,
+    });
     try {
       const rawRecognition = await recognizeSpeech(recording.blob, {
         candidate1: word,
@@ -168,12 +206,18 @@ export function usePracticeAttempt({
           ? { transcript: rawRecognition, matchType: 'freeform' as const, matchedWord: null, debug: null }
           : rawRecognition;
 
+      if (activeSessionKeyRef.current !== attemptKey) {
+        return;
+      }
+
       const text = recognition.transcript.toLowerCase().trim();
-      setTranscript(text);
-      setDebugInfo({
-        ...nextDebugInfo,
-        skipReason: undefined,
-        recognition: recognition.debug ?? null,
+      patchAttemptState(attemptKey, {
+        transcript: text,
+        debugInfo: {
+          ...nextDebugInfo,
+          skipReason: undefined,
+          recognition: recognition.debug ?? null,
+        },
       });
 
       const target = word.toLowerCase();
@@ -187,11 +231,19 @@ export function usePracticeAttempt({
         });
         const hint =
           experimentMode === 'frame_sentence' && text.length > 0 ? 'use_frame' : null;
-        setNoMatchHint(hint);
-        setStatus('no_match');
+        patchAttemptState(attemptKey, {
+          noMatchHint: hint,
+          status: 'no_match',
+        });
         outcomeTimerRef.current = setTimeout(() => {
-          setStatus('idle');
-          setNoMatchHint(null);
+          if (activeSessionKeyRef.current !== attemptKey) {
+            return;
+          }
+          patchAttemptState(attemptKey, {
+            status: 'idle',
+            noMatchHint: null,
+            progress: 0,
+          });
         }, incorrectDelayMs);
         return;
       }
@@ -202,11 +254,19 @@ export function usePracticeAttempt({
           transcript: text,
           matchType: recognition.matchType,
         });
-        setStatus('correct');
+        patchAttemptState(attemptKey, {
+          status: 'correct',
+        });
         outcomeTimerRef.current = setTimeout(() => {
-          setStatus('idle');
-          setTranscript('');
-          setIsCompleted(true);
+          if (activeSessionKeyRef.current !== attemptKey) {
+            return;
+          }
+          patchAttemptState(attemptKey, {
+            status: 'idle',
+            transcript: '',
+            isCompleted: true,
+            progress: 0,
+          });
           onSuccess();
         }, successDelayMs);
       } else {
@@ -215,40 +275,66 @@ export function usePracticeAttempt({
           transcript: text,
           matchType: recognition.matchType,
         });
-        setStatus('incorrect');
+        patchAttemptState(attemptKey, {
+          status: 'incorrect',
+        });
         outcomeTimerRef.current = setTimeout(() => {
-          setStatus('idle');
+          if (activeSessionKeyRef.current !== attemptKey) {
+            return;
+          }
+          patchAttemptState(attemptKey, {
+            status: 'idle',
+            progress: 0,
+          });
         }, incorrectDelayMs);
       }
     } catch (error) {
-      setDebugInfo({
-        ...nextDebugInfo,
-        recognition: extractRecognitionDebug(error),
+      if (activeSessionKeyRef.current !== attemptKey) {
+        return;
+      }
+      patchAttemptState(attemptKey, {
+        debugInfo: {
+          ...nextDebugInfo,
+          recognition: extractRecognitionDebug(error),
+        },
+        status: 'no_match',
+        noMatchHint: null,
       });
-      setNoMatchHint(null);
-      setStatus('no_match');
     }
-  }, [dialect, experimentMode, incorrectDelayMs, onAttemptEvaluated, onSuccess, partnerWord, successDelayMs, word]);
+  }, [
+    dialect,
+    experimentMode,
+    incorrectDelayMs,
+    onAttemptEvaluated,
+    onSuccess,
+    patchAttemptState,
+    partnerWord,
+    successDelayMs,
+    word,
+  ]);
 
   const sendDebugRecording = useCallback(async () => {
     const recording = lastRecordingRef.current;
-    const nextDebugInfo = debugInfo;
+    const nextDebugInfo = currentState.debugInfo;
     if (!recording || !nextDebugInfo) return;
 
-    await runRecognition(recording, nextDebugInfo);
-  }, [debugInfo, runRecognition]);
+    await runRecognition(sessionKey, recording, nextDebugInfo);
+  }, [currentState.debugInfo, runRecognition, sessionKey]);
 
   useEffect(() => {
-    if (status !== 'recording') {
-      setProgress(0);
+    if (currentState.status !== 'recording') {
       return;
     }
 
+    const attemptKey = sessionKey;
     startTimeRef.current = performance.now();
 
     const tick = () => {
       const elapsed = performance.now() - startTimeRef.current;
-      setProgress(Math.min(elapsed / recordDurationMs, 1));
+      setAttemptState((prev) => {
+        if (prev.key !== attemptKey) return prev;
+        return { ...prev, progress: Math.min(elapsed / recordDurationMs, 1) };
+      });
       if (elapsed < recordDurationMs) {
         animFrameRef.current = requestAnimationFrame(tick);
       }
@@ -256,23 +342,41 @@ export function usePracticeAttempt({
 
     animFrameRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(animFrameRef.current);
-  }, [status, recordDurationMs]);
+  }, [currentState.status, recordDurationMs, sessionKey]);
 
   const handleRecord = useCallback(async () => {
-    if (status !== 'idle') return;
+    if (currentState.status !== 'idle') return;
 
     clearTimeout(timerRef.current);
     clearTimeout(outcomeTimerRef.current);
 
-    setStatus('arming');
-    setTranscript('');
+    const attemptKey = sessionKey;
+    patchAttemptState(attemptKey, {
+      status: 'arming',
+      transcript: '',
+      progress: 0,
+      noMatchHint: null,
+      isCompleted: false,
+    });
     await startRecording();
-    setStatus('recording');
+    if (activeSessionKeyRef.current !== attemptKey) {
+      return;
+    }
+    patchAttemptState(attemptKey, {
+      status: 'recording',
+      progress: 0,
+    });
 
     timerRef.current = setTimeout(async () => {
       const recording = await stopRecording();
       if (recording.blob.size === 0) {
-        setStatus('idle');
+        if (activeSessionKeyRef.current !== attemptKey) {
+          return;
+        }
+        patchAttemptState(attemptKey, {
+          status: 'idle',
+          progress: 0,
+        });
         return;
       }
 
@@ -288,7 +392,9 @@ export function usePracticeAttempt({
           metrics: recording.metrics,
         },
       };
-      setDebugInfo(nextDebugInfo);
+      patchAttemptState(attemptKey, {
+        debugInfo: nextDebugInfo,
+      });
 
       if (shouldSkipRecognition(recording.metrics)) {
         onAttemptEvaluated?.({
@@ -296,31 +402,36 @@ export function usePracticeAttempt({
           transcript: '',
           matchType: 'no_match',
         });
-        setStatus('no_match');
-        setDebugInfo({
-          ...nextDebugInfo,
-          skipReason: getSkipReason(recording.metrics),
+        patchAttemptState(attemptKey, {
+          status: 'no_match',
+          debugInfo: {
+            ...nextDebugInfo,
+            skipReason: getSkipReason(recording.metrics),
+          },
         });
         if (!import.meta.env.DEV) {
           outcomeTimerRef.current = setTimeout(() => {
-            setStatus('idle');
+            if (activeSessionKeyRef.current !== attemptKey) {
+              return;
+            }
+            patchAttemptState(attemptKey, {
+              status: 'idle',
+              progress: 0,
+            });
           }, incorrectDelayMs);
         }
         return;
       }
 
-      await runRecognition(recording, nextDebugInfo);
+      await runRecognition(attemptKey, recording, nextDebugInfo);
     }, recordDurationMs);
   }, [
-    status,
+    currentState.status,
+    patchAttemptState,
+    sessionKey,
     startRecording,
     stopRecording,
-    word,
-    partnerWord,
-    dialect,
-    onSuccess,
     recordDurationMs,
-    successDelayMs,
     incorrectDelayMs,
     onAttemptEvaluated,
     runRecognition,
@@ -335,12 +446,12 @@ export function usePracticeAttempt({
   }, []);
 
   return {
-    transcript,
-    status,
-    progress,
-    isCompleted,
-    debugInfo,
-    noMatchHint,
+    transcript: currentState.transcript,
+    status: currentState.status,
+    progress: currentState.progress,
+    isCompleted: currentState.isCompleted,
+    debugInfo: currentState.debugInfo,
+    noMatchHint: currentState.noMatchHint,
     resetAttempt,
     sendDebugRecording,
     handleRecord,

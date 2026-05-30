@@ -6,8 +6,10 @@ export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const refreshUser = useCallback(async () => {
-    setIsLoading(true);
+  const refreshUser = useCallback(async (showLoading = true) => {
+    if (showLoading) {
+      setIsLoading(true);
+    }
     try {
       const data = await fetchCurrentUser();
       setUser(data.user);
@@ -19,8 +21,30 @@ export function useAuth() {
   }, []);
 
   useEffect(() => {
-    void refreshUser();
-  }, [refreshUser]);
+    let cancelled = false;
+
+    const loadInitialUser = async () => {
+      try {
+        const data = await fetchCurrentUser();
+        if (!cancelled) {
+          setUser(data.user);
+        }
+      } catch {
+        if (!cancelled) {
+          setUser(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadInitialUser();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const login = useCallback(() => {
     window.location.href = getLoginUrl();
