@@ -28,7 +28,7 @@ ESL/EFL learners, speech therapy users, and pronunciation-focused self-learners 
 * Optional Google OAuth for account creation and cross-device progress sync
 
 ### Future Roadmap
-* Stronger dialect coverage and curated `au_only` dataset (AU UI only after meaningful dataset)
+* Expand the seeded `au_only` dataset with additional research-backed contrasts
 * Classroom/teacher custom lists and assignments
 * More advanced review scheduling and personalized practice plans
 * STT quality analytics/tuning dashboards
