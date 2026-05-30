@@ -2,13 +2,18 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { PairCard } from './PairCard';
 
 const playWordAudioMock = vi.fn();
+const audioUrlMock = vi.fn((word: string, options?: { dialect?: string; voice?: string }) =>
+  options?.dialect
+    ? `/api/audio/${word}?dialect=${options.dialect}&voice=${options.voice ?? 'default'}`
+    : `/api/audio/${word}`,
+);
 
 vi.mock('../lib/api', () => ({
-  audioUrl: (word: string) => `/api/audio/${word}`,
+  audioUrl: (word: string, options?: { dialect?: string; voice?: string }) => audioUrlMock(word, options),
 }));
 
 vi.mock('../lib/audioPlayback', () => ({
-  playWordAudio: (...args: unknown[]) => playWordAudioMock(...args),
+  playWordAudio: (src: string, options?: unknown) => playWordAudioMock(src, options),
 }));
 
 describe('PairCard', () => {
@@ -30,12 +35,16 @@ describe('PairCard', () => {
   });
 
   it('plays audio when action button is clicked', () => {
-    render(<PairCard word="ship" isActive={true} isFirstWord={false} />);
+    render(<PairCard word="ship" isActive={true} isFirstWord={false} audioDialect="en-AU" />);
 
     fireEvent.click(screen.getByRole('button', { name: /play pronunciation/i }));
 
     expect(playWordAudioMock).toHaveBeenCalledTimes(1);
-    expect(playWordAudioMock).toHaveBeenCalledWith('/api/audio/ship', expect.any(Object));
+    expect(audioUrlMock).toHaveBeenCalledWith('ship', { dialect: 'en-AU', voice: 'default' });
+    expect(playWordAudioMock).toHaveBeenCalledWith(
+      '/api/audio/ship?dialect=en-AU&voice=default',
+      expect.any(Object),
+    );
   });
 
   it('uses adaptive heading size for long words to keep visual symmetry', () => {

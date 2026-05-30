@@ -1,14 +1,15 @@
 import { PairCard } from './PairCard';
-import type { WordPair } from '../lib/types';
+import type { AudioDialect, WordPair } from '../lib/types';
 
 interface LearnStageProps {
   pair: WordPair;
+  audioDialect: AudioDialect;
   index: number;
   totalPairs: number;
   progress: number;
 }
 
-export function LearnStage({ pair, index, totalPairs, progress }: LearnStageProps) {
+export function LearnStage({ pair, audioDialect, index, totalPairs, progress }: LearnStageProps) {
   return (
     <main
       data-testid="learn-stage"
@@ -43,12 +44,14 @@ export function LearnStage({ pair, index, totalPairs, progress }: LearnStageProp
           partnerWord={pair.word2}
           isActive={true}
           isFirstWord={true}
+          audioDialect={audioDialect}
         />
         <PairCard
           word={pair.word2}
           partnerWord={pair.word1}
           isActive={true}
           isFirstWord={false}
+          audioDialect={audioDialect}
         />
       </div>
     </main>

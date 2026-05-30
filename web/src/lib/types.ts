@@ -15,7 +15,11 @@ export interface Category {
 
 export type Mode = 'LEARN' | 'PRACTICE' | 'CATEGORIES' | 'PROFILE';
 
-export type Dialect = 'all' | 'uk_only' | 'us_only';
+export type Dialect = 'all' | 'uk_only' | 'us_only' | 'au_only';
+
+export type AudioDialect = 'en-US' | 'en-GB' | 'en-AU';
+
+export type AudioVoice = 'default';
 
 export type TargetWord = 1 | 2;
 

@@ -9,6 +9,7 @@ const DIALECT_OPTIONS: Array<{ value: Dialect; label: string }> = [
   { value: 'all', label: 'Common' },
   { value: 'uk_only', label: 'UK' },
   { value: 'us_only', label: 'US' },
+  { value: 'au_only', label: 'AU' },
 ];
 
 export function DialectFilter({ selected, onSelect }: DialectFilterProps) {

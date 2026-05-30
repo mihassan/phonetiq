@@ -8,6 +8,7 @@ import {
   updateProgressForAttempt,
 } from '../lib/progressStorage';
 import type {
+  AudioDialect,
   Category,
   Dialect,
   Mode,
@@ -15,6 +16,12 @@ import type {
   TargetWord,
   WordPair,
 } from '../lib/types';
+
+function getAudioDialect(dialect: Dialect): AudioDialect {
+  if (dialect === 'uk_only') return 'en-GB';
+  if (dialect === 'au_only') return 'en-AU';
+  return 'en-US';
+}
 
 export function usePracticeSession() {
   const [mode, setModeState] = useState<Mode>('LEARN');
@@ -30,6 +37,7 @@ export function usePracticeSession() {
   const [practiceBatch, setPracticeBatch] = useState<WordPair[]>([]);
   const [practiceBatchIndex, setPracticeBatchIndex] = useState(0);
   const modeRef = useRef(mode);
+  const audioDialect = useMemo(() => getAudioDialect(dialect), [dialect]);
 
   useEffect(() => {
     modeRef.current = mode;
@@ -218,6 +226,7 @@ export function usePracticeSession() {
     pairs,
     categories,
     dialect,
+    audioDialect,
     setDialect,
     selectedCategory,
     setSelectedCategory,

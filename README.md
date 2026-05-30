@@ -38,9 +38,10 @@ Most pronunciation apps use browser-native speech recognition which is flaky acr
 - **Progress tracking** — Accuracy, streaks, completions, and weak-area analysis
 
 ### 🌐 Dialect-Aware
-- Filter pairs by dialect (`Common`, `UK`, `US`)
+- Filter pairs by dialect (`Common`, `UK`, `US`, `AU`)
 - Whisper receives dialect-specific prompts for better recognition
-- Currently: 170 "common" pairs + 16 UK-exclusive pairs
+- Audio available in three dialects: US English, British English, Australian English
+- Dataset now includes 400+ seeded pairs with `all`, `uk_only`, `us_only`, and an initial `au_only` starter set
 
 ### 🔒 Production-Ready
 - **Two-tier rate limiting** — 10 req/min for AI (protects costs), 100 req/min for general API
@@ -57,8 +58,9 @@ Most pronunciation apps use browser-native speech recognition which is flaky acr
 
 ## Features
 
-- 186 curated word pairs across 9 phoneme categories (vowels, consonants, fricatives, affricates, liquids, nasals, sibilants, approximants)
-- Dialect-aware pair filtering (`Common`=`all`, `UK`=`uk_only`, `US`=`us_only` support in schema)
+- 400+ curated word pairs across 9 phoneme categories (vowels, consonants, fricatives, affricates, liquids, nasals, sibilants, approximants)
+- Dialect-aware pair filtering: `all` (common), `uk_only`, `us_only`, `au_only`
+- Audio support for three dialects: `en-US`, `en-GB`, `en-AU` with one default voice per dialect
 - **Smart speech recognition** with mic warm-up, noise detection, and silence trimming
 - Adaptive Practice sessions: 15-pair batches with 5 weak-pair quota + unseen/medium-weak filler
 - Local progress tracking (attempts, accuracy, completions, streaks, weak-pair signals)
@@ -102,7 +104,7 @@ Phonetiq/
         googleOAuth.ts        # OAuth URL, token exchange, profile fetch
       db/
         schema.ts             # Drizzle ORM schema
-        seed.sql              # 186 word pairs seed data
+        seed.sql              # 400+ word pairs seed data
     scripts/
       run-eval.ts             # Baseline recognition eval harness (34 WAV fixtures)
       run-eval-experiment.ts  # E1/E2 experiment eval harness
@@ -138,7 +140,8 @@ Phonetiq/
         wordSizing.ts         # Word display sizing helpers
         types.ts              # Shared TypeScript types
   scripts/
-    generate-audio.sh         # TTS audio generation + R2 upload
+    generate-audio.sh         # Shell wrapper for portable dialect-aware generator
+    generate-audio.ts         # Google TTS batch generation + optional R2 upload
   docs/
     PRD.md                    # Product requirements
     DESIGN.md                 # Architecture & design decisions
@@ -152,8 +155,9 @@ Phonetiq/
 ### Prerequisites
 
 - Node.js >= 20
-- macOS (for audio generation via `say` command)
+- `ffmpeg` on your `PATH` (for MP3 → `.m4a` transcoding during audio generation)
 - Cloudflare account (for Workers AI; D1 and R2 work locally without auth)
+- Google Cloud service account credentials for Text-to-Speech generation
 
 ### 1. Install dependencies
 
@@ -177,12 +181,31 @@ npm run db:seed:local
 ### 3. Generate and upload audio files
 
 ```bash
-# From project root — generates 338 .m4a files and uploads to local R2
+# From project root — preview the full dialect-aware asset set without calling Google TTS
+./scripts/generate-audio.sh --dry-run
+
+# Generate all missing assets for en-US, en-GB, and en-AU into .audio-cache/
 ./scripts/generate-audio.sh
 
-# To regenerate all (overwrite existing):
+# Regenerate everything from scratch
 ./scripts/generate-audio.sh --force
+
+# Upload generated assets to local R2 after generation
+./scripts/generate-audio.sh --upload
+
+# Upload to remote R2 instead of local emulation
+./scripts/generate-audio.sh --upload --remote
 ```
+
+**Generator prerequisites:**
+
+- `ffmpeg` installed and available on `PATH` (used to transcode Google TTS MP3 output into `.m4a`)
+- A Google Cloud service account with Text-to-Speech access
+- Authentication configured via either:
+  - `GOOGLE_APPLICATION_CREDENTIALS=/absolute/path/to/service-account.json`, or
+  - `GOOGLE_CREDENTIALS_JSON='{"type":"service_account",...}'`
+
+The portable generator uses Google Cloud Text-to-Speech, renders one default voice per dialect (`en-US`, `en-GB`, `en-AU`), writes files under `.audio-cache/<dialect>/default/<word>.m4a`, and preserves the app's pre-generated R2 audio serving model.
 
 ### 4. Run the app
 
@@ -231,7 +254,13 @@ npx wrangler pages project create phonetiq --production-branch main
 
 ### 2. Upload audio files to R2
 
-Upload the 338 `.m4a` files from `.audio-cache/` to the `phonetiq-audio` R2 bucket via the Cloudflare Dashboard (R2 > phonetiq-audio > Upload Files).
+Generate and upload the dialect-aware assets from the project root:
+
+```bash
+./scripts/generate-audio.sh --upload --remote
+```
+
+Asset keys are written as `<dialect>/default/<word>.m4a` with a legacy flat-key fallback still supported by the API.
 
 ### 3. Deploy manually (first time)
 

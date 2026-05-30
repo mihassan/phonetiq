@@ -1,4 +1,16 @@
-import { recognizeSpeech } from './api';
+import { audioUrl, recognizeSpeech } from './api';
+
+describe('audioUrl', () => {
+  it('builds a legacy flat audio path when no options are provided', () => {
+    expect(audioUrl("who'd there")).toBe('http://localhost:3000/api/audio/whod-there');
+  });
+
+  it('adds dialect and voice query params for dialect-aware assets', () => {
+    expect(audioUrl("who'd", { dialect: 'en-AU', voice: 'default' })).toBe(
+      'http://localhost:3000/api/audio/whod?dialect=en-AU&voice=default',
+    );
+  });
+});
 
 describe('recognizeSpeech', () => {
   afterEach(() => {

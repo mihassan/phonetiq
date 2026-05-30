@@ -194,6 +194,61 @@ describe('usePracticeSession', () => {
     expect(result.current.targetNum).toBe(1);
   });
 
+  it('derives audio dialect from the selected content dialect', async () => {
+    const { result } = renderHook(() => usePracticeSession());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.audioDialect).toBe('en-US');
+
+    act(() => {
+      result.current.setDialect('uk_only');
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.audioDialect).toBe('en-GB');
+
+    act(() => {
+      result.current.setDialect('au_only');
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.audioDialect).toBe('en-AU');
+  });
+
+  it('refetches pairs and categories when dialect changes to au_only', async () => {
+    const { result } = renderHook(() => usePracticeSession());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    act(() => {
+      result.current.setDialect('au_only');
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(fetchCategoriesMock).toHaveBeenLastCalledWith({ dialect: 'au_only' });
+    expect(fetchPairsMock).toHaveBeenLastCalledWith({
+      category: undefined,
+      dialect: 'au_only',
+      limit: 200,
+    });
+    expect(result.current.index).toBe(0);
+    expect(result.current.targetNum).toBe(1);
+  });
+
   it('records practice attempt outcomes to local progress state', async () => {
     const { result } = renderHook(() => usePracticeSession());
 

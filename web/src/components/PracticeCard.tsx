@@ -3,6 +3,7 @@ import { Mic, Check, X, Loader2, Play } from 'lucide-react';
 import { audioUrl } from '../lib/api';
 import { playWordAudio } from '../lib/audioPlayback';
 import { usePracticeAttempt } from '../hooks/usePracticeAttempt';
+import type { AudioDialect } from '../lib/types';
 import { getPracticeHeadingSizeClass } from '../lib/wordSizing';
 
 const FRAME_TIP_KEY = 'phonetiq:seenFrameTip';
@@ -20,6 +21,7 @@ interface Props {
     matchType: 'exact' | 'token' | 'fuzzy' | 'no_match' | 'freeform';
   }) => void;
   dialect?: string;
+  audioDialect?: AudioDialect;
   isFirstWord: boolean;
   partnerWord: string;
   experimentMode?: 'repetition' | 'frame_sentence';
@@ -31,6 +33,7 @@ export function PracticeCard({
   onSuccess,
   onAttemptEvaluated,
   dialect,
+  audioDialect,
   isFirstWord,
   partnerWord,
   experimentMode,
@@ -61,7 +64,7 @@ export function PracticeCard({
   };
 
   const play = () => {
-    playWordAudio(audioUrl(word));
+    playWordAudio(audioUrl(word, audioDialect ? { dialect: audioDialect, voice: 'default' } : undefined));
   };
 
   const ringRadius = 40;

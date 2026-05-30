@@ -4,20 +4,23 @@ import { audioUrl } from '../lib/api';
 import { playWordAudio } from '../lib/audioPlayback';
 import { getPairHeadingSizeClass } from '../lib/wordSizing';
 
+import type { AudioDialect } from '../lib/types';
+
 interface Props {
   word: string;
   partnerWord?: string;
   isActive: boolean;
   isFirstWord: boolean;
+  audioDialect?: AudioDialect;
 }
 
-export function PairCard({ word, partnerWord, isActive, isFirstWord }: Props) {
+export function PairCard({ word, partnerWord, isActive, isFirstWord, audioDialect }: Props) {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const sizeClass = getPairHeadingSizeClass(word, partnerWord);
 
   const play = () => {
-    audioRef.current = playWordAudio(audioUrl(word), {
+    audioRef.current = playWordAudio(audioUrl(word, audioDialect ? { dialect: audioDialect, voice: 'default' } : undefined), {
       reuseAudio: audioRef.current,
       onPlayStateChange: setIsPlaying,
     });

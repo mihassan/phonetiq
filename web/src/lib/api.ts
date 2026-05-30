@@ -1,3 +1,5 @@
+import type { AudioDialect, AudioVoice } from './types';
+
 export const API_BASE = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL}/api`
   : '/api';
@@ -28,9 +30,15 @@ export async function fetchCategories(params?: { dialect?: string }) {
   return res.json();
 }
 
-export function audioUrl(word: string): string {
+export function audioUrl(
+  word: string,
+  options?: { dialect?: AudioDialect; voice?: AudioVoice },
+): string {
   const sanitized = word.toLowerCase().replace(/'/g, '').replace(/\s+/g, '-');
-  return `${API_BASE}/audio/${encodeURIComponent(sanitized)}`;
+  const url = new URL(`${API_BASE}/audio/${encodeURIComponent(sanitized)}`, window.location.origin);
+  if (options?.dialect) url.searchParams.set('dialect', options.dialect);
+  if (options?.voice) url.searchParams.set('voice', options.voice);
+  return url.toString();
 }
 
 export interface RecognizeSpeechResult {

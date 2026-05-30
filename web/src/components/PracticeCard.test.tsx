@@ -4,6 +4,11 @@ import { PracticeCard } from './PracticeCard';
 const startRecordingMock = vi.fn();
 const stopRecordingMock = vi.fn();
 const recognizeSpeechMock = vi.fn();
+const audioUrlMock = vi.fn((word: string, options?: { dialect?: string; voice?: string }) =>
+  options?.dialect
+    ? `/api/audio/${word}?dialect=${options.dialect}&voice=${options.voice ?? 'default'}`
+    : `/api/audio/${word}`,
+);
 
 vi.mock('../hooks/useAudioRecorder', () => ({
   useAudioRecorder: () => ({
@@ -13,8 +18,8 @@ vi.mock('../hooks/useAudioRecorder', () => ({
 }));
 
 vi.mock('../lib/api', () => ({
-  recognizeSpeech: (...args: unknown[]) => recognizeSpeechMock(...args),
-  audioUrl: (word: string) => `/api/audio/${word}`,
+  recognizeSpeech: (audioBlob: Blob, options?: unknown) => recognizeSpeechMock(audioBlob, options),
+  audioUrl: (word: string, options?: { dialect?: string; voice?: string }) => audioUrlMock(word, options),
 }));
 
 function createRecordingResult(overrides?: Record<string, unknown>) {
@@ -47,6 +52,23 @@ describe('PracticeCard', () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.clearAllMocks();
+  });
+
+  it('uses the provided audio dialect for listen playback', () => {
+    render(
+      <PracticeCard
+        word="ship"
+        isActive={true}
+        onSuccess={vi.fn()}
+        isFirstWord={true}
+        partnerWord="sheep"
+        audioDialect="en-GB"
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId('practice-listen-button'));
+
+    expect(audioUrlMock).toHaveBeenCalledWith('ship', { dialect: 'en-GB', voice: 'default' });
   });
 
   it('records, recognizes a correct transcript, and calls onSuccess', async () => {

@@ -44,7 +44,7 @@ CREATE TABLE word_pairs (
   word2 TEXT NOT NULL,
   phoneme_type TEXT NOT NULL, -- e.g., 'vowel_short', 'consonant_voicing', 'fricative'
   target_sounds TEXT,         -- e.g., '/ɪ/ vs /iː/'
-  dialect_filter TEXT,        -- e.g., 'all', 'us_only', 'uk_only'
+  dialect_filter TEXT,        -- e.g., 'all', 'us_only', 'uk_only', 'au_only'
   difficulty_level INTEGER DEFAULT 1,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -54,13 +54,18 @@ CREATE TABLE word_pairs (
 Minimal pairs are highly dependent on the speaker's accent. For example:
 - `["hut", "heart"]` is a minimal pair in non-rhotic accents (UK/Aus) but not in many rhotic American accents.
 - `["cot", "caught"]` is distinct in the UK, but identical for most North Americans due to the cot-caught merger.
-The `dialect_filter` column ensures the app only presents relevant pairs based on selected dialect. In the UI, `Common` maps to `all` (shared/cross-dialect pairs), while `UK` maps to `uk_only` additions.
+The `dialect_filter` column ensures the app only presents relevant pairs based on selected dialect. In the UI, `Common` maps to `all` (shared/cross-dialect pairs), while `UK`, `US`, and `AU` each request `all` plus their dialect-specific additions (`uk_only`, `us_only`, `au_only`).
 
 ## Audio Pipelines
 ### 1. Text-to-Speech (TTS) Pipeline
 *   **Problem:** Browser `speechSynthesis` voices vary in quality/accent across platforms; Google Translate URLs are undocumented and rate-limited.
-*   **Solution:** Pre-generated `.m4a` audio files stored in a **Cloudflare R2** bucket. Audio is generated locally using macOS `say` command via `scripts/generate-audio.sh` and cached in `.audio-cache/`.
-*   **Workflow:** Frontend requests `GET /api/audio/:word` → Worker fetches the `.m4a` file from R2 → returns it with proper `Content-Type: audio/mp4` header. All 338 audio files (for 186 word pairs) are pre-generated and uploaded to R2 during initial setup.
+*   **Solution:** Pre-generated `.m4a` audio files stored in a **Cloudflare R2** bucket. Audio is generated via a portable Google Cloud Text-to-Speech batch script (`scripts/generate-audio.ts`, wrapped by `scripts/generate-audio.sh`) and cached in `.audio-cache/`.
+*   **Audio Dialects:** Phonetiq supports three audio dialects with one default voice per dialect in v1:
+    - `en-US` — General American English
+    - `en-GB` — Received Pronunciation (British English)
+    - `en-AU` — Australian English
+*   **Asset Key Structure:** Audio files are organized as `<dialect>/<voice>/<word>.m4a` (e.g., `en-us/default/ship.m4a`). The generator emits one default voice per dialect, and the API attempts to locate assets in order: exact match → dialect-only → legacy flat key fallback.
+*   **Workflow:** Frontend requests `GET /api/audio/:word?dialect=en-AU&voice=default` → Worker attempts R2 keys in fallback order → returns the `.m4a` file with proper `Content-Type: audio/mp4` header. All audio files are pre-generated and uploaded to R2 during initial setup.
 
 ### 2. Speech-to-Text (STT) Pipeline
 *   **Problem:** `SpeechRecognition` is unsupported in Firefox and buggy in Safari.

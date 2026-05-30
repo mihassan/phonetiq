@@ -33,6 +33,7 @@ function App() {
     pairs,
     categories,
     dialect,
+    audioDialect,
     setDialect,
     selectedCategory,
     setSelectedCategory,
@@ -161,6 +162,7 @@ function App() {
         mode === 'LEARN' ? (
           <LearnStage
             pair={currentPair}
+            audioDialect={audioDialect}
             index={index}
             totalPairs={pairs.length}
             progress={progress}
@@ -233,6 +235,7 @@ function App() {
                 isFirstWord={true}
                 partnerWord={practicePair.word2}
                 dialect={dialect}
+                audioDialect={audioDialect}
                 experimentMode={experimentMode}
                 onSuccess={handlePracticeSuccess}
                 onAttemptEvaluated={({ isCorrect, matchType }) => {
@@ -265,6 +268,7 @@ function App() {
                 isFirstWord={false}
                 partnerWord={practicePair.word1}
                 dialect={dialect}
+                audioDialect={audioDialect}
                 experimentMode={experimentMode}
                 onSuccess={handlePracticeSuccess}
                 onAttemptEvaluated={({ isCorrect, matchType }) => {
