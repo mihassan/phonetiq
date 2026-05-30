@@ -94,7 +94,7 @@ Phonetiq/
       routes/
         pairs.ts              # GET /api/pairs, GET /api/pairs/categories
         audio.ts              # GET /api/audio/:word (serves from R2)
-        recognize.ts          # POST /api/recognize (dialect-aware Whisper STT + experiments)
+        recognize.ts          # POST /api/recognize (dialect-aware Whisper STT + frame-sentence matching)
         auth.ts               # GET /api/auth/login, /callback, /logout (Google OAuth)
         me.ts                 # GET /api/me (current user from session)
         progress.ts           # GET/POST /api/progress (cloud progress sync)
@@ -107,10 +107,10 @@ Phonetiq/
         seed.sql              # 400+ word pairs seed data
     scripts/
       run-eval.ts             # Baseline recognition eval harness (34 WAV fixtures)
-      run-eval-experiment.ts  # E1/E2 experiment eval harness
+      run-eval-experiment.ts  # Frame-sentence eval harness
       wrangler-with-env.mjs   # Wrangler wrapper that injects local env
     drizzle/                  # Generated SQL migrations
-    wrangler.toml             # Bindings: D1, R2, AI, Rate Limiters, feature flags
+    wrangler.toml             # Bindings: D1, R2, AI, Rate Limiters
   web/                        # React SPA (Vite)
     src/
       App.tsx                 # Main app with Learn/Categories/Practice/Profile modes
@@ -269,7 +269,7 @@ Asset keys are written as `<dialect>/default/<word>.m4a` with a legacy flat-key 
 cd api && npm run deploy
 
 # Build and deploy frontend
-cd web && VITE_API_URL=https://api.phonetiq.mihassan.com VITE_EXPERIMENT_MODE=frame_sentence npm run build
+cd web && VITE_API_URL=https://api.phonetiq.mihassan.com npm run build
 npx wrangler pages deploy dist --project-name phonetiq
 ```
 

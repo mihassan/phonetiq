@@ -17,16 +17,7 @@ const DELAY_MS = process.argv.includes('--delay-ms')
 
 const LABEL = process.argv.includes('--label')
   ? process.argv[process.argv.indexOf('--label') + 1]
-  : 'EXPERIMENT';
-
-const EXPERIMENT = process.argv.includes('--experiment')
-  ? (process.argv[process.argv.indexOf('--experiment') + 1] as 'repetition' | 'frame_sentence')
-  : 'repetition';
-
-if (EXPERIMENT !== 'repetition' && EXPERIMENT !== 'frame_sentence') {
-  console.error(`Unknown experiment: ${EXPERIMENT}. Use repetition or frame_sentence.`);
-  process.exit(1);
-}
+  : 'FRAME SENTENCE (the word is X)';
 
 interface EvalPair {
   word1: string;
@@ -62,18 +53,17 @@ function voiceSlug(voice: string) {
   return voice.replace(/[^a-z0-9]/gi, '_').toLowerCase();
 }
 
-function wavPath(word: string, voice: string, experiment: string): string {
-  return join(FIXTURES_DIR, `${word}_${voiceSlug(voice)}_${experiment}.wav`);
+function wavPath(word: string, voice: string): string {
+  return join(FIXTURES_DIR, `${word}_${voiceSlug(voice)}_frame_sentence.wav`);
 }
 
-function sayPhrase(word: string, experiment: 'repetition' | 'frame_sentence'): string {
-  if (experiment === 'repetition') return `${word} ${word} ${word}`;
+function sayPhrase(word: string): string {
   return `the word is ${word}`;
 }
 
-function generateWav(word: string, voice: string, path: string, experiment: 'repetition' | 'frame_sentence') {
+function generateWav(word: string, voice: string, path: string) {
   if (existsSync(path)) return;
-  const phrase = sayPhrase(word, experiment);
+  const phrase = sayPhrase(word);
   execSync(`say -v "${voice}" -o "${path}" --data-format=LEF32@22050 "${phrase}"`, { stdio: 'pipe' });
   const tmp = path + '.tmp.wav';
   execSync(`afconvert -f WAVE -d LEI16@16000 -c 1 "${path}" "${tmp}"`, { stdio: 'pipe' });
@@ -85,7 +75,6 @@ async function recognize(
   word1: string,
   word2: string,
   dialect: string,
-  experiment: 'repetition' | 'frame_sentence',
 ): Promise<{ matchType: string; matchedWord: string | null; transcript: string }> {
   const audioData = readFileSync(wavFilePath);
   const blob = new Blob([audioData], { type: 'audio/wav' });
@@ -94,7 +83,6 @@ async function recognize(
   form.append('candidate1', word1);
   form.append('candidate2', word2);
   form.append('dialect', dialect);
-  form.append('experiment', experiment);
 
   const resp = await fetch(`${BASE_URL}/api/recognize`, { method: 'POST', body: form });
   if (!resp.ok) {
@@ -153,13 +141,13 @@ async function checkWorkerRunning() {
     if (!resp.ok) throw new Error(`status ${resp.status}`);
   } catch {
     console.error(`\n✗ Cannot reach Worker at ${BASE_URL}`);
-    console.error(`  Start it with: cd api && npm run dev:${EXPERIMENT === 'repetition' ? 'repetition' : 'frame'}\n`);
+    console.error('  Start it with: cd api && npm run dev:frame\n');
     process.exit(1);
   }
 }
 
 async function main() {
-  console.log(`\nPhonetiq Recognition Eval — Experiment: ${EXPERIMENT}`);
+  console.log('\nPhonetiq Recognition Eval — Frame sentence');
   console.log(`Base URL: ${BASE_URL}`);
   console.log(`Fixtures: ${FIXTURES_DIR}\n`);
 
@@ -170,10 +158,10 @@ async function main() {
   for (const pair of EVAL_CORPUS) {
     for (const word of [pair.word1, pair.word2]) {
       for (const { name: voice } of pair.voices) {
-        const path = wavPath(word, voice, EXPERIMENT);
+        const path = wavPath(word, voice);
         if (!existsSync(path)) {
           process.stdout.write(` ${word}(${voice})`);
-          generateWav(word, voice, path, EXPERIMENT);
+          generateWav(word, voice, path);
         }
       }
     }
@@ -195,10 +183,10 @@ async function main() {
           await new Promise((r) => setTimeout(r, DELAY_MS));
         }
 
-        const path = wavPath(targetWord, voice, EXPERIMENT);
+        const path = wavPath(targetWord, voice);
         requestCount += 1;
         try {
-          const { matchType, matchedWord } = await recognize(path, pair.word1, pair.word2, pair.dialect, EXPERIMENT);
+          const { matchType, matchedWord } = await recognize(path, pair.word1, pair.word2, pair.dialect);
           results.push({
             word: targetWord,
             expectedWord: targetWord,

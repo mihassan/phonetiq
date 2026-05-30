@@ -28,7 +28,6 @@ jobs:
         working-directory: web
         env:
           VITE_API_URL: https://api.phonetiq.mihassan.com
-          VITE_EXPERIMENT_MODE: frame_sentence
 
       - name: Deploy to Pages
         uses: cloudflare/wrangler-action@v3

@@ -11,62 +11,6 @@ export interface MatchResult {
   debug: Record<string, unknown>;
 }
 
-function isFoundationV2Enabled(env: Env): boolean {
-  const raw = env.RECOGNITION_FOUNDATION_V2;
-  if (typeof raw !== 'string') return false;
-  return raw.trim().toLowerCase() === 'true';
-}
-
-export function isTwoPassEnabled(env: Env): boolean {
-  const raw = env.EXPERIMENT_TWO_PASS;
-  if (typeof raw !== 'string') return false;
-  return raw.trim().toLowerCase() === 'true';
-}
-
-export function isRepetitionEnabled(env: Env): boolean {
-  const raw = env.EXPERIMENT_REPETITION;
-  if (typeof raw !== 'string') return false;
-  return raw.trim().toLowerCase() === 'true';
-}
-
-export function isFrameSentenceEnabled(env: Env): boolean {
-  const raw = env.EXPERIMENT_FRAME_SENTENCE;
-  if (typeof raw !== 'string') return false;
-  return raw.trim().toLowerCase() === 'true';
-}
-
-export type ExperimentMode = 'repetition' | 'frame_sentence' | null;
-
-export function matchRepetition(
-  transcript: string,
-  candidate1: string,
-  candidate2: string,
-): MatchResult {
-  const c1 = normalizeText(candidate1);
-  const c2 = normalizeText(candidate2);
-  const tokens = normalizeText(transcript).split(' ').filter(Boolean);
-
-  const count1 = tokens.filter((t) => t === c1).length;
-  const count2 = tokens.filter((t) => t === c2).length;
-
-  const debug: Record<string, unknown> = {
-    experiment: 'repetition',
-    tokens,
-    candidate1: c1,
-    candidate2: c2,
-    count1,
-    count2,
-  };
-
-  if (count1 >= 2 && count1 - count2 >= 2) {
-    return { matchedWord: candidate1, matchType: 'token', debug };
-  }
-  if (count2 >= 2 && count2 - count1 >= 2) {
-    return { matchedWord: candidate2, matchType: 'token', debug };
-  }
-  return { matchedWord: null, matchType: 'no_match', debug };
-}
-
 const FRAME_SENTENCE_RE = /\bthe\s+word\s+is\s+(\S+)/i;
 
 export function extractFrameWord(transcript: string): string | null {
@@ -79,7 +23,6 @@ export function matchFrameSentence(
   transcript: string,
   candidate1: string,
   candidate2: string,
-  strict: boolean,
 ): MatchResult {
   const extracted = extractFrameWord(transcript);
   const debug: Record<string, unknown> = {
@@ -92,112 +35,8 @@ export function matchFrameSentence(
     return { matchedWord: null, matchType: 'no_match', debug };
   }
 
-  const inner = matchTranscriptToCandidates(extracted, candidate1, candidate2, strict);
+  const inner = matchTranscriptToCandidates(extracted, candidate1, candidate2);
   return { matchedWord: inner.matchedWord, matchType: inner.matchType, debug: { ...debug, ...inner.debug } };
-}
-
-export function buildTwoPassPrompt(dialectPrompt: string, candidate: string): string {
-  return `${dialectPrompt} The speaker said the word ${candidate}.`;
-}
-
-// Stopwords to strip when extracting the first content word from a Whisper transcript.
-const STOPWORDS = new Set([
-  'the', 'a', 'an', 'is', 'was', 'are', 'were', 'i', 'my', 'me', 'we', 'our',
-  'it', 'its', 'this', 'that', 'in', 'on', 'at', 'of', 'to', 'and', 'or',
-  'said', 'say', 'word',
-]);
-
-export function extractFirstContentWord(transcript: string): string {
-  const tokens = normalizeText(transcript).split(' ').filter(Boolean);
-  for (const token of tokens) {
-    if (!STOPWORDS.has(token)) return token;
-  }
-  return tokens[0] ?? '';
-}
-
-export interface TwoPassResult {
-  matchResult: MatchResult;
-  passATranscript: string;
-  passBTranscript: string;
-  passAWord: string;
-  passBWord: string;
-}
-
-export async function runTwoPassRecognition(
-  ai: Ai,
-  base64Audio: string,
-  dialectPrompt: string,
-  candidate1: string,
-  candidate2: string,
-): Promise<TwoPassResult> {
-  const promptA = buildTwoPassPrompt(dialectPrompt, candidate1);
-  const promptB = buildTwoPassPrompt(dialectPrompt, candidate2);
-
-  const [resultA, resultB] = await Promise.all([
-    ai.run('@cf/openai/whisper-large-v3-turbo', {
-      audio: base64Audio,
-      task: 'transcribe',
-      language: 'en',
-      vad_filter: true,
-      initial_prompt: promptA,
-    } as Record<string, unknown>),
-    ai.run('@cf/openai/whisper-large-v3-turbo', {
-      audio: base64Audio,
-      task: 'transcribe',
-      language: 'en',
-      vad_filter: true,
-      initial_prompt: promptB,
-    } as Record<string, unknown>),
-  ]);
-
-  const transcriptA = ((resultA as Record<string, unknown>).text as string || '').trim();
-  const transcriptB = ((resultB as Record<string, unknown>).text as string || '').trim();
-
-  const wordA = extractFirstContentWord(transcriptA);
-  const wordB = extractFirstContentWord(transcriptB);
-
-  const c1 = normalizeText(candidate1);
-  const c2 = normalizeText(candidate2);
-
-  const debug: Record<string, unknown> = {
-    twoPass: true,
-    passAPrompt: promptA,
-    passBPrompt: promptB,
-    passATranscript: transcriptA,
-    passBTranscript: transcriptB,
-    passAWord: wordA,
-    passBWord: wordB,
-    candidate1: c1,
-    candidate2: c2,
-  };
-
-  if (wordA === c1 && wordB === c1) {
-    return {
-      matchResult: { matchedWord: candidate1, matchType: 'token', debug },
-      passATranscript: transcriptA,
-      passBTranscript: transcriptB,
-      passAWord: wordA,
-      passBWord: wordB,
-    };
-  }
-
-  if (wordA === c2 && wordB === c2) {
-    return {
-      matchResult: { matchedWord: candidate2, matchType: 'token', debug },
-      passATranscript: transcriptA,
-      passBTranscript: transcriptB,
-      passAWord: wordA,
-      passBWord: wordB,
-    };
-  }
-
-  return {
-    matchResult: { matchedWord: null, matchType: 'no_match', debug },
-    passATranscript: transcriptA,
-    passBTranscript: transcriptB,
-    passAWord: wordA,
-    passBWord: wordB,
-  };
 }
 
 export function buildDialectPrompt(dialect: string | undefined): string {
@@ -217,10 +56,8 @@ export function buildInitialPrompt(
   dialect: string | undefined,
   candidate1: string | undefined,
   candidate2: string | undefined,
-  foundationV2: boolean,
 ): string {
   const dialectPrompt = buildDialectPrompt(dialect);
-  if (foundationV2) return dialectPrompt;
   if (candidate1 && candidate2) {
     return `${dialectPrompt} The expected options are: ${candidate1} or ${candidate2}.`;
   }
@@ -315,7 +152,6 @@ export function matchTranscriptToCandidates(
   transcript: string,
   candidate1: string | undefined,
   candidate2: string | undefined,
-  strict: boolean,
 ): MatchResult {
   if (!candidate1 || !candidate2) {
     return {
@@ -325,7 +161,6 @@ export function matchTranscriptToCandidates(
         normalizedTranscript: normalizeText(transcript),
         candidate1: candidate1 ?? null,
         candidate2: candidate2 ?? null,
-        strict,
       },
     };
   }
@@ -352,7 +187,6 @@ export function matchTranscriptToCandidates(
     distance2,
     bestDistance,
     distanceGap,
-    strict,
   };
 
   if (!normalized) {
@@ -365,7 +199,7 @@ export function matchTranscriptToCandidates(
   if (hasC1Token && !hasC2Token) return { matchedWord: candidate1, matchType: 'token', debug };
   if (hasC2Token && !hasC1Token) return { matchedWord: candidate2, matchType: 'token', debug };
 
-  if (!strict && bestDistance <= 1 && distanceGap >= 1) {
+  if (bestDistance <= 1 && distanceGap >= 1) {
     return distance1 < distance2
       ? { matchedWord: candidate1, matchType: 'fuzzy', debug }
       : { matchedWord: candidate2, matchType: 'fuzzy', debug };
@@ -382,7 +216,6 @@ recognizeRoutes.post('/', async (c) => {
   let candidate2: string | undefined;
   let dialect: string | undefined;
   let shouldDebug = false;
-  let requestedExperiment: ExperimentMode = null;
   let prompt = '';
 
   let audioBytes: ArrayBuffer;
@@ -394,7 +227,6 @@ recognizeRoutes.post('/', async (c) => {
     candidate2 = String(formData.get('candidate2') || '').trim() || undefined;
     dialect = String(formData.get('dialect') || '').trim() || undefined;
     shouldDebug = String(formData.get('debug') || '').trim() === '1';
-    requestedExperiment = (String(formData.get('experiment') || '').trim() || null) as ExperimentMode;
 
     if (!file || !(file instanceof File)) {
       return c.json({ error: 'Missing "audio" file in form data' }, 400);
@@ -414,14 +246,7 @@ recognizeRoutes.post('/', async (c) => {
 
   try {
     const base64Audio = arrayBufferToBase64(audioBytes);
-    const foundationV2 = isFoundationV2Enabled(c.env);
-
-    const activeExperiment: ExperimentMode =
-      requestedExperiment === 'repetition' && isRepetitionEnabled(c.env) ? 'repetition' :
-      requestedExperiment === 'frame_sentence' && isFrameSentenceEnabled(c.env) ? 'frame_sentence' :
-      null;
-
-    prompt = buildInitialPrompt(dialect, candidate1, candidate2, foundationV2);
+    prompt = buildInitialPrompt(dialect, candidate1, candidate2);
 
     const result = await c.env.AI.run('@cf/openai/whisper-large-v3-turbo', {
       audio: base64Audio,
@@ -439,34 +264,10 @@ recognizeRoutes.post('/', async (c) => {
     let matchType: MatchType;
     let debug: Record<string, unknown>;
 
-    if (activeExperiment === 'repetition' && candidate1 && candidate2) {
-      ({ matchedWord, matchType, debug } = matchRepetition(rawTranscript, candidate1, candidate2));
-    } else if (activeExperiment === 'frame_sentence' && candidate1 && candidate2) {
-      ({ matchedWord, matchType, debug } = matchFrameSentence(rawTranscript, candidate1, candidate2, foundationV2));
+    if (candidate1 && candidate2) {
+      ({ matchedWord, matchType, debug } = matchFrameSentence(rawTranscript, candidate1, candidate2));
     } else {
-      ({ matchedWord, matchType, debug } = matchTranscriptToCandidates(rawTranscript, candidate1, candidate2, foundationV2));
-    }
-
-    let twoPassDebug: Record<string, unknown> | null = null;
-
-    if (
-      matchType === 'no_match' &&
-      audioBytes.byteLength >= 8192 &&
-      candidate1 &&
-      candidate2 &&
-      isTwoPassEnabled(c.env)
-    ) {
-      const dialectPrompt = buildDialectPrompt(dialect);
-      const twoPassResult = await runTwoPassRecognition(
-        c.env.AI,
-        base64Audio,
-        dialectPrompt,
-        candidate1,
-        candidate2,
-      );
-      matchedWord = twoPassResult.matchResult.matchedWord;
-      matchType = twoPassResult.matchResult.matchType;
-      twoPassDebug = twoPassResult.matchResult.debug;
+      ({ matchedWord, matchType, debug } = matchTranscriptToCandidates(rawTranscript, candidate1, candidate2));
     }
 
     return c.json({
@@ -479,10 +280,7 @@ recognizeRoutes.post('/', async (c) => {
             normalizedTranscript: normalizeText(rawTranscript),
             audioBytes: audioBytes.byteLength,
             prompt,
-            foundationV2,
-            experiment: activeExperiment,
             matching: debug,
-            twoPass: twoPassDebug,
             rawResult,
           }
         : null,

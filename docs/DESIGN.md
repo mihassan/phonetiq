@@ -88,8 +88,8 @@ Applied in `encodeWavSegment` (always-on, no flag required):
 2.  **80 Hz high-pass filter** — Removes low-frequency rumble (desk vibration, HVAC) that can confuse VAD
 3.  **−18 dBFS loudness normalisation** — Brings quiet recordings up to a consistent level, reducing no-match from soft speech
 
-#### Frame-Sentence Experiment (E2 — Production)
-Users are prompted to say *"The word is X"* instead of just *X*. The backend extracts the target word from the sentence context before matching. Eval result: **97% correct** (+21 pp vs 76% baseline), 0 no-match. Enabled via `EXPERIMENT_FRAME_SENTENCE=true` (Worker) and `VITE_EXPERIMENT_MODE=frame_sentence` (frontend).
+#### Frame-Sentence Recognition (Production)
+Users are prompted to say *"The word is X"* instead of just *X*. The backend extracts the target word from the sentence context before matching. Eval result: **97% correct** (+21 pp vs 76% baseline), 0 no-match. This is now the single production recognition path.
 
 This dramatically improves recognition reliability in non-ideal recording environments.
 

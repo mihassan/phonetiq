@@ -43,7 +43,7 @@ interface UsePracticeAttemptOptions {
   word: string;
   partnerWord?: string;
   dialect?: string;
-  experimentMode?: 'repetition' | 'frame_sentence';
+  experimentMode?: 'frame_sentence';
   onSuccess: () => void;
   onAttemptEvaluated?: (result: {
     isCorrect: boolean;
@@ -199,7 +199,6 @@ export function usePracticeAttempt({
         candidate2: partnerWord ?? word,
         dialect,
         debug: import.meta.env.DEV,
-        experiment: experimentMode,
       });
       const recognition =
         typeof rawRecognition === 'string'

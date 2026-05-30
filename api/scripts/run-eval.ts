@@ -9,13 +9,9 @@
  *   - macOS `say` command (for synthetic WAV generation)
  *   - `wrangler dev` running at --base-url (default http://localhost:8787)
  *
- * Runs each eval word through /api/recognize with both candidate words and
+ * Runs each eval phrase through /api/recognize with both candidate words and
  * the word's dialect. Scores correct / wrong / no_match per run, then
  * prints a summary table.
- *
- * Run twice to compare flag states:
- *   RECOGNITION_FOUNDATION_V2=false  → baseline (biasing prompt + fuzzy match)
- *   RECOGNITION_FOUNDATION_V2=true   → foundation-v2 (no biasing, strict match)
  */
 
 import { execSync } from 'node:child_process';
@@ -36,7 +32,7 @@ const DELAY_MS = process.argv.includes('--delay-ms')
 
 const LABEL = process.argv.includes('--label')
   ? process.argv[process.argv.indexOf('--label') + 1]
-  : 'BASELINE (biasing prompt + fuzzy match)';
+  : 'FRAME SENTENCE (the word is X)';
 
 interface EvalPair {
   word1: string;
@@ -76,7 +72,7 @@ function wavPath(word: string, voice: string): string {
 
 function generateWav(word: string, voice: string, path: string) {
   if (existsSync(path)) return;
-  execSync(`say -v "${voice}" -o "${path}" --data-format=LEF32@22050 "${word}"`, { stdio: 'pipe' });
+  execSync(`say -v "${voice}" -o "${path}" --data-format=LEF32@22050 "the word is ${word}"`, { stdio: 'pipe' });
   // Convert to 16-bit PCM WAV that Whisper accepts
   const tmp = path + '.tmp.wav';
   execSync(`afconvert -f WAVE -d LEI16@16000 -c 1 "${path}" "${tmp}"`, { stdio: 'pipe' });

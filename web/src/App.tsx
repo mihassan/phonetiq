@@ -19,12 +19,7 @@ import {
 
 function App() {
   const { user, isAuthenticated, isLoading: isAuthLoading, login, logout } = useAuth();
-
-  const experimentMode = ((): 'repetition' | 'frame_sentence' | undefined => {
-    const raw = import.meta.env.VITE_EXPERIMENT_MODE;
-    if (raw === 'repetition' || raw === 'frame_sentence') return raw;
-    return undefined;
-  })();
+  const experimentMode = 'frame_sentence' as const;
 
   const {
     mode,

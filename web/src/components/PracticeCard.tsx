@@ -9,7 +9,6 @@ import { getPracticeHeadingSizeClass } from '../lib/wordSizing';
 const FRAME_TIP_KEY = 'phonetiq:seenFrameTip';
 
 const RECORD_DURATION_DEFAULT = 3000;
-const RECORD_DURATION_REPETITION = 8000;
 
 interface Props {
   word: string;
@@ -24,7 +23,7 @@ interface Props {
   audioDialect?: AudioDialect;
   isFirstWord: boolean;
   partnerWord: string;
-  experimentMode?: 'repetition' | 'frame_sentence';
+  experimentMode?: 'frame_sentence';
 }
 
 export function PracticeCard({
@@ -38,8 +37,7 @@ export function PracticeCard({
   partnerWord,
   experimentMode,
 }: Props) {
-  const recordDuration =
-    experimentMode === 'repetition' ? RECORD_DURATION_REPETITION : RECORD_DURATION_DEFAULT;
+  const recordDuration = RECORD_DURATION_DEFAULT;
 
   const { transcript, status, progress, isCompleted, debugInfo, resetAttempt, sendDebugRecording, handleRecord, noMatchHint } =
     usePracticeAttempt({
@@ -202,11 +200,6 @@ export function PracticeCard({
         >
           <Play size={14} fill="currentColor" /> Listen first
         </button>
-        {experimentMode === 'repetition' && (
-          <p className="ui-muted text-[11px] md:text-xs font-semibold mt-1">
-            Say the word 3 times
-          </p>
-        )}
         {experimentMode === 'frame_sentence' && (
           <p className="ui-muted text-[11px] md:text-xs font-semibold mt-1">
             Say: &ldquo;The word is {word}&rdquo;
