@@ -62,7 +62,7 @@ If no asset is found, the API returns a 404 error.
 
 ### Pair Count
 
-- **Current state:** 186 pairs (170 common + 16 UK-exclusive)
+- **Current state:** 400+ seeded pairs spanning common and dialect-specific subsets (including an initial `au_only` starter set)
 - **Target state:** 400–600 pairs
 
 This expansion increases coverage of phonetic categories and dialect-specific distinctions.

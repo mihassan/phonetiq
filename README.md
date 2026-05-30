@@ -224,10 +224,10 @@ Open http://localhost:5173 in your browser.
 ### Running tests
 
 ```bash
-# Web (123 tests)
+# Web (145 tests)
 cd web && npm test
 
-# API (50 tests)
+# API (64 tests)
 cd api && npm test
 ```
 

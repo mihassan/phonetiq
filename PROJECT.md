@@ -30,7 +30,7 @@
 - `npm run dev:repetition` - Start with `EXPERIMENT_REPETITION=true` (port 8790)
 - `npm run dev:frame` - Start with `EXPERIMENT_FRAME_SENTENCE=true` (port 8791)
 - `npm run typecheck` - TypeScript check
-- `npm test` - Run Vitest tests (50 tests)
+- `npm test` - Run Vitest tests (64 tests)
 - `npm run eval` - Baseline recognition eval (34 WAV fixtures, 7 s delay)
 - `npm run eval:fast` - Baseline eval (no delay)
 - `npm run eval:twopass` - E4 two-pass eval (port 8789)
@@ -44,7 +44,7 @@
 ### Web (`web/`)
 - `npm run dev` - Start Vite dev server (port 5173, proxies /api to 8787)
 - `npm run build` - Typecheck + production build (outputs to `web/dist/`)
-- `npm test` - Run Vitest tests (123 tests)
+- `npm test` - Run Vitest tests (145 tests)
 - `npm run lint` - ESLint check
 - `npm run preview` - Preview production build locally
 
@@ -53,10 +53,9 @@
 - `./scripts/generate-audio.sh --force` - Regenerate all audio (overwrite)
 
 ## Data Schema
-- **186 word pairs** across 9 phoneme categories
+- **400+ word pairs** across 9 phoneme categories
 - Categories: vowel_short, vowel_long, consonant_voicing, fricative, sibilant, affricate, liquid, nasal, approximant
-- Dialect filters currently seeded: `all` (170 pairs), `uk_only` (16 pairs)
-- `us_only` is supported by schema/query path but has limited/no exclusive seeded rows at present
+- Dialect filters seeded: `all`, `uk_only`, `us_only`, and an initial `au_only` starter set
 
 ## API Endpoints
 - `GET /api/health` - Health check
