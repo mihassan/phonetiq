@@ -206,9 +206,9 @@ describe('time-based decay in scorePairForPractice', () => {
 
   it('does not decay when lastSeenAt is within 7 days', () => {
     const score = scorePairForPractice(pairs[1], recentProgress, now);
-    const scoreNoNow = scorePairForPractice(pairs[1], recentProgress);
+    const expectedScoreWithoutDecay = 72;
 
-    expect(score).toBe(scoreNoNow);
+    expect(score).toBe(expectedScoreWithoutDecay);
   });
 
   it('halves recentIncorrectCount (floor) for stale pairs — difference is exactly mistakeBoost delta', () => {
