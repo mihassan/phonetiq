@@ -4,7 +4,7 @@
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare)](https://workers.cloudflare.com/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)](https://www.typescriptlang.org/)
-[![Tests](https://img.shields.io/badge/Tests-219%20passing-42b883?logo=vitest)](https://vitest.dev/)
+[![Tests](https://img.shields.io/badge/Tests-225%20passing-42b883?logo=vitest)](https://vitest.dev/)
 
 **Live:** [phonetiq.mihassan.com](https://phonetiq.mihassan.com) | **API:** [api.phonetiq.mihassan.com](https://api.phonetiq.mihassan.com)
 
@@ -265,7 +265,7 @@ Open http://localhost:5173 in your browser.
 # Web (158 tests)
 cd web && npm test
 
-# API (61 tests)
+# API (67 tests)
 cd api && npm test
 ```
 
