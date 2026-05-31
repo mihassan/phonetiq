@@ -11,7 +11,7 @@ import type { ProgressAttemptEvent, ProgressStore } from './types';
 function makeEvent(overrides: Partial<ProgressAttemptEvent> = {}): ProgressAttemptEvent {
   return {
     pairId: 1,
-    dialect: 'all',
+    dialect: 'us_only',
     category: 'vowel_short',
     targetWord: 1,
     isCorrect: true,
@@ -106,6 +106,39 @@ describe('progressStorage', () => {
     expect(loaded.totalAttempts).toBe(8);
     expect(loaded.completedPairIds).toEqual([1, 2]);
   });
+
+  it('coerces legacy all-dialect progress to the default target dialect', () => {
+    setRawProgressStore(JSON.stringify({
+      totalAttempts: 1,
+      totalCorrect: 1,
+      currentStreak: 1,
+      bestStreak: 1,
+      sessionsCount: 1,
+      completedPairIds: [],
+      lastPracticedAt: '2026-04-20T12:00:00.000Z',
+      pairs: {
+        '1': {
+          pairId: 1,
+          category: 'vowel_short',
+          dialect: 'all',
+          word1Attempts: 1,
+          word1Correct: 1,
+          word2Attempts: 0,
+          word2Correct: 0,
+          pairCompletions: 0,
+          exposureCount: 1,
+          recentIncorrectCount: 0,
+          successStreak: 1,
+          lastSeenAt: '2026-04-20T12:00:00.000Z',
+          lastCorrectAt: '2026-04-20T12:00:00.000Z',
+        },
+      },
+    }));
+
+    const store = loadProgressStore();
+
+    expect(store.pairs['1'].dialect).toBe('us_only');
+  });
 });
 
 describe('pairCompletions mastery threshold', () => {
@@ -118,7 +151,7 @@ describe('pairCompletions mastery threshold', () => {
     seedStore.pairs['99'] = {
       pairId: 99,
       category: 'vowel_short',
-      dialect: 'all',
+      dialect: 'us_only',
       word1Attempts: 2,
       word1Correct: 1,
       word2Attempts: 1,
@@ -143,7 +176,7 @@ describe('pairCompletions mastery threshold', () => {
     seedStore.pairs['99'] = {
       pairId: 99,
       category: 'vowel_short',
-      dialect: 'all',
+      dialect: 'us_only',
       word1Attempts: 3,
       word1Correct: 2,
       word2Attempts: 2,

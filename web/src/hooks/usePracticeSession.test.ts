@@ -88,8 +88,8 @@ describe('usePracticeSession', () => {
     });
 
     expect(fetchCategoriesMock).toHaveBeenCalledTimes(1);
-    expect(fetchCategoriesMock).toHaveBeenCalledWith({ dialect: 'all' });
-    expect(fetchPairsMock).toHaveBeenCalledWith({ category: undefined, dialect: 'all', limit: 200 });
+    expect(fetchCategoriesMock).toHaveBeenCalledWith({ dialect: 'us_only' });
+    expect(fetchPairsMock).toHaveBeenCalledWith({ category: undefined, dialect: 'us_only', limit: 200 });
     expect(result.current.categories).toHaveLength(2);
     expect(result.current.pairs).toHaveLength(2);
     expect(result.current.index).toBe(0);
@@ -165,7 +165,7 @@ describe('usePracticeSession', () => {
     expect(result.current.index).toBe(0);
     expect(result.current.targetNum).toBe(1);
     expect(result.current.pairs).toHaveLength(1);
-    expect(fetchPairsMock).toHaveBeenLastCalledWith({ category: 'nasal', dialect: 'all', limit: 200 });
+    expect(fetchPairsMock).toHaveBeenLastCalledWith({ category: 'nasal', dialect: 'us_only', limit: 200 });
   });
 
   it('refetches pairs and categories when dialect changes', async () => {

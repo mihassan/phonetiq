@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { fetchCategories, fetchPairs } from '../lib/api';
+import { DEFAULT_TARGET_DIALECT, getDialectProfile } from '../lib/dialects';
 import { buildCategoryProgress, getProfileSummary } from '../lib/progressMetrics';
 import { buildPracticeBatch, buildWeakPairQueue } from '../lib/pairSelection';
 import {
   loadProgressStore,
+  normalizeProgressStore,
   resetProgressStore,
   updateProgressForAttempt,
 } from '../lib/progressStorage';
 import type {
-  AudioDialect,
   Category,
   Dialect,
   Mode,
@@ -17,17 +18,11 @@ import type {
   WordPair,
 } from '../lib/types';
 
-function getAudioDialect(dialect: Dialect): AudioDialect {
-  if (dialect === 'uk_only') return 'en-GB';
-  if (dialect === 'au_only') return 'en-AU';
-  return 'en-US';
-}
-
 export function usePracticeSession() {
   const [mode, setModeState] = useState<Mode>('LEARN');
   const [pairs, setPairs] = useState<WordPair[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [dialect, setDialectState] = useState<Dialect>('all');
+  const [dialect, setDialectState] = useState<Dialect>(DEFAULT_TARGET_DIALECT);
   const [selectedCategory, setSelectedCategoryState] = useState<string | null>(null);
   const [index, setIndex] = useState(0);
   const [targetNum, setTargetNum] = useState<1 | 2>(1);
@@ -37,7 +32,7 @@ export function usePracticeSession() {
   const [practiceBatch, setPracticeBatch] = useState<WordPair[]>([]);
   const [practiceBatchIndex, setPracticeBatchIndex] = useState(0);
   const modeRef = useRef(mode);
-  const audioDialect = useMemo(() => getAudioDialect(dialect), [dialect]);
+  const audioDialect = useMemo(() => getDialectProfile(dialect).audioDialect, [dialect]);
 
   useEffect(() => {
     modeRef.current = mode;
@@ -222,7 +217,7 @@ export function usePracticeSession() {
   );
 
   const applyProgressStore = useCallback((store: ProgressStore) => {
-    setProgressStore(store);
+    setProgressStore(normalizeProgressStore(store));
   }, []);
 
   const startWeakPairPractice = useCallback(() => {

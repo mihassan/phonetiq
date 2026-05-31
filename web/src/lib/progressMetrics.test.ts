@@ -46,7 +46,7 @@ const store: ProgressStore = {
     '1': {
       pairId: 1,
       category: 'vowel_short',
-      dialect: 'all',
+      dialect: 'us_only',
       word1Attempts: 3,
       word1Correct: 2,
       word2Attempts: 2,
@@ -61,7 +61,7 @@ const store: ProgressStore = {
     '2': {
       pairId: 2,
       category: 'fricative',
-      dialect: 'all',
+      dialect: 'us_only',
       word1Attempts: 3,
       word1Correct: 1,
       word2Attempts: 2,

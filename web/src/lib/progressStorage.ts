@@ -1,3 +1,4 @@
+import { coerceTargetDialect } from './dialects';
 import type { PairProgress, ProgressAttemptEvent, ProgressStore } from './types';
 
 export const PROGRESS_STORAGE_KEY = 'phonetiq.progress.v1';
@@ -74,8 +75,26 @@ function persistProgressStore(store: ProgressStore) {
   getStorage().setItem(PROGRESS_STORAGE_KEY, JSON.stringify(store));
 }
 
+function normalizePairProgress(pair: PairProgress): PairProgress {
+  return {
+    ...pair,
+    dialect: coerceTargetDialect(pair.dialect),
+  };
+}
+
+export function normalizeProgressStore(store: ProgressStore): ProgressStore {
+  return {
+    ...createEmptyProgressStore(),
+    ...store,
+    completedPairIds: Array.isArray(store.completedPairIds) ? store.completedPairIds : [],
+    pairs: Object.fromEntries(
+      Object.entries(store.pairs ?? {}).map(([key, value]) => [key, normalizePairProgress(value)]),
+    ),
+  };
+}
+
 export function saveProgressStore(store: ProgressStore) {
-  persistProgressStore(store);
+  persistProgressStore(normalizeProgressStore(store));
 }
 
 export function setRawProgressStore(raw: string) {
@@ -92,12 +111,7 @@ export function loadProgressStore(): ProgressStore {
       return createEmptyProgressStore();
     }
 
-    return {
-      ...createEmptyProgressStore(),
-      ...parsed,
-      completedPairIds: Array.isArray(parsed.completedPairIds) ? parsed.completedPairIds : [],
-      pairs: parsed.pairs ?? {},
-    };
+    return normalizeProgressStore(parsed);
   } catch {
     return createEmptyProgressStore();
   }

@@ -4,7 +4,7 @@ export interface WordPair {
   word2: string;
   phoneme_type: string;
   target_sounds: string | null;
-  dialect_filter: string;
+  dialect_filter: ContentDialect;
   difficulty_level: number;
 }
 
@@ -15,7 +15,11 @@ export interface Category {
 
 export type Mode = 'LEARN' | 'PRACTICE' | 'CATEGORIES' | 'PROFILE';
 
-export type Dialect = 'all' | 'uk_only' | 'us_only' | 'au_only';
+export type ContentDialect = 'all' | 'uk_only' | 'us_only' | 'au_only';
+
+export type TargetDialect = Exclude<ContentDialect, 'all'>;
+
+export type Dialect = TargetDialect;
 
 export type AudioDialect = 'en-US' | 'en-GB' | 'en-AU';
 

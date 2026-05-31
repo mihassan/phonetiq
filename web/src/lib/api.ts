@@ -1,4 +1,4 @@
-import type { AudioDialect, AudioVoice } from './types';
+import type { AudioDialect, AudioVoice, Dialect } from './types';
 
 export const API_BASE = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL}/api`
@@ -6,7 +6,7 @@ export const API_BASE = import.meta.env.VITE_API_URL
 
 export async function fetchPairs(params?: {
   category?: string;
-  dialect?: string;
+  dialect?: Dialect;
   limit?: number;
   offset?: number;
 }) {
@@ -21,7 +21,7 @@ export async function fetchPairs(params?: {
   return res.json();
 }
 
-export async function fetchCategories(params?: { dialect?: string }) {
+export async function fetchCategories(params?: { dialect?: Dialect }) {
   const url = new URL(`${API_BASE}/pairs/categories`, window.location.origin);
   if (params?.dialect) url.searchParams.set('dialect', params.dialect);
 
@@ -77,7 +77,7 @@ async function readErrorBody(res: Response) {
 
 export async function recognizeSpeech(
   audioBlob: Blob,
-  options?: { candidate1?: string; candidate2?: string; dialect?: string; debug?: boolean },
+  options?: { candidate1?: string; candidate2?: string; dialect?: Dialect; debug?: boolean },
 ): Promise<RecognizeSpeechResult> {
   const formData = new FormData();
   formData.append('audio', audioBlob, 'recording.webm');

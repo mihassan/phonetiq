@@ -1,16 +1,10 @@
+import { TARGET_DIALECT_OPTIONS } from '../lib/dialects';
 import type { Dialect } from '../lib/types';
 
 interface DialectFilterProps {
   selected: Dialect;
   onSelect: (dialect: Dialect) => void;
 }
-
-const DIALECT_OPTIONS: Array<{ value: Dialect; label: string }> = [
-  { value: 'all', label: 'Common' },
-  { value: 'uk_only', label: 'UK' },
-  { value: 'us_only', label: 'US' },
-  { value: 'au_only', label: 'AU' },
-];
 
 export function DialectFilter({ selected, onSelect }: DialectFilterProps) {
   return (
@@ -22,19 +16,19 @@ export function DialectFilter({ selected, onSelect }: DialectFilterProps) {
         Dialect
       </span>
 
-      {DIALECT_OPTIONS.map((option) => (
+      {TARGET_DIALECT_OPTIONS.map((option) => (
         <button
-          key={option.value}
+          key={option.id}
           type="button"
-          aria-pressed={selected === option.value}
-          onClick={() => onSelect(option.value)}
+          aria-pressed={selected === option.id}
+          onClick={() => onSelect(option.id)}
           className={`min-h-9 px-4 rounded-full text-xs md:text-sm font-bold transition-all border ${
-            selected === option.value
+            selected === option.id
               ? 'ui-btn-primary border-transparent'
               : 'ui-card-muted border-[color:var(--color-outline)] hover:border-[color:var(--color-primary)]'
           }`}
         >
-          {option.label}
+          {option.shortLabel}
         </button>
       ))}
     </div>

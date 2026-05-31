@@ -3,7 +3,7 @@ import { Mic, Check, X, Loader2, Play } from 'lucide-react';
 import { audioUrl } from '../lib/api';
 import { playWordAudio } from '../lib/audioPlayback';
 import { usePracticeAttempt } from '../hooks/usePracticeAttempt';
-import type { AudioDialect } from '../lib/types';
+import type { AudioDialect, Dialect } from '../lib/types';
 import { getPracticeHeadingSizeClass } from '../lib/wordSizing';
 
 const FRAME_TIP_KEY = 'phonetiq:seenFrameTip';
@@ -19,7 +19,7 @@ interface Props {
     transcript: string;
     matchType: 'exact' | 'token' | 'fuzzy' | 'no_match' | 'freeform';
   }) => void;
-  dialect?: string;
+  dialect?: Dialect;
   audioDialect?: AudioDialect;
   isFirstWord: boolean;
   partnerWord: string;

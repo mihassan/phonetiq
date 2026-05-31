@@ -38,7 +38,7 @@ Most pronunciation apps use browser-native speech recognition which is flaky acr
 - **Progress tracking** — Accuracy, streaks, completions, and weak-area analysis
 
 ### 🌐 Dialect-Aware
-- Filter pairs by dialect (`Common`, `UK`, `US`, `AU`)
+- Choose a target dialect (`US`, `UK`, `AU`)
 - Whisper receives dialect-specific prompts for better recognition
 - Audio available in three dialects: US English, British English, Australian English
 - Dataset now includes 400+ seeded pairs with `all`, `uk_only`, `us_only`, and an initial `au_only` starter set
@@ -59,7 +59,7 @@ Most pronunciation apps use browser-native speech recognition which is flaky acr
 ## Features
 
 - 400+ curated word pairs across 9 phoneme categories (vowels, consonants, fricatives, affricates, liquids, nasals, sibilants, approximants)
-- Dialect-aware pair filtering: `all` (common), `uk_only`, `us_only`, `au_only`
+- Dialect-aware practice targets: `us_only`, `uk_only`, `au_only` with shared `all` pairs included behind the scenes
 - Audio support for three dialects: `en-US`, `en-GB`, `en-AU` with one default voice per dialect
 - **Smart speech recognition** with mic warm-up, noise detection, and silence trimming
 - Adaptive Practice sessions: 15-pair batches with 5 weak-pair quota + unseen/medium-weak filler

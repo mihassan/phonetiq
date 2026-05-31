@@ -20,21 +20,21 @@ describe('buildDialectPrompt', () => {
     expect(buildDialectPrompt('au_only')).toContain('Australian English');
   });
 
-  it('returns common-international prompt by default', () => {
-    expect(buildDialectPrompt(undefined)).toContain('common international English');
-    expect(buildDialectPrompt('all')).toContain('common international English');
+  it('defaults to American English when dialect is missing or legacy', () => {
+    expect(buildDialectPrompt(undefined)).toContain('American English');
+    expect(buildDialectPrompt('all')).toContain('American English');
   });
 });
 
 describe('buildInitialPrompt', () => {
   it('includes the candidate-biasing clause when both candidates are provided', () => {
-    const prompt = buildInitialPrompt('all', 'desert', 'dessert');
+    const prompt = buildInitialPrompt('us_only', 'desert', 'dessert');
     expect(prompt).toContain('The expected options are: desert or dessert.');
   });
 
   it('falls back to dialect-only prompt when candidates are missing', () => {
-    expect(buildInitialPrompt('all', undefined, undefined)).not.toContain('expected options');
-    expect(buildInitialPrompt('all', 'desert', undefined)).not.toContain('expected options');
+    expect(buildInitialPrompt('us_only', undefined, undefined)).not.toContain('expected options');
+    expect(buildInitialPrompt('us_only', 'desert', undefined)).not.toContain('expected options');
   });
 });
 

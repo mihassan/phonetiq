@@ -54,7 +54,7 @@ CREATE TABLE word_pairs (
 Minimal pairs are highly dependent on the speaker's accent. For example:
 - `["hut", "heart"]` is a minimal pair in non-rhotic accents (UK/Aus) but not in many rhotic American accents.
 - `["cot", "caught"]` is distinct in the UK, but identical for most North Americans due to the cot-caught merger.
-The `dialect_filter` column ensures the app only presents relevant pairs based on selected dialect. In the UI, `Common` maps to `all` (shared/cross-dialect pairs), while `UK`, `US`, and `AU` each request `all` plus their dialect-specific additions (`uk_only`, `us_only`, `au_only`).
+The `dialect_filter` column ensures the app only presents relevant pairs based on the selected target dialect. In the UI, `US`, `UK`, and `AU` each request their target dialect plus shared `all` pairs behind the scenes.
 
 ## Audio Pipelines
 ### 1. Text-to-Speech (TTS) Pipeline

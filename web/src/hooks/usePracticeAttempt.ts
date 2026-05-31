@@ -5,6 +5,7 @@ import {
   type RecordingResult,
 } from './useAudioRecorder';
 import { recognizeSpeech, type RecognizeSpeechResult } from '../lib/api';
+import type { Dialect } from '../lib/types';
 
 export type PracticeStatus =
   | 'idle'
@@ -48,7 +49,7 @@ interface AttemptState {
 interface UsePracticeAttemptOptions {
   word: string;
   partnerWord?: string;
-  dialect?: string;
+  dialect?: Dialect;
   experimentMode?: 'frame_sentence';
   debugEnabled?: boolean;
   onSuccess: () => void;

@@ -1,5 +1,9 @@
 import { Hono } from 'hono';
 import type { Env } from '../index';
+import {
+  coerceTargetDialect,
+  getDialectPromptLabel,
+} from '../lib/dialects';
 
 export const recognizeRoutes = new Hono<{ Bindings: Env }>();
 
@@ -40,16 +44,8 @@ export function matchFrameSentence(
 }
 
 export function buildDialectPrompt(dialect: string | undefined): string {
-  if (dialect === 'uk_only') {
-    return 'The speaker will say one short English word in British English.';
-  }
-  if (dialect === 'us_only') {
-    return 'The speaker will say one short English word in American English.';
-  }
-  if (dialect === 'au_only') {
-    return 'The speaker will say one short English word in Australian English.';
-  }
-  return 'The speaker will say one short English word in common international English.';
+  const targetDialect = coerceTargetDialect(dialect);
+  return `The speaker will say one short English word in ${getDialectPromptLabel(targetDialect)}.`;
 }
 
 export function buildInitialPrompt(
@@ -225,7 +221,8 @@ recognizeRoutes.post('/', async (c) => {
     const file = formData.get('audio');
     candidate1 = String(formData.get('candidate1') || '').trim() || undefined;
     candidate2 = String(formData.get('candidate2') || '').trim() || undefined;
-    dialect = String(formData.get('dialect') || '').trim() || undefined;
+    const rawDialect = String(formData.get('dialect') || '').trim() || undefined;
+    dialect = coerceTargetDialect(rawDialect);
     shouldDebug = String(formData.get('debug') || '').trim() === '1';
 
     if (!file || !(file instanceof File)) {

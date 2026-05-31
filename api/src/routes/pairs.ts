@@ -1,12 +1,13 @@
 import { Hono } from 'hono';
 import type { Env } from '../index';
+import { coerceTargetDialect } from '../lib/dialects';
 
 export const pairsRoutes = new Hono<{ Bindings: Env }>();
 
 // GET /api/pairs - List word pairs with optional filters
 pairsRoutes.get('/', async (c) => {
   const category = c.req.query('category');
-  const dialect = c.req.query('dialect') || 'all';
+  const dialect = coerceTargetDialect(c.req.query('dialect'));
   const difficulty = c.req.query('difficulty');
   const limit = Math.min(parseInt(c.req.query('limit') || '50', 10), 200);
   const offset = parseInt(c.req.query('offset') || '0', 10);
@@ -32,7 +33,7 @@ pairsRoutes.get('/', async (c) => {
 
 // GET /api/pairs/categories - List all available categories
 pairsRoutes.get('/categories', async (c) => {
-  const dialect = c.req.query('dialect') || 'all';
+  const dialect = coerceTargetDialect(c.req.query('dialect'));
 
   const { results } = await c.env.DB.prepare(
     `SELECT phoneme_type, COUNT(*) as count
