@@ -27,7 +27,7 @@
 - `npm run dev` - Start Worker dev server (port 8787)
 - `npm run dev:frame` - Start frame-sentence profile (port 8791)
 - `npm run typecheck` - TypeScript check
-- `npm test` - Run Vitest tests (59 tests)
+- `npm test` - Run Vitest tests (61 tests)
 - `npm run eval` - Dialect-tagged frame-sentence recognition eval (7 s delay)
 - `npm run eval:fast` - Dialect-tagged frame-sentence eval (no delay)
 - `npm run eval:json` - Machine-readable JSON output for automation
