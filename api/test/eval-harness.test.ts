@@ -18,6 +18,27 @@ describe('evalHarness', () => {
     expect(new Set(DIALECT_EVAL_CORPUS.map((pair) => pair.dialect))).toEqual(
       new Set(['us_only', 'uk_only', 'au_only']),
     );
+    expect(
+      new Set(DIALECT_EVAL_CORPUS.map((pair) => toContrastFamily(pair.word1, pair.word2))),
+    ).toEqual(
+      new Set([
+        toContrastFamily('ship', 'sheep'),
+        toContrastFamily('pen', 'pan'),
+        toContrastFamily('cot', 'caught'),
+        toContrastFamily('bar', 'bore'),
+        toContrastFamily('cut', 'cart'),
+        toContrastFamily('peer', 'pear'),
+        toContrastFamily('hut', 'heart'),
+      ]),
+    );
+  });
+
+  it('keeps non-rhotic contrast rows scoped to UK and AU in the eval corpus', () => {
+    const hutHeartRows = DIALECT_EVAL_CORPUS.filter(
+      (pair) => toContrastFamily(pair.word1, pair.word2) === toContrastFamily('hut', 'heart'),
+    );
+
+    expect(hutHeartRows.map((pair) => pair.dialect).sort()).toEqual(['au_only', 'uk_only']);
   });
 
   it('parses an optional dialect filter flag', () => {

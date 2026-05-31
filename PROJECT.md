@@ -36,6 +36,7 @@
 - `npm run eval -- --dialect uk_only` - Run only one target dialect's eval rows
 - `npm run eval:guard -- --min-dialect-accuracy 70` - Override guardrail thresholds
 - Eval output includes both per-dialect and contrast-family rollups for diagnosis
+- Eval corpus now includes wider pilot coverage (`ship/sheep`, `pen/pan`, `cot/caught`, `bar/bore`, `cut/cart`, `peer/pear`, `hut/heart`)
 - `npm run db:generate` - Generate Drizzle migration SQL
 - `npm run db:migrate:local` - Apply migrations to local D1
 - `npm run db:seed:local` - Seed word pairs to local D1

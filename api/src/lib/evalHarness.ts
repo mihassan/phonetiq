@@ -75,19 +75,45 @@ export const DEFAULT_EVAL_GUARDRAILS: Required<EvalGuardrailThresholds> = {
   maxDialectNoMatchPct: 40,
 };
 
-export const DIALECT_EVAL_CORPUS: EvalPair[] = [
-  { word1: 'ship', word2: 'sheep', dialect: 'us_only', voices: [{ name: 'Samantha' }] },
-  { word1: 'ship', word2: 'sheep', dialect: 'uk_only', voices: [{ name: 'Daniel' }] },
-  { word1: 'ship', word2: 'sheep', dialect: 'au_only', voices: [{ name: 'Karen' }] },
-  { word1: 'pen', word2: 'pan', dialect: 'us_only', voices: [{ name: 'Samantha' }] },
-  { word1: 'pen', word2: 'pan', dialect: 'uk_only', voices: [{ name: 'Daniel' }] },
-  { word1: 'pen', word2: 'pan', dialect: 'au_only', voices: [{ name: 'Karen' }] },
-  { word1: 'bar', word2: 'bore', dialect: 'us_only', voices: [{ name: 'Samantha' }] },
-  { word1: 'cut', word2: 'cart', dialect: 'uk_only', voices: [{ name: 'Daniel' }] },
-  { word1: 'peer', word2: 'pear', dialect: 'au_only', voices: [{ name: 'Karen' }] },
+const DIALECT_ORDER: TargetDialect[] = ['us_only', 'uk_only', 'au_only'];
+const DIALECT_VOICE_BY_TARGET: Record<TargetDialect, EvalVoice> = {
+  us_only: { name: 'Samantha' },
+  uk_only: { name: 'Daniel' },
+  au_only: { name: 'Karen' },
+};
+
+const CROSS_DIALECT_EVAL_CONTRASTS = [
+  ['ship', 'sheep'],
+  ['pen', 'pan'],
+  ['cot', 'caught'],
+] as const;
+
+const TARGETED_EVAL_CONTRASTS: Array<{
+  word1: string;
+  word2: string;
+  dialect: TargetDialect;
+}> = [
+  { word1: 'bar', word2: 'bore', dialect: 'us_only' },
+  { word1: 'cut', word2: 'cart', dialect: 'uk_only' },
+  { word1: 'peer', word2: 'pear', dialect: 'au_only' },
+  { word1: 'hut', word2: 'heart', dialect: 'uk_only' },
+  { word1: 'hut', word2: 'heart', dialect: 'au_only' },
 ];
 
-const DIALECT_ORDER: TargetDialect[] = ['us_only', 'uk_only', 'au_only'];
+export const DIALECT_EVAL_CORPUS: EvalPair[] = [
+  ...CROSS_DIALECT_EVAL_CONTRASTS.flatMap(([word1, word2]) =>
+    DIALECT_ORDER.map((dialect) => ({
+      word1,
+      word2,
+      dialect,
+      voices: [DIALECT_VOICE_BY_TARGET[dialect]],
+    })),
+  ),
+  ...TARGETED_EVAL_CONTRASTS.map((pair) => ({
+    ...pair,
+    voices: [DIALECT_VOICE_BY_TARGET[pair.dialect]],
+  })),
+];
 
 export function toContrastFamily(word1: string, word2: string): string {
   return [word1, word2].sort().join('|');
