@@ -33,8 +33,8 @@ api/
 | Persistent model | `src/db/schema.ts` | Drizzle table definitions |
 | Seed data | `src/db/seed.sql` | Word-pair dataset |
 | Infra bindings | `wrangler.toml` | D1, R2, AI, origins, custom domain |
-| Baseline eval harness | `scripts/run-eval.ts` | Dialect-tagged frame-sentence corpus with per-dialect summaries; `npm run eval` / `eval:fast` |
-| Frame eval harness | `scripts/run-eval-experiment.ts` | Same dialect-tagged corpus on `dev:frame`; `npm run eval:frame` |
+| Baseline eval harness | `scripts/run-eval.ts` | Dialect-tagged frame-sentence corpus with per-dialect summaries and optional strict guardrails; `npm run eval` / `eval:fast` / `eval:guard` |
+| Frame eval harness | `scripts/run-eval-experiment.ts` | Same dialect-tagged corpus on `dev:frame`, including strict guardrails; `npm run eval:frame` / `eval:frame:guard` |
 
 ## CONVENTIONS
 - `src/index.ts` is the only place routes are mounted; route files export `const *Routes = new Hono...`.

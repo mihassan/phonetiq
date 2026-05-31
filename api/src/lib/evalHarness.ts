@@ -38,6 +38,30 @@ export interface EvalSummaryBucket {
   aliasResolved: number;
 }
 
+export interface EvalSummary {
+  overall: EvalSummaryBucket;
+  byDialect: EvalSummaryBucket[];
+}
+
+export interface EvalGuardrailThresholds {
+  minOverallAccuracyPct?: number;
+  minDialectAccuracyPct?: number;
+  maxOverallNoMatchPct?: number;
+  maxDialectNoMatchPct?: number;
+}
+
+export interface EvalGuardrailResult {
+  passed: boolean;
+  failures: string[];
+}
+
+export const DEFAULT_EVAL_GUARDRAILS: Required<EvalGuardrailThresholds> = {
+  minOverallAccuracyPct: 70,
+  minDialectAccuracyPct: 60,
+  maxOverallNoMatchPct: 30,
+  maxDialectNoMatchPct: 40,
+};
+
 export const DIALECT_EVAL_CORPUS: EvalPair[] = [
   { word1: 'ship', word2: 'sheep', dialect: 'us_only', voices: [{ name: 'Samantha' }] },
   { word1: 'ship', word2: 'sheep', dialect: 'uk_only', voices: [{ name: 'Daniel' }] },
@@ -122,5 +146,119 @@ export function summarizeEvalResults(results: EvalResult[]) {
         return buildSummaryBucket(getDialectPromptLabel(dialect), dialectResults, dialect);
       })
       .filter((bucket): bucket is EvalSummaryBucket => bucket !== null),
+  } satisfies EvalSummary;
+}
+
+function readPercentArg(argv: string[], flag: string): number | null {
+  const flagIndex = argv.indexOf(flag);
+  if (flagIndex === -1) {
+    return null;
+  }
+
+  const value = argv[flagIndex + 1];
+  if (!value) {
+    throw new Error(`Missing value for ${flag}. Use a percentage between 0 and 100.`);
+  }
+
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100) {
+    throw new Error(`Invalid ${flag} "${value}". Use a percentage between 0 and 100.`);
+  }
+
+  return parsed;
+}
+
+export function readEvalGuardrailArgs(argv: string[]): EvalGuardrailThresholds | null {
+  const strict = argv.includes('--strict');
+  const minOverallAccuracyPct = readPercentArg(argv, '--min-overall-accuracy');
+  const minDialectAccuracyPct = readPercentArg(argv, '--min-dialect-accuracy');
+  const maxOverallNoMatchPct = readPercentArg(argv, '--max-overall-no-match');
+  const maxDialectNoMatchPct = readPercentArg(argv, '--max-dialect-no-match');
+
+  if (
+    !strict &&
+    minOverallAccuracyPct === null &&
+    minDialectAccuracyPct === null &&
+    maxOverallNoMatchPct === null &&
+    maxDialectNoMatchPct === null
+  ) {
+    return null;
+  }
+
+  return {
+    minOverallAccuracyPct:
+      minOverallAccuracyPct ?? (strict ? DEFAULT_EVAL_GUARDRAILS.minOverallAccuracyPct : undefined),
+    minDialectAccuracyPct:
+      minDialectAccuracyPct ?? (strict ? DEFAULT_EVAL_GUARDRAILS.minDialectAccuracyPct : undefined),
+    maxOverallNoMatchPct:
+      maxOverallNoMatchPct ?? (strict ? DEFAULT_EVAL_GUARDRAILS.maxOverallNoMatchPct : undefined),
+    maxDialectNoMatchPct:
+      maxDialectNoMatchPct ?? (strict ? DEFAULT_EVAL_GUARDRAILS.maxDialectNoMatchPct : undefined),
+  };
+}
+
+function accuracyPct(bucket: EvalSummaryBucket) {
+  return bucket.total === 0 ? 100 : (bucket.correct / bucket.total) * 100;
+}
+
+function noMatchPct(bucket: EvalSummaryBucket) {
+  return bucket.total === 0 ? 0 : (bucket.noMatch / bucket.total) * 100;
+}
+
+function pctLabel(value: number) {
+  return `${value.toFixed(1)}%`;
+}
+
+export function evaluateEvalGuardrails(
+  summary: EvalSummary,
+  thresholds: EvalGuardrailThresholds,
+): EvalGuardrailResult {
+  const failures: string[] = [];
+  const overallAccuracy = accuracyPct(summary.overall);
+  const overallNoMatch = noMatchPct(summary.overall);
+
+  if (
+    thresholds.minOverallAccuracyPct !== undefined &&
+    overallAccuracy < thresholds.minOverallAccuracyPct
+  ) {
+    failures.push(
+      `Overall accuracy ${pctLabel(overallAccuracy)} is below minimum ${pctLabel(thresholds.minOverallAccuracyPct)}.`,
+    );
+  }
+
+  if (
+    thresholds.maxOverallNoMatchPct !== undefined &&
+    overallNoMatch > thresholds.maxOverallNoMatchPct
+  ) {
+    failures.push(
+      `Overall no-match rate ${pctLabel(overallNoMatch)} is above maximum ${pctLabel(thresholds.maxOverallNoMatchPct)}.`,
+    );
+  }
+
+  if (thresholds.minDialectAccuracyPct !== undefined) {
+    for (const bucket of summary.byDialect) {
+      const dialectAccuracy = accuracyPct(bucket);
+      if (dialectAccuracy < thresholds.minDialectAccuracyPct) {
+        failures.push(
+          `${bucket.label} accuracy ${pctLabel(dialectAccuracy)} is below minimum ${pctLabel(thresholds.minDialectAccuracyPct)}.`,
+        );
+      }
+    }
+  }
+
+  if (thresholds.maxDialectNoMatchPct !== undefined) {
+    for (const bucket of summary.byDialect) {
+      const dialectNoMatch = noMatchPct(bucket);
+      if (dialectNoMatch > thresholds.maxDialectNoMatchPct) {
+        failures.push(
+          `${bucket.label} no-match rate ${pctLabel(dialectNoMatch)} is above maximum ${pctLabel(thresholds.maxDialectNoMatchPct)}.`,
+        );
+      }
+    }
+  }
+
+  return {
+    passed: failures.length === 0,
+    failures,
   };
 }

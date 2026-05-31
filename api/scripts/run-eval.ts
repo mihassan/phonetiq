@@ -12,11 +12,15 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   DIALECT_EVAL_CORPUS,
+  evaluateEvalGuardrails,
   filterEvalCorpus,
   readDialectFilterArg,
+  readEvalGuardrailArgs,
   summarizeEvalResults,
+  type EvalGuardrailThresholds,
   type EvalPair,
   type EvalResult,
+  type EvalSummary,
 } from '../src/lib/evalHarness';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -31,6 +35,7 @@ const LABEL = process.argv.includes('--label')
   ? process.argv[process.argv.indexOf('--label') + 1]
   : 'FRAME SENTENCE (the word is X)';
 const DIALECT_FILTER = readDialectFilterArg(process.argv);
+const EVAL_GUARDRAILS = readEvalGuardrailArgs(process.argv);
 const EVAL_CORPUS = filterEvalCorpus(DIALECT_EVAL_CORPUS, DIALECT_FILTER);
 const RATE_LIMIT_BATCH = 8;
 
@@ -122,8 +127,8 @@ function pct(n: number, total: number) {
   return total === 0 ? '0%' : `${Math.round((n / total) * 100)}%`;
 }
 
-function printTable(results: EvalResult[], label: string) {
-  const summary = summarizeEvalResults(results).overall;
+function printTable(results: EvalResult[], label: string, summary: EvalSummary) {
+  const overall = summary.overall;
 
   console.log(`\n${'='.repeat(110)}`);
   console.log(`  ${label}`);
@@ -141,18 +146,34 @@ function printTable(results: EvalResult[], label: string) {
 
   console.log('-'.repeat(110));
   console.log(
-    `Total: ${summary.total}  Correct: ${summary.correct} (${pct(summary.correct, summary.total)})  Wrong: ${summary.wrong} (${pct(summary.wrong, summary.total)})  No-match: ${summary.noMatch} (${pct(summary.noMatch, summary.total)})  Alias-resolved: ${summary.aliasResolved}`,
+    `Total: ${overall.total}  Correct: ${overall.correct} (${pct(overall.correct, overall.total)})  Wrong: ${overall.wrong} (${pct(overall.wrong, overall.total)})  No-match: ${overall.noMatch} (${pct(overall.noMatch, overall.total)})  Alias-resolved: ${overall.aliasResolved}`,
   );
 }
 
-function printDialectSummary(results: EvalResult[]) {
-  const summary = summarizeEvalResults(results);
+function printDialectSummary(summary: EvalSummary) {
   console.log('\nBy target dialect');
   for (const bucket of summary.byDialect) {
     console.log(
       `- ${bucket.label} (${bucket.dialect}, N=${bucket.total}): Correct ${bucket.correct} (${pct(bucket.correct, bucket.total)}), Wrong ${bucket.wrong} (${pct(bucket.wrong, bucket.total)}), No-match ${bucket.noMatch} (${pct(bucket.noMatch, bucket.total)}), Alias-resolved ${bucket.aliasResolved}`,
     );
   }
+}
+
+function printGuardrailSettings(settings: EvalGuardrailThresholds) {
+  const parts: string[] = [];
+  if (settings.minOverallAccuracyPct !== undefined) {
+    parts.push(`min overall accuracy ${settings.minOverallAccuracyPct}%`);
+  }
+  if (settings.minDialectAccuracyPct !== undefined) {
+    parts.push(`min dialect accuracy ${settings.minDialectAccuracyPct}%`);
+  }
+  if (settings.maxOverallNoMatchPct !== undefined) {
+    parts.push(`max overall no-match ${settings.maxOverallNoMatchPct}%`);
+  }
+  if (settings.maxDialectNoMatchPct !== undefined) {
+    parts.push(`max dialect no-match ${settings.maxDialectNoMatchPct}%`);
+  }
+  console.log(`Guardrails: ${parts.join(', ')}`);
 }
 
 async function checkWorkerRunning() {
@@ -172,10 +193,16 @@ async function main() {
   if (DIALECT_FILTER) {
     console.log(`Target dialect filter: ${DIALECT_FILTER}`);
   }
+  if (EVAL_GUARDRAILS) {
+    printGuardrailSettings(EVAL_GUARDRAILS);
+  }
   console.log(`Fixtures: ${FIXTURES_DIR}\n`);
 
   await checkWorkerRunning();
   mkdirSync(FIXTURES_DIR, { recursive: true });
+  if (EVAL_CORPUS.length === 0) {
+    throw new Error('No eval corpus rows matched the selected dialect filter.');
+  }
 
   process.stdout.write('Generating WAV fixtures...');
   for (const pair of EVAL_CORPUS) {
@@ -249,8 +276,22 @@ async function main() {
     }
   }
 
-  printTable(results, LABEL);
-  printDialectSummary(results);
+  const summary = summarizeEvalResults(results);
+
+  printTable(results, LABEL, summary);
+  printDialectSummary(summary);
+  if (EVAL_GUARDRAILS) {
+    const guardrailResult = evaluateEvalGuardrails(summary, EVAL_GUARDRAILS);
+    if (guardrailResult.passed) {
+      console.log('\nGuardrails: PASS');
+    } else {
+      console.error('\nGuardrails: FAIL');
+      for (const failure of guardrailResult.failures) {
+        console.error(`- ${failure}`);
+      }
+      process.exit(1);
+    }
+  }
   console.log();
 }
 

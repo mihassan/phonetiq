@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DEFAULT_EVAL_GUARDRAILS,
   DIALECT_EVAL_CORPUS,
+  evaluateEvalGuardrails,
   filterEvalCorpus,
   readDialectFilterArg,
+  readEvalGuardrailArgs,
   summarizeEvalResults,
   type EvalResult,
 } from '../src/lib/evalHarness';
@@ -25,6 +28,37 @@ describe('evalHarness', () => {
     expect(() => readDialectFilterArg(['node', 'script.ts', '--dialect', 'all'])).toThrow(
       'Invalid --dialect "all"',
     );
+  });
+
+  it('parses optional strict guardrail settings', () => {
+    expect(readEvalGuardrailArgs(['node', 'script.ts'])).toBeNull();
+    expect(readEvalGuardrailArgs(['node', 'script.ts', '--strict'])).toEqual(
+      DEFAULT_EVAL_GUARDRAILS,
+    );
+    expect(
+      readEvalGuardrailArgs([
+        'node',
+        'script.ts',
+        '--strict',
+        '--min-dialect-accuracy',
+        '75',
+        '--max-overall-no-match',
+        '20',
+      ]),
+    ).toEqual({
+      ...DEFAULT_EVAL_GUARDRAILS,
+      minDialectAccuracyPct: 75,
+      maxOverallNoMatchPct: 20,
+    });
+  });
+
+  it('rejects invalid guardrail percentages', () => {
+    expect(() =>
+      readEvalGuardrailArgs(['node', 'script.ts', '--min-overall-accuracy', 'nan']),
+    ).toThrow('Invalid --min-overall-accuracy');
+    expect(() =>
+      readEvalGuardrailArgs(['node', 'script.ts', '--max-dialect-no-match', '101']),
+    ).toThrow('Invalid --max-dialect-no-match');
   });
 
   it('filters the corpus by target dialect', () => {
@@ -108,6 +142,83 @@ describe('evalHarness', () => {
         noMatch: 1,
         aliasResolved: 0,
       },
+    ]);
+  });
+
+  it('evaluates guardrail pass/fail thresholds', () => {
+    const results: EvalResult[] = [
+      {
+        word: 'ship',
+        expectedWord: 'ship',
+        candidate1: 'ship',
+        candidate2: 'sheep',
+        dialect: 'us_only',
+        voice: 'Samantha',
+        matchType: 'exact',
+        matchedWord: 'ship',
+        matchedBy: 'exact',
+        correct: true,
+      },
+      {
+        word: 'sheep',
+        expectedWord: 'sheep',
+        candidate1: 'ship',
+        candidate2: 'sheep',
+        dialect: 'us_only',
+        voice: 'Samantha',
+        matchType: 'no_match',
+        matchedWord: null,
+        matchedBy: 'none',
+        correct: false,
+      },
+      {
+        word: 'pen',
+        expectedWord: 'pen',
+        candidate1: 'pen',
+        candidate2: 'pan',
+        dialect: 'uk_only',
+        voice: 'Daniel',
+        matchType: 'exact',
+        matchedWord: 'pen',
+        matchedBy: 'exact',
+        correct: true,
+      },
+      {
+        word: 'pan',
+        expectedWord: 'pan',
+        candidate1: 'pen',
+        candidate2: 'pan',
+        dialect: 'uk_only',
+        voice: 'Daniel',
+        matchType: 'exact',
+        matchedWord: 'pan',
+        matchedBy: 'exact',
+        correct: true,
+      },
+    ];
+
+    const summary = summarizeEvalResults(results);
+    const pass = evaluateEvalGuardrails(summary, {
+      minOverallAccuracyPct: 70,
+      minDialectAccuracyPct: 50,
+      maxOverallNoMatchPct: 30,
+      maxDialectNoMatchPct: 60,
+    });
+    const fail = evaluateEvalGuardrails(summary, {
+      minOverallAccuracyPct: 80,
+      minDialectAccuracyPct: 60,
+      maxOverallNoMatchPct: 20,
+      maxDialectNoMatchPct: 40,
+    });
+
+    expect(pass.passed).toBe(true);
+    expect(pass.failures).toEqual([]);
+    expect(fail.passed).toBe(false);
+    expect(fail.failures).toEqual([
+      'Overall accuracy 75.0% is below minimum 80.0%.',
+      'Overall no-match rate 25.0% is above maximum 20.0%.',
+      'American English accuracy 50.0% is below minimum 60.0%.',
+      'American English no-match rate 50.0% is above maximum 40.0%.',
     ]);
   });
 });

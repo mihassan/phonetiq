@@ -30,8 +30,11 @@
 - `npm test` - Run Vitest tests (64 tests)
 - `npm run eval` - Dialect-tagged frame-sentence recognition eval (7 s delay)
 - `npm run eval:fast` - Dialect-tagged frame-sentence eval (no delay)
+- `npm run eval:guard` - Same eval with strict guardrail thresholds (fails on regressions)
 - `npm run eval:frame` - Frame-sentence eval on `dev:frame` (port 8791)
+- `npm run eval:frame:guard` - Frame-profile eval with strict guardrail thresholds
 - `npm run eval -- --dialect uk_only` - Run only one target dialect's eval rows
+- `npm run eval:guard -- --min-dialect-accuracy 70` - Override guardrail thresholds
 - `npm run db:generate` - Generate Drizzle migration SQL
 - `npm run db:migrate:local` - Apply migrations to local D1
 - `npm run db:seed:local` - Seed word pairs to local D1
