@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildEvalJsonReport,
+  buildEvalSummaryJsonReport,
   DEFAULT_EVAL_GUARDRAILS,
   DIALECT_EVAL_CORPUS,
   evaluateEvalGuardrails,
@@ -86,15 +87,37 @@ describe('evalHarness', () => {
   });
 
   it('parses eval output mode flags', () => {
-    expect(readEvalOutputModeArgs(['node', 'script.ts'])).toEqual({ json: false, pretty: false });
+    expect(readEvalOutputModeArgs(['node', 'script.ts'])).toEqual({
+      json: false,
+      summaryJson: false,
+      pretty: false,
+    });
     expect(readEvalOutputModeArgs(['node', 'script.ts', '--json'])).toEqual({
       json: true,
+      summaryJson: false,
       pretty: false,
     });
     expect(readEvalOutputModeArgs(['node', 'script.ts', '--json-pretty'])).toEqual({
       json: true,
+      summaryJson: false,
       pretty: true,
     });
+    expect(readEvalOutputModeArgs(['node', 'script.ts', '--summary-json'])).toEqual({
+      json: false,
+      summaryJson: true,
+      pretty: false,
+    });
+    expect(readEvalOutputModeArgs(['node', 'script.ts', '--summary-json-pretty'])).toEqual({
+      json: false,
+      summaryJson: true,
+      pretty: true,
+    });
+  });
+
+  it('rejects conflicting JSON output modes', () => {
+    expect(() =>
+      readEvalOutputModeArgs(['node', 'script.ts', '--json', '--summary-json']),
+    ).toThrow('Use either --json/--json-pretty or --summary-json/--summary-json-pretty');
   });
 
   it('filters the corpus by target dialect', () => {
@@ -373,6 +396,54 @@ describe('evalHarness', () => {
         enabled: true,
         thresholds: DEFAULT_EVAL_GUARDRAILS,
         passed: true,
+        failures: [],
+      },
+    });
+  });
+
+  it('builds a summary-only eval JSON report', () => {
+    const results: EvalResult[] = [
+      {
+        family: toContrastFamily('ship', 'sheep'),
+        word: 'ship',
+        expectedWord: 'ship',
+        candidate1: 'ship',
+        candidate2: 'sheep',
+        dialect: 'us_only',
+        voice: 'Samantha',
+        matchType: 'exact',
+        matchedWord: 'ship',
+        matchedBy: 'exact',
+        correct: true,
+      },
+    ];
+    const summary = summarizeEvalResults(results);
+    const report = buildEvalSummaryJsonReport({
+      generatedAt: '2026-01-01T00:00:00.000Z',
+      baseUrl: 'http://localhost:8787',
+      label: 'FRAME SENTENCE',
+      fixtureDir: '/tmp/fixtures',
+      delayMs: 0,
+      dialectFilter: null,
+      summary,
+      guardrails: {
+        thresholds: null,
+        result: null,
+      },
+    });
+
+    expect(report).toEqual({
+      generatedAt: '2026-01-01T00:00:00.000Z',
+      baseUrl: 'http://localhost:8787',
+      label: 'FRAME SENTENCE',
+      fixtureDir: '/tmp/fixtures',
+      delayMs: 0,
+      dialectFilter: null,
+      summary,
+      guardrails: {
+        enabled: false,
+        thresholds: null,
+        passed: null,
         failures: [],
       },
     });

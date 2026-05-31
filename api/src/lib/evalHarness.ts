@@ -70,6 +70,7 @@ export interface EvalGuardrailResult {
 
 export interface EvalOutputMode {
   json: boolean;
+  summaryJson: boolean;
   pretty: boolean;
 }
 
@@ -82,6 +83,22 @@ export interface EvalJsonReport {
   dialectFilter: TargetDialect | null;
   summary: EvalSummary;
   results: EvalResult[];
+  guardrails: {
+    enabled: boolean;
+    thresholds: EvalGuardrailThresholds | null;
+    passed: boolean | null;
+    failures: string[];
+  };
+}
+
+export interface EvalSummaryJsonReport {
+  generatedAt: string;
+  baseUrl: string;
+  label: string;
+  fixtureDir: string;
+  delayMs: number;
+  dialectFilter: TargetDialect | null;
+  summary: EvalSummary;
   guardrails: {
     enabled: boolean;
     thresholds: EvalGuardrailThresholds | null;
@@ -305,10 +322,22 @@ export function readEvalGuardrailArgs(argv: string[]): EvalGuardrailThresholds |
 }
 
 export function readEvalOutputModeArgs(argv: string[]): EvalOutputMode {
-  const pretty = argv.includes('--json-pretty');
-  const json = argv.includes('--json') || pretty;
+  const jsonPretty = argv.includes('--json-pretty');
+  const summaryJsonPretty = argv.includes('--summary-json-pretty');
+  const json = argv.includes('--json') || jsonPretty;
+  const summaryJson = argv.includes('--summary-json') || summaryJsonPretty;
 
-  return { json, pretty };
+  if (json && summaryJson) {
+    throw new Error(
+      'Use either --json/--json-pretty or --summary-json/--summary-json-pretty, not both.',
+    );
+  }
+
+  return {
+    json,
+    summaryJson,
+    pretty: jsonPretty || summaryJsonPretty,
+  };
 }
 
 function accuracyPct(bucket: EvalSummaryBucket) {
@@ -400,6 +429,36 @@ export function buildEvalJsonReport(input: {
     dialectFilter: input.dialectFilter,
     summary: input.summary,
     results: input.results,
+    guardrails: {
+      enabled: input.guardrails.thresholds !== null,
+      thresholds: input.guardrails.thresholds,
+      passed: input.guardrails.result?.passed ?? null,
+      failures: input.guardrails.result?.failures ?? [],
+    },
+  };
+}
+
+export function buildEvalSummaryJsonReport(input: {
+  generatedAt: string;
+  baseUrl: string;
+  label: string;
+  fixtureDir: string;
+  delayMs: number;
+  dialectFilter: TargetDialect | null;
+  summary: EvalSummary;
+  guardrails: {
+    thresholds: EvalGuardrailThresholds | null;
+    result: EvalGuardrailResult | null;
+  };
+}): EvalSummaryJsonReport {
+  return {
+    generatedAt: input.generatedAt,
+    baseUrl: input.baseUrl,
+    label: input.label,
+    fixtureDir: input.fixtureDir,
+    delayMs: input.delayMs,
+    dialectFilter: input.dialectFilter,
+    summary: input.summary,
     guardrails: {
       enabled: input.guardrails.thresholds !== null,
       thresholds: input.guardrails.thresholds,

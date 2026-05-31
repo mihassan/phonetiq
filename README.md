@@ -112,8 +112,8 @@ Phonetiq/
         schema.ts             # Drizzle ORM schema
         seed.sql              # 400+ word pairs seed data
     scripts/
-      run-eval.ts             # Dialect-tagged eval harness (+ JSON output, strict guardrails, family rollups)
-      run-eval-experiment.ts  # Frame eval variant (+ JSON output, strict guardrails, family rollups)
+      run-eval.ts             # Dialect-tagged eval harness (+ full/summary JSON, strict guardrails, family rollups)
+      run-eval-experiment.ts  # Frame eval variant (+ full/summary JSON, strict guardrails, family rollups)
       wrangler-with-env.mjs   # Wrangler wrapper that injects local env
     drizzle/                  # Generated SQL migrations
     wrangler.toml             # Bindings: D1, R2, AI, Rate Limiters
