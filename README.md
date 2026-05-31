@@ -405,7 +405,7 @@ CI uses a dedicated workflow plus path-scoped deploy workflows:
 
 | Secret | Value |
 | --- | --- |
-| `CLOUDFLARE_API_TOKEN` | API token with Workers Scripts Edit + Cloudflare Pages Edit permissions |
+| `CLOUDFLARE_API_TOKEN` | API token with Workers Scripts Edit + D1 Edit + Cloudflare Pages Edit permissions |
 | `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID |
 
 ### 5. Custom domains

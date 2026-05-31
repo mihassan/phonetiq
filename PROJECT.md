@@ -119,7 +119,7 @@ If you want to reintroduce foundation mode, restore the previous recognition bra
 - `VITE_API_URL` - (Frontend, production only) Base URL for the API Worker (e.g., `https://api.phonetiq.mihassan.com`). The code appends `/api` automatically. Defaults to `/api` in local dev via Vite proxy.
 
 ## GitHub Secrets
-- `CLOUDFLARE_API_TOKEN` - API token with Workers Scripts Edit + Cloudflare Pages Edit permissions
+- `CLOUDFLARE_API_TOKEN` - API token with Workers Scripts Edit + D1 Edit + Cloudflare Pages Edit permissions
 - `CLOUDFLARE_ACCOUNT_ID` - Cloudflare account ID (`3bea2e6d6f93b5cc822b36b69958d4cd`)
 
 ## Cloudflare Worker Secrets
