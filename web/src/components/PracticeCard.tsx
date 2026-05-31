@@ -24,6 +24,7 @@ interface Props {
   isFirstWord: boolean;
   partnerWord: string;
   experimentMode?: 'frame_sentence';
+  debugEnabled?: boolean;
 }
 
 export function PracticeCard({
@@ -36,6 +37,7 @@ export function PracticeCard({
   isFirstWord,
   partnerWord,
   experimentMode,
+  debugEnabled,
 }: Props) {
   const recordDuration = RECORD_DURATION_DEFAULT;
 
@@ -45,6 +47,7 @@ export function PracticeCard({
       partnerWord,
       dialect,
       experimentMode,
+      debugEnabled,
       onSuccess,
       onAttemptEvaluated,
       recordDurationMs: recordDuration,
@@ -290,9 +293,21 @@ export function PracticeCard({
             <span className="text-sm font-black capitalize">&ldquo;{transcript}&rdquo;</span>
           </div>
         )}
+
+        {status === 'no_match' && noMatchHint === 'use_frame' && (
+          <div
+            data-testid="practice-frame-tip"
+            className="mt-3 px-4 py-3 rounded-2xl border ui-divider-border ui-card text-xs md:text-sm flex items-start gap-2 max-w-md"
+          >
+            <span className="shrink-0 mt-px">💡</span>
+            <span className="ui-muted font-medium leading-snug">
+              Try the full sentence: &ldquo;The word is {word}&rdquo;.
+            </span>
+          </div>
+        )}
       </div>
 
-      {isDevelopment && debugInfo && (
+      {isDevelopment && debugEnabled && debugInfo && (
         <div
           data-testid="practice-debug-panel"
           className="mt-4 w-full rounded-2xl border ui-divider-border ui-card p-4 text-left"

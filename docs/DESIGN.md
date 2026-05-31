@@ -93,6 +93,8 @@ Users are prompted to say *"The word is X"* instead of just *X*. The backend ext
 
 This dramatically improves recognition reliability in non-ideal recording environments.
 
+The Practice screen also surfaces a short contextual tip when a user misses the frame phrase, and the debug transcript/response panel stays behind a local-only dev toggle so production remains clean.
+
 ## Practice Session Personalization
 *   **Local Progress Store:** Practice outcomes are persisted in browser storage (attempts, correctness, completions, streaks, weak-pair signals, timestamps).
 *   **Adaptive Batch Sessions:** Practice mode runs refreshable batches instead of global index jumps. Default batch size is 15 with a fixed weak-pair quota of 5; remaining items are filled from unseen then medium-weak pairs.

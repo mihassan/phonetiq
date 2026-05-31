@@ -226,15 +226,21 @@ describe('App', () => {
   });
 
   it('uses themed header and mode-toggle styling aligned with the design direction', async () => {
+    const user = userEvent.setup();
     render(<App />);
 
     await screen.findByText(/pair 1 of 2/i);
 
     const header = screen.getByTestId('app-header');
     const toggle = screen.getByTestId('mode-toggle');
+    const debugToggle = screen.getByTestId('dev-debug-toggle');
 
     expect(header.className).toContain('ui-topbar');
     expect(toggle.className).toContain('ui-card-muted');
+    expect(debugToggle).toHaveTextContent(/debug on/i);
+
+    await user.click(debugToggle);
+    expect(debugToggle).toHaveTextContent(/debug off/i);
   });
 
   it('keeps the mobile mode selector outside hidden ancestors and lets it switch screens', async () => {

@@ -44,6 +44,7 @@ interface UsePracticeAttemptOptions {
   partnerWord?: string;
   dialect?: string;
   experimentMode?: 'frame_sentence';
+  debugEnabled?: boolean;
   onSuccess: () => void;
   onAttemptEvaluated?: (result: {
     isCorrect: boolean;
@@ -128,6 +129,7 @@ export function usePracticeAttempt({
   partnerWord,
   dialect,
   experimentMode,
+  debugEnabled = import.meta.env.DEV,
   onSuccess,
   onAttemptEvaluated,
   recordDurationMs = 3000,
@@ -198,7 +200,7 @@ export function usePracticeAttempt({
         candidate1: word,
         candidate2: partnerWord ?? word,
         dialect,
-        debug: import.meta.env.DEV,
+        debug: debugEnabled,
       });
       const recognition =
         typeof rawRecognition === 'string'
@@ -303,6 +305,7 @@ export function usePracticeAttempt({
   }, [
     dialect,
     experimentMode,
+    debugEnabled,
     incorrectDelayMs,
     onAttemptEvaluated,
     onSuccess,
@@ -408,7 +411,7 @@ export function usePracticeAttempt({
             skipReason: getSkipReason(recording.metrics),
           },
         });
-        if (!import.meta.env.DEV) {
+        if (!debugEnabled) {
           outcomeTimerRef.current = setTimeout(() => {
             if (activeSessionKeyRef.current !== attemptKey) {
               return;
@@ -434,6 +437,7 @@ export function usePracticeAttempt({
     incorrectDelayMs,
     onAttemptEvaluated,
     runRecognition,
+    debugEnabled,
   ]);
 
   useEffect(() => {

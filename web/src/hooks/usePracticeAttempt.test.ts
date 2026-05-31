@@ -517,6 +517,42 @@ describe('usePracticeAttempt', () => {
     expect(result.current.debugInfo?.recording.objectUrl).toBe('blob:debug-recording');
   });
 
+  it('can disable debug mode and skip the extra recognition payload', async () => {
+    recognizeSpeechMock.mockResolvedValue({
+      transcript: 'ship',
+      matchType: 'exact',
+      matchedWord: 'ship',
+      debug: null,
+    });
+
+    const { result } = renderHook(() =>
+      usePracticeAttempt({
+        word: 'ship',
+        partnerWord: 'sheep',
+        debugEnabled: false,
+        onSuccess: vi.fn(),
+      }),
+    );
+
+    await act(async () => {
+      await result.current.handleRecord();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(recognizeSpeechMock).toHaveBeenCalledWith(expect.anything(), {
+      candidate1: 'ship',
+      candidate2: 'sheep',
+      dialect: undefined,
+      debug: false,
+    });
+    expect(result.current.debugInfo?.recognition).toBeNull();
+  });
+
   it('allows a low-signal recording to be force-sent in development debug flow', async () => {
     stopRecordingMock.mockResolvedValue(
       createRecordingResult({

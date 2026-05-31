@@ -489,6 +489,41 @@ describe('PracticeCard', () => {
     });
 
     expect(screen.getByTestId('practice-status-label')).toHaveTextContent("Didn't catch that");
+    expect(screen.queryByTestId('practice-frame-tip')).not.toBeInTheDocument();
+  });
+
+  it('shows a contextual frame tip in the feedback area when the frame phrase is missed', async () => {
+    recognizeSpeechMock.mockResolvedValue({
+      transcript: 'cat',
+      matchType: 'no_match',
+      matchedWord: null,
+      debug: null,
+    });
+
+    render(
+      <PracticeCard
+        word="cat"
+        isActive={true}
+        onSuccess={vi.fn()}
+        isFirstWord={true}
+        partnerWord="cut"
+        experimentMode="frame_sentence"
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /record pronunciation/i }));
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(screen.getByTestId('practice-frame-tip')).toHaveTextContent('Try the full sentence');
+    expect(screen.getByTestId('practice-frame-tip')).toHaveTextContent('The word is cat');
   });
 
   it('shows a development debug panel with recorded audio and raw ai details', async () => {
@@ -509,6 +544,7 @@ describe('PracticeCard', () => {
         onSuccess={vi.fn()}
         isFirstWord={true}
         partnerWord="sheep"
+        debugEnabled={true}
       />,
     );
 
@@ -530,6 +566,42 @@ describe('PracticeCard', () => {
     expect(screen.getByText(/normalized transcript/i)).toBeInTheDocument();
     expect(screen.getByText(/prompt used/i)).toBeInTheDocument();
     expect(screen.getByText(/raw ai response/i)).toBeInTheDocument();
+  });
+
+  it('hides the development debug panel when debug mode is disabled', async () => {
+    recognizeSpeechMock.mockResolvedValue({
+      transcript: 'ship',
+      matchType: 'exact',
+      matchedWord: 'ship',
+      debug: {
+        rawTranscript: 'Ship',
+        normalizedTranscript: 'ship',
+      },
+    });
+
+    render(
+      <PracticeCard
+        word="ship"
+        isActive={true}
+        onSuccess={vi.fn()}
+        isFirstWord={true}
+        partnerWord="sheep"
+        debugEnabled={false}
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /record pronunciation/i }));
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(screen.queryByTestId('practice-debug-panel')).not.toBeInTheDocument();
   });
 
   it('offers send-anyway and retry controls for low-signal debug sessions', async () => {
@@ -556,6 +628,7 @@ describe('PracticeCard', () => {
         onSuccess={vi.fn()}
         isFirstWord={true}
         partnerWord="sheep"
+        debugEnabled={true}
       />,
     );
 
@@ -598,6 +671,7 @@ describe('PracticeCard', () => {
         onSuccess={vi.fn()}
         isFirstWord={true}
         partnerWord="sheep"
+        debugEnabled={true}
       />,
     );
 

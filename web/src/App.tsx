@@ -10,6 +10,7 @@ import { CategoriesStage } from './components/CategoriesStage';
 import { ProfileStage } from './components/ProfileStage';
 import { ModeTabBar } from './components/ModeTabBar';
 import { useAuth } from './hooks/useAuth';
+import { useDevDebugMode } from './hooks/useDevDebugMode';
 import { usePracticeSession } from './hooks/usePracticeSession';
 import {
   fetchCloudProgress,
@@ -20,6 +21,7 @@ import {
 function App() {
   const { user, isAuthenticated, isLoading: isAuthLoading, login, logout } = useAuth();
   const experimentMode = 'frame_sentence' as const;
+  const { debugEnabled, setDebugEnabled } = useDevDebugMode();
 
   const {
     mode,
@@ -125,6 +127,18 @@ function App() {
             </div>
 
             <div className="flex items-center gap-2">
+              {import.meta.env.DEV && (
+                <button
+                  type="button"
+                  onClick={() => setDebugEnabled(!debugEnabled)}
+                  className="ui-card-muted h-11 px-3 md:px-4 rounded-full text-xs md:text-sm font-bold inline-flex items-center gap-2 text-[color:var(--color-text)] shrink-0"
+                  aria-pressed={debugEnabled}
+                  aria-label={debugEnabled ? 'Disable debug mode' : 'Enable debug mode'}
+                  data-testid="dev-debug-toggle"
+                >
+                  Debug {debugEnabled ? 'on' : 'off'}
+                </button>
+              )}
               <button
                 onClick={isAuthenticated ? logout : login}
                 disabled={isAuthLoading}
@@ -232,6 +246,7 @@ function App() {
                 dialect={dialect}
                 audioDialect={audioDialect}
                 experimentMode={experimentMode}
+                debugEnabled={debugEnabled}
                 onSuccess={handlePracticeSuccess}
                 onAttemptEvaluated={({ isCorrect, matchType }) => {
                   if (matchType === 'no_match') return;
@@ -265,6 +280,7 @@ function App() {
                 dialect={dialect}
                 audioDialect={audioDialect}
                 experimentMode={experimentMode}
+                debugEnabled={debugEnabled}
                 onSuccess={handlePracticeSuccess}
                 onAttemptEvaluated={({ isCorrect, matchType }) => {
                   if (matchType === 'no_match') return;

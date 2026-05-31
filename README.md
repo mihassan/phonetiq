@@ -67,7 +67,8 @@ Most pronunciation apps use browser-native speech recognition which is flaky acr
 - Profile stage with key stats + weak-pair practice action
 - Cross-platform speech recognition using `MediaRecorder` + Workers AI (`@cf/openai/whisper-large-v3-turbo`)
 - Candidate-constrained recognition (2 target words) with explicit `no_match` fallback
-- Development debug panel showing recording metrics, audio levels, and AI responses
+- Frame-sentence miss tip that reminds users to say the full "The word is X" prompt
+- Development debug panel gated by a local dev toggle, showing recording metrics, audio levels, and AI responses
 - Two-tier rate limiting to protect the AI endpoint from abuse
 - Optional Google OAuth for cloud progress sync
 
