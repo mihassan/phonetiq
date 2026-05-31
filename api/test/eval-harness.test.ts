@@ -376,6 +376,11 @@ describe('evalHarness', () => {
       fixtureDir: '/tmp/fixtures',
       delayMs: 0,
       dialectFilter: 'us_only',
+      run: {
+        requestCount: 1,
+        errorCount: 0,
+        elapsedMs: 123,
+      },
       summary,
       results,
       guardrails: {
@@ -393,6 +398,11 @@ describe('evalHarness', () => {
       fixtureDir: '/tmp/fixtures',
       delayMs: 0,
       dialectFilter: 'us_only',
+      run: {
+        requestCount: 1,
+        errorCount: 0,
+        elapsedMs: 123,
+      },
       summary,
       results,
       guardrails: {
@@ -428,6 +438,11 @@ describe('evalHarness', () => {
       fixtureDir: '/tmp/fixtures',
       delayMs: 0,
       dialectFilter: null,
+      run: {
+        requestCount: 1,
+        errorCount: 0,
+        elapsedMs: 50,
+      },
       summary,
       guardrails: {
         thresholds: null,
@@ -444,6 +459,11 @@ describe('evalHarness', () => {
       fixtureDir: '/tmp/fixtures',
       delayMs: 0,
       dialectFilter: null,
+      run: {
+        requestCount: 1,
+        errorCount: 0,
+        elapsedMs: 50,
+      },
       summary,
       guardrails: {
         enabled: false,

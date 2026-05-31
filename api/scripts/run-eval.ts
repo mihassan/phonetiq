@@ -208,6 +208,7 @@ async function checkWorkerRunning() {
 }
 
 async function main() {
+  const startedAt = Date.now();
   if (!IS_JSON_OUTPUT) {
     console.log('\nPhonetiq Recognition Eval Harness');
     console.log(`Base URL: ${BASE_URL}`);
@@ -248,6 +249,7 @@ async function main() {
 
   const results: EvalResult[] = [];
   let requestCount = 0;
+  let errorCount = 0;
 
   for (const pair of EVAL_CORPUS) {
     for (const targetWord of [pair.word1, pair.word2]) {
@@ -291,6 +293,7 @@ async function main() {
             correct: matchedWord === targetWord,
           });
         } catch (error) {
+          errorCount += 1;
           if (!IS_JSON_OUTPUT) {
             console.error(`\nERROR recognizing ${targetWord} (${voice}): ${error}`);
           }
@@ -313,6 +316,7 @@ async function main() {
   }
 
   const summary = summarizeEvalResults(results);
+  const elapsedMs = Date.now() - startedAt;
   const guardrailResult = EVAL_GUARDRAILS
     ? evaluateEvalGuardrails(summary, EVAL_GUARDRAILS)
     : null;
@@ -325,6 +329,7 @@ async function main() {
       fixtureDir: FIXTURES_DIR,
       delayMs: DELAY_MS,
       dialectFilter: DIALECT_FILTER,
+      run: { requestCount, errorCount, elapsedMs },
       summary,
       results,
       guardrails: {
@@ -347,6 +352,7 @@ async function main() {
       fixtureDir: FIXTURES_DIR,
       delayMs: DELAY_MS,
       dialectFilter: DIALECT_FILTER,
+      run: { requestCount, errorCount, elapsedMs },
       summary,
       guardrails: {
         thresholds: EVAL_GUARDRAILS,

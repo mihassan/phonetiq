@@ -76,6 +76,12 @@ export interface EvalOutputMode {
 
 export type EvalJsonOutputMode = 'full' | 'summary';
 
+export interface EvalRunMetadata {
+  requestCount: number;
+  errorCount: number;
+  elapsedMs: number;
+}
+
 export interface EvalJsonReport {
   schemaVersion: number;
   outputMode: EvalJsonOutputMode;
@@ -85,6 +91,7 @@ export interface EvalJsonReport {
   fixtureDir: string;
   delayMs: number;
   dialectFilter: TargetDialect | null;
+  run: EvalRunMetadata;
   summary: EvalSummary;
   results: EvalResult[];
   guardrails: {
@@ -104,6 +111,7 @@ export interface EvalSummaryJsonReport {
   fixtureDir: string;
   delayMs: number;
   dialectFilter: TargetDialect | null;
+  run: EvalRunMetadata;
   summary: EvalSummary;
   guardrails: {
     enabled: boolean;
@@ -420,6 +428,7 @@ export function buildEvalJsonReport(input: {
   fixtureDir: string;
   delayMs: number;
   dialectFilter: TargetDialect | null;
+  run: EvalRunMetadata;
   summary: EvalSummary;
   results: EvalResult[];
   guardrails: {
@@ -436,6 +445,7 @@ export function buildEvalJsonReport(input: {
     fixtureDir: input.fixtureDir,
     delayMs: input.delayMs,
     dialectFilter: input.dialectFilter,
+    run: input.run,
     summary: input.summary,
     results: input.results,
     guardrails: {
@@ -454,6 +464,7 @@ export function buildEvalSummaryJsonReport(input: {
   fixtureDir: string;
   delayMs: number;
   dialectFilter: TargetDialect | null;
+  run: EvalRunMetadata;
   summary: EvalSummary;
   guardrails: {
     thresholds: EvalGuardrailThresholds | null;
@@ -469,6 +480,7 @@ export function buildEvalSummaryJsonReport(input: {
     fixtureDir: input.fixtureDir,
     delayMs: input.delayMs,
     dialectFilter: input.dialectFilter,
+    run: input.run,
     summary: input.summary,
     guardrails: {
       enabled: input.guardrails.thresholds !== null,

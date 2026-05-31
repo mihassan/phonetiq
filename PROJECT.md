@@ -42,6 +42,7 @@
 - `npm run eval -- --summary-json-pretty` - Pretty-print summary-only JSON for local inspection
 - `npm run eval:guard -- --min-dialect-accuracy 70` - Override guardrail thresholds
 - JSON outputs include `schemaVersion` and `outputMode` (`full` or `summary`) for stable automation parsing
+- JSON outputs include run metadata: `requestCount`, `errorCount`, and `elapsedMs`
 - Eval output includes both per-dialect and contrast-family rollups for diagnosis
 - Eval corpus now includes wider pilot coverage (`ship/sheep`, `pen/pan`, `cot/caught`, `bar/bore`, `cut/cart`, `peer/pear`, `hut/heart`)
 - `npm run db:generate` - Generate Drizzle migration SQL
