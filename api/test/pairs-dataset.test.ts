@@ -41,4 +41,11 @@ describe('seed curriculum dataset', () => {
     expect(seedSql).toContain('INSERT INTO word_pair_dialect_metadata');
     expect(seedSql).toContain("'/oʊ/ vs /ɔ/'");
   });
+
+  it('expands the non-rhotic /ʌ/ vs /ɑː/ family through shared rows plus dialect metadata', () => {
+    expect(seedSql).toContain("('hut', 'heart', 'vowel_long', '/ʌ/ vs /ɑː/', 'all', 2)");
+    expect(seedSql).not.toContain("('hut', 'heart', 'vowel_long', '/ʌ/ vs /ɑː/', 'uk_only', 2)");
+    expect(seedSql).toContain("SELECT id, 'au_only', 'supported', 'Non-rhotic /ʌ/ vs /ɑː/ contrast for the current AU pilot set.'");
+    expect(seedSql).toContain("SELECT id, 'us_only', 'unavailable', 'This family is not in the current US pilot because rhotic American pronunciations reduce the non-rhotic /ʌ/ vs /ɑː/ contrast we teach in UK and AU.'");
+  });
 });

@@ -42,7 +42,7 @@ Most pronunciation apps use browser-native speech recognition which is flaky acr
 - Whisper receives dialect-specific prompts for better recognition
 - Pilot `vowel_long` recognition now accepts a few dialect-specific transcript spellings for supported contrasts and exposes rule tags in local debug output
 - Audio available in three dialects: US English, British English, Australian English
-- Pilot `vowel_long` metadata now marks some dialect-specific contrasts as `supported`, `weak`, or unavailable for selection/filtering
+- Pilot `vowel_long` metadata now marks some dialect-specific contrasts as `supported`, `weak`, or unavailable for selection/filtering, including a shared non-rhotic `hut`/`heart` family that is taught for UK/AU but filtered for US
 - Learn and Practice now surface pilot dialect notes so users can see when a contrast is subtle or being treated specially for the selected dialect
 - Dataset now includes 400+ seeded pairs with `all`, `uk_only`, `us_only`, and an initial `au_only` starter set
 

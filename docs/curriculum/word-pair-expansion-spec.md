@@ -9,7 +9,7 @@ This document defines the product contract for Phonetiq's curriculum expansion a
 The `dialect_filter` column in the `word_pairs` table accepts the following values:
 
 - **`all`** — Pairs that are relevant across all major English dialects (General American, Received Pronunciation, Australian English). These pairs form the core curriculum.
-- **`uk_only`** — Pairs that are phonologically distinct in UK English but not in other major dialects. Example: `hut` vs `heart` (non-rhotic distinction).
+- **`uk_only`** — Pairs that are currently taught only in the UK track because the distinction has not been rolled out more broadly through dialect metadata yet.
 - **`us_only`** — Pairs that are phonologically distinct in US English but not in other major dialects. Example: `cot` vs `caught` (cot-caught merger in many US accents).
 - **`au_only`** — Pairs that are phonologically distinct in Australian English but not in other major dialects. This category is seeded with an initial starter set and should keep expanding with research-backed additions.
 

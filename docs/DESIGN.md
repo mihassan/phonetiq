@@ -56,7 +56,7 @@ Minimal pairs are highly dependent on the speaker's accent. For example:
 - `["cot", "caught"]` is distinct in the UK, but identical for most North Americans due to the cot-caught merger.
 The `dialect_filter` column ensures the app only presents relevant pairs based on the selected target dialect. In the UI, `US`, `UK`, and `AU` each request their target dialect plus shared `all` pairs behind the scenes.
 
-For dialects where a contrast is weaker or pedagogically unavailable, Phonetiq now layers pilot metadata on top of `word_pairs` via `word_pair_dialect_metadata`. The first rollout targets selected `vowel_long` pairs and classifies them as `supported`, `weak`, or `unavailable` per target dialect so filtering and practice selection can evolve without duplicating the whole dataset.
+For dialects where a contrast is weaker or pedagogically unavailable, Phonetiq now layers pilot metadata on top of `word_pairs` via `word_pair_dialect_metadata`. The first rollout targets selected `vowel_long` pairs and classifies them as `supported`, `weak`, or `unavailable` per target dialect so filtering and practice selection can evolve without duplicating the whole dataset. That pilot now also covers a shared non-rhotic `/ʌ/ vs /ɑː/` family (`hut`/`heart`, `cut`/`cart`, etc.), which stays available for UK/AU and is filtered for US through metadata rather than a hardcoded dialect filter.
 
 ## Audio Pipelines
 ### 1. Text-to-Speech (TTS) Pipeline

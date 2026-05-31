@@ -60,17 +60,17 @@ INSERT INTO word_pairs (word1, word2, phoneme_type, target_sounds, dialect_filte
 ('wok', 'walk', 'vowel_long', '/ɒ/ vs /ɔː/', 'uk_only', 2);
 
 -- ============================================================
--- VOWELS: /ʌ/ vs /ɑː/ (hut vs heart) - UK ONLY (rhotic)
+-- VOWELS: /ʌ/ vs /ɑː/ (hut vs heart) - NON-RHOTIC PILOT FAMILY
 -- ============================================================
 INSERT INTO word_pairs (word1, word2, phoneme_type, target_sounds, dialect_filter, difficulty_level) VALUES
-('hut', 'heart', 'vowel_long', '/ʌ/ vs /ɑː/', 'uk_only', 2),
-('cut', 'cart', 'vowel_long', '/ʌ/ vs /ɑː/', 'uk_only', 2),
-('duck', 'dark', 'vowel_long', '/ʌ/ vs /ɑː/', 'uk_only', 2),
-('much', 'march', 'vowel_long', '/ʌ/ vs /ɑː/', 'uk_only', 2),
-('luck', 'lark', 'vowel_long', '/ʌ/ vs /ɑː/', 'uk_only', 2),
-('buck', 'bark', 'vowel_long', '/ʌ/ vs /ɑː/', 'uk_only', 2),
-('puck', 'park', 'vowel_long', '/ʌ/ vs /ɑː/', 'uk_only', 2),
-('muck', 'mark', 'vowel_long', '/ʌ/ vs /ɑː/', 'uk_only', 2);
+('hut', 'heart', 'vowel_long', '/ʌ/ vs /ɑː/', 'all', 2),
+('cut', 'cart', 'vowel_long', '/ʌ/ vs /ɑː/', 'all', 2),
+('duck', 'dark', 'vowel_long', '/ʌ/ vs /ɑː/', 'all', 2),
+('much', 'march', 'vowel_long', '/ʌ/ vs /ɑː/', 'all', 2),
+('luck', 'lark', 'vowel_long', '/ʌ/ vs /ɑː/', 'all', 2),
+('buck', 'bark', 'vowel_long', '/ʌ/ vs /ɑː/', 'all', 2),
+('puck', 'park', 'vowel_long', '/ʌ/ vs /ɑː/', 'all', 2),
+('muck', 'mark', 'vowel_long', '/ʌ/ vs /ɑː/', 'all', 2);
 
 -- ============================================================
 -- VOWELS: /ʌ/ vs /æ/ (cup vs cap)
@@ -679,7 +679,21 @@ INSERT INTO word_pair_dialect_metadata (pair_id, target_dialect, contrast_streng
 SELECT id, 'uk_only', 'supported', 'Distinct /ʌ/ vs /ɑː/ contrast for the current UK pilot set.'
 FROM word_pairs
 WHERE phoneme_type = 'vowel_long'
-  AND dialect_filter = 'uk_only'
+  AND dialect_filter = 'all'
+  AND target_sounds = '/ʌ/ vs /ɑː/';
+
+INSERT INTO word_pair_dialect_metadata (pair_id, target_dialect, contrast_strength, note)
+SELECT id, 'au_only', 'supported', 'Non-rhotic /ʌ/ vs /ɑː/ contrast for the current AU pilot set.'
+FROM word_pairs
+WHERE phoneme_type = 'vowel_long'
+  AND dialect_filter = 'all'
+  AND target_sounds = '/ʌ/ vs /ɑː/';
+
+INSERT INTO word_pair_dialect_metadata (pair_id, target_dialect, contrast_strength, note)
+SELECT id, 'us_only', 'unavailable', 'This family is not in the current US pilot because rhotic American pronunciations reduce the non-rhotic /ʌ/ vs /ɑː/ contrast we teach in UK and AU.'
+FROM word_pairs
+WHERE phoneme_type = 'vowel_long'
+  AND dialect_filter = 'all'
   AND target_sounds = '/ʌ/ vs /ɑː/';
 
 INSERT INTO word_pair_dialect_metadata (pair_id, target_dialect, contrast_strength, note)
