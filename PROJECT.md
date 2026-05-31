@@ -57,7 +57,7 @@
 - `GET /api/pairs?category=&dialect=&difficulty=&limit=&offset=` - List word pairs
 - `GET /api/pairs/categories` - List categories with counts
 - `GET /api/audio/:word` - Serve audio from R2
-- `POST /api/recognize` - Candidate-constrained speech recognition via Whisper AI (`large-v3-turbo`) with dialect-aware prompt context and frame-sentence matching (`"the word is X"`). Returns detailed debug info in local dev mode including raw transcript, normalized transcript, matching details, and AI response. Automatically maps results to `exact` / `token` / `fuzzy` / `no_match` / `freeform` match types.
+- `POST /api/recognize` - Candidate-constrained speech recognition via Whisper AI (`large-v3-turbo`) with dialect-aware prompt context and frame-sentence matching (`"the word is X"`). The pilot dialect-foundation slice also adds narrow dialect-specific alias acceptance for selected supported `vowel_long` pairs. Returns detailed debug info in local dev mode including raw transcript, normalized transcript, matching details, rule tags, and AI response. Automatically maps results to `exact` / `token` / `fuzzy` / `no_match` / `freeform` match types.
 - `GET /api/auth/login` - Initiate Google OAuth flow
 - `GET /api/auth/callback` - OAuth callback, sets signed session cookie
 - `GET /api/auth/logout` - Clear session

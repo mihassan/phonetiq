@@ -72,7 +72,7 @@ For dialects where a contrast is weaker or pedagogically unavailable, Phonetiq n
 ### 2. Speech-to-Text (STT) Pipeline
 *   **Problem:** `SpeechRecognition` is unsupported in Firefox and buggy in Safari.
 *   **Solution:** The universally supported HTML5 `MediaRecorder` API captures audio on the frontend.
-*   **Workflow:** User taps the mic button → 3-second recording with visual countdown (SVG progress ring) → audio blob sent to `POST /api/recognize` with the two candidate words and selected dialect → Worker sends base64 audio to **Cloudflare Workers AI (`@cf/openai/whisper-large-v3-turbo`)** with `language=en`, `vad_filter=true`, and dialect-aware prompt context → backend maps transcript to candidate 1 / candidate 2 / `no_match` → structured result returned to frontend.
+*   **Workflow:** User taps the mic button → 3-second recording with visual countdown (SVG progress ring) → audio blob sent to `POST /api/recognize` with the two candidate words and selected dialect → Worker sends base64 audio to **Cloudflare Workers AI (`@cf/openai/whisper-large-v3-turbo`)** with `language=en`, `vad_filter=true`, and dialect-aware prompt context → backend maps transcript to candidate 1 / candidate 2 / `no_match`, including pilot dialect-specific alias acceptance for supported `vowel_long` pairs → structured result returned to frontend.
 
 #### Robust Audio Processing (New)
 To handle real-world recording conditions, the frontend now includes:

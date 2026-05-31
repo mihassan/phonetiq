@@ -3,6 +3,7 @@ import type { Env } from '../index';
 import {
   coerceTargetDialect,
   getDialectPromptLabel,
+  type TargetDialect,
 } from '../lib/dialects';
 
 export const recognizeRoutes = new Hono<{ Bindings: Env }>();
@@ -15,7 +16,108 @@ export interface MatchResult {
   debug: Record<string, unknown>;
 }
 
+interface PairDialectRule {
+  ruleTag: string;
+  aliases: Record<string, readonly string[]>;
+}
+
 const FRAME_SENTENCE_RE = /\bthe\s+word\s+is\s+(\S+)/i;
+
+const DIALECT_CANDIDATE_RULES: Partial<Record<TargetDialect, Record<string, PairDialectRule>>> = {
+  uk_only: {
+    'gnawed::nod': {
+      ruleTag: 'uk_only:vowel_long:nod-gnawed-spelling',
+      aliases: {
+        gnawed: ['nawed'],
+      },
+    },
+    'knot::naught': {
+      ruleTag: 'uk_only:vowel_long:knot-naught-spelling',
+      aliases: {
+        naught: ['nought'],
+      },
+    },
+  },
+  us_only: {
+    'bar::bore': {
+      ruleTag: 'us_only:vowel_long:bar-bore-spelling',
+      aliases: {
+        bore: ['boar'],
+      },
+    },
+    'hard::hoard': {
+      ruleTag: 'us_only:vowel_long:hard-hoard-spelling',
+      aliases: {
+        hoard: ['horde'],
+      },
+    },
+    'par::pore': {
+      ruleTag: 'us_only:vowel_long:par-pore-spelling',
+      aliases: {
+        pore: ['pour'],
+      },
+    },
+  },
+  au_only: {
+    'bear::beer': {
+      ruleTag: 'au_only:vowel_long:beer-bear-spelling',
+      aliases: {
+        bear: ['bare'],
+      },
+    },
+    'hair::hear': {
+      ruleTag: 'au_only:vowel_long:hear-hair-spelling',
+      aliases: {
+        hear: ['here'],
+        hair: ['hare'],
+      },
+    },
+    'nair::near': {
+      ruleTag: 'au_only:vowel_long:near-nair-spelling',
+      aliases: {
+        nair: ['nare'],
+      },
+    },
+    'pear::peer': {
+      ruleTag: 'au_only:vowel_long:peer-pear-spelling',
+      aliases: {
+        pear: ['pair'],
+      },
+    },
+  },
+};
+
+function buildCandidatePairKey(candidate1: string, candidate2: string) {
+  return [normalizeText(candidate1), normalizeText(candidate2)].sort().join('::');
+}
+
+function getPairDialectRule(
+  dialect: TargetDialect,
+  candidate1: string,
+  candidate2: string,
+) {
+  return DIALECT_CANDIDATE_RULES[dialect]?.[buildCandidatePairKey(candidate1, candidate2)] ?? null;
+}
+
+function getCandidateAliases(rule: PairDialectRule | null, candidate: string) {
+  return rule?.aliases[normalizeText(candidate)] ?? [];
+}
+
+function hasAliasTokenMatch(tokens: string[], aliases: readonly string[]) {
+  return aliases.some((alias) => !alias.includes(' ') && tokens.includes(alias));
+}
+
+function withMatchDebug(
+  debug: Record<string, unknown>,
+  matchedBy: string,
+  matchedRuleTag: string | null = null,
+) {
+  return {
+    ...debug,
+    matchedBy,
+    matchedRuleTag,
+  };
+}
 
 export function extractFrameWord(transcript: string): string | null {
   const m = FRAME_SENTENCE_RE.exec(transcript);
@@ -27,19 +129,21 @@ export function matchFrameSentence(
   transcript: string,
   candidate1: string,
   candidate2: string,
+  dialect: string | undefined,
 ): MatchResult {
   const extracted = extractFrameWord(transcript);
   const debug: Record<string, unknown> = {
     experiment: 'frame_sentence',
     rawTranscript: transcript,
     extractedWord: extracted,
+    dialect: coerceTargetDialect(dialect),
   };
 
   if (!extracted) {
     return { matchedWord: null, matchType: 'no_match', debug };
   }
 
-  const inner = matchTranscriptToCandidates(extracted, candidate1, candidate2);
+  const inner = matchTranscriptToCandidates(extracted, candidate1, candidate2, dialect);
   return { matchedWord: inner.matchedWord, matchType: inner.matchType, debug: { ...debug, ...inner.debug } };
 }
 
@@ -148,12 +252,16 @@ export function matchTranscriptToCandidates(
   transcript: string,
   candidate1: string | undefined,
   candidate2: string | undefined,
+  dialect: string | undefined,
 ): MatchResult {
+  const targetDialect = coerceTargetDialect(dialect);
+
   if (!candidate1 || !candidate2) {
     return {
       matchedWord: null,
       matchType: 'freeform',
       debug: {
+        dialect: targetDialect,
         normalizedTranscript: normalizeText(transcript),
         candidate1: candidate1 ?? null,
         candidate2: candidate2 ?? null,
@@ -165,40 +273,95 @@ export function matchTranscriptToCandidates(
   const c2 = normalizeText(candidate2);
   const normalized = normalizeText(transcript);
   const tokens = normalized.split(' ').filter(Boolean);
+  const pairRule = getPairDialectRule(targetDialect, candidate1, candidate2);
+  const candidate1Aliases = getCandidateAliases(pairRule, candidate1);
+  const candidate2Aliases = getCandidateAliases(pairRule, candidate2);
   const hasC1Token = tokens.includes(c1);
   const hasC2Token = tokens.includes(c2);
+  const hasC1AliasExact = candidate1Aliases.includes(normalized);
+  const hasC2AliasExact = candidate2Aliases.includes(normalized);
+  const hasC1AliasToken = hasAliasTokenMatch(tokens, candidate1Aliases);
+  const hasC2AliasToken = hasAliasTokenMatch(tokens, candidate2Aliases);
   const distance1 = levenshtein(normalized, c1);
   const distance2 = levenshtein(normalized, c2);
   const bestDistance = Math.min(distance1, distance2);
   const distanceGap = Math.abs(distance1 - distance2);
 
   const debug = {
+    dialect: targetDialect,
     normalizedTranscript: normalized,
     tokens,
     candidate1: c1,
     candidate2: c2,
+    candidate1Aliases,
+    candidate2Aliases,
     hasCandidate1Token: hasC1Token,
     hasCandidate2Token: hasC2Token,
+    hasCandidate1AliasExact: hasC1AliasExact,
+    hasCandidate2AliasExact: hasC2AliasExact,
+    hasCandidate1AliasToken: hasC1AliasToken,
+    hasCandidate2AliasToken: hasC2AliasToken,
+    availableRuleTags: pairRule ? [pairRule.ruleTag] : [],
     distance1,
     distance2,
     bestDistance,
     distanceGap,
+    matchedBy: 'none',
+    matchedRuleTag: null,
   };
 
   if (!normalized) {
     return { matchedWord: null, matchType: 'no_match', debug };
   }
 
-  if (normalized === c1) return { matchedWord: candidate1, matchType: 'exact', debug };
-  if (normalized === c2) return { matchedWord: candidate2, matchType: 'exact', debug };
+  if (normalized === c1) {
+    return { matchedWord: candidate1, matchType: 'exact', debug: withMatchDebug(debug, 'exact') };
+  }
+  if (normalized === c2) {
+    return { matchedWord: candidate2, matchType: 'exact', debug: withMatchDebug(debug, 'exact') };
+  }
 
-  if (hasC1Token && !hasC2Token) return { matchedWord: candidate1, matchType: 'token', debug };
-  if (hasC2Token && !hasC1Token) return { matchedWord: candidate2, matchType: 'token', debug };
+  if (hasC1AliasExact && !hasC2AliasExact) {
+    return {
+      matchedWord: candidate1,
+      matchType: 'fuzzy',
+      debug: withMatchDebug(debug, 'dialect_alias_exact', pairRule?.ruleTag ?? null),
+    };
+  }
+  if (hasC2AliasExact && !hasC1AliasExact) {
+    return {
+      matchedWord: candidate2,
+      matchType: 'fuzzy',
+      debug: withMatchDebug(debug, 'dialect_alias_exact', pairRule?.ruleTag ?? null),
+    };
+  }
+
+  if (hasC1Token && !hasC2Token) {
+    return { matchedWord: candidate1, matchType: 'token', debug: withMatchDebug(debug, 'token') };
+  }
+  if (hasC2Token && !hasC1Token) {
+    return { matchedWord: candidate2, matchType: 'token', debug: withMatchDebug(debug, 'token') };
+  }
+
+  if (hasC1AliasToken && !hasC2AliasToken) {
+    return {
+      matchedWord: candidate1,
+      matchType: 'token',
+      debug: withMatchDebug(debug, 'dialect_alias_token', pairRule?.ruleTag ?? null),
+    };
+  }
+  if (hasC2AliasToken && !hasC1AliasToken) {
+    return {
+      matchedWord: candidate2,
+      matchType: 'token',
+      debug: withMatchDebug(debug, 'dialect_alias_token', pairRule?.ruleTag ?? null),
+    };
+  }
 
   if (bestDistance <= 1 && distanceGap >= 1) {
     return distance1 < distance2
-      ? { matchedWord: candidate1, matchType: 'fuzzy', debug }
-      : { matchedWord: candidate2, matchType: 'fuzzy', debug };
+      ? { matchedWord: candidate1, matchType: 'fuzzy', debug: withMatchDebug(debug, 'fuzzy') }
+      : { matchedWord: candidate2, matchType: 'fuzzy', debug: withMatchDebug(debug, 'fuzzy') };
   }
 
   return { matchedWord: null, matchType: 'no_match', debug };
@@ -262,9 +425,9 @@ recognizeRoutes.post('/', async (c) => {
     let debug: Record<string, unknown>;
 
     if (candidate1 && candidate2) {
-      ({ matchedWord, matchType, debug } = matchFrameSentence(rawTranscript, candidate1, candidate2));
+      ({ matchedWord, matchType, debug } = matchFrameSentence(rawTranscript, candidate1, candidate2, dialect));
     } else {
-      ({ matchedWord, matchType, debug } = matchTranscriptToCandidates(rawTranscript, candidate1, candidate2));
+      ({ matchedWord, matchType, debug } = matchTranscriptToCandidates(rawTranscript, candidate1, candidate2, dialect));
     }
 
     return c.json({

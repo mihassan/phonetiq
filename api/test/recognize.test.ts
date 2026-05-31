@@ -40,27 +40,56 @@ describe('buildInitialPrompt', () => {
 
 describe('matchTranscriptToCandidates', () => {
   it('returns exact match when transcript equals candidate1', () => {
-    const result = matchTranscriptToCandidates('desert', 'desert', 'dessert');
+    const result = matchTranscriptToCandidates('desert', 'desert', 'dessert', 'us_only');
     expect(result.matchType).toBe('exact');
     expect(result.matchedWord).toBe('desert');
   });
 
   it('returns token match for multi-word transcript', () => {
-    const result = matchTranscriptToCandidates('the desert', 'desert', 'dessert');
+    const result = matchTranscriptToCandidates('the desert', 'desert', 'dessert', 'us_only');
     expect(result.matchType).toBe('token');
     expect(result.matchedWord).toBe('desert');
   });
 
   it('preserves fuzzy match for edit-distance-1 transcripts', () => {
-    const result = matchTranscriptToCandidates('deserts', 'desert', 'dessert');
+    const result = matchTranscriptToCandidates('deserts', 'desert', 'dessert', 'us_only');
     expect(result.matchType).toBe('fuzzy');
     expect(result.matchedWord).toBe('desert');
   });
 
   it('returns freeform when candidates are missing', () => {
-    const result = matchTranscriptToCandidates('anything', undefined, undefined);
+    const result = matchTranscriptToCandidates('anything', undefined, undefined, 'us_only');
     expect(result.matchType).toBe('freeform');
     expect(result.matchedWord).toBeNull();
+  });
+
+  it('accepts an AU-specific spelling alias for supported pilot pairs', () => {
+    const result = matchTranscriptToCandidates('pair', 'peer', 'pear', 'au_only');
+    expect(result.matchType).toBe('fuzzy');
+    expect(result.matchedWord).toBe('pear');
+    expect(result.debug.matchedRuleTag).toBe('au_only:vowel_long:peer-pear-spelling');
+    expect(result.debug.matchedBy).toBe('dialect_alias_exact');
+  });
+
+  it('keeps alias lookup order-insensitive for the same supported pair', () => {
+    const result = matchTranscriptToCandidates('boar', 'bore', 'bar', 'us_only');
+    expect(result.matchType).toBe('fuzzy');
+    expect(result.matchedWord).toBe('bore');
+    expect(result.debug.matchedRuleTag).toBe('us_only:vowel_long:bar-bore-spelling');
+  });
+
+  it('does not apply another dialects alias profile', () => {
+    const result = matchTranscriptToCandidates('pair', 'peer', 'pear', 'us_only');
+    expect(result.matchType).toBe('no_match');
+    expect(result.matchedWord).toBeNull();
+    expect(result.debug.availableRuleTags).toEqual([]);
+  });
+
+  it('does not widen matching for weak US merger pilot pairs', () => {
+    const result = matchTranscriptToCandidates('bawl', 'bowl', 'ball', 'us_only');
+    expect(result.matchType).toBe('no_match');
+    expect(result.matchedWord).toBeNull();
+    expect(result.debug.availableRuleTags).toEqual([]);
   });
 });
 
@@ -80,19 +109,30 @@ describe('extractFrameWord', () => {
 
 describe('matchFrameSentence', () => {
   it('resolves to candidate1 via exact match after extraction', () => {
-    const r = matchFrameSentence('the word is ship', 'ship', 'sheep');
+    const r = matchFrameSentence('the word is ship', 'ship', 'sheep', 'us_only');
     expect(r.matchedWord).toBe('ship');
     expect(r.matchType).toBe('exact');
   });
 
   it('resolves to candidate2 via exact match after extraction', () => {
-    const r = matchFrameSentence('The word is sheep.', 'ship', 'sheep');
+    const r = matchFrameSentence('The word is sheep.', 'ship', 'sheep', 'us_only');
     expect(r.matchedWord).toBe('sheep');
   });
 
   it('returns no_match when frame is absent', () => {
-    const r = matchFrameSentence('I said sheep', 'ship', 'sheep');
+    const r = matchFrameSentence('I said sheep', 'ship', 'sheep', 'us_only');
     expect(r.matchedWord).toBeNull();
     expect(r.matchType).toBe('no_match');
+  });
+
+  it('threads dialect through the frame matcher for AU-specific aliases', () => {
+    const matched = matchFrameSentence('The word is pair.', 'peer', 'pear', 'au_only');
+    expect(matched.matchedWord).toBe('pear');
+    expect(matched.matchType).toBe('fuzzy');
+    expect(matched.debug.matchedRuleTag).toBe('au_only:vowel_long:peer-pear-spelling');
+
+    const rejected = matchFrameSentence('The word is pair.', 'peer', 'pear', 'us_only');
+    expect(rejected.matchedWord).toBeNull();
+    expect(rejected.matchType).toBe('no_match');
   });
 });
