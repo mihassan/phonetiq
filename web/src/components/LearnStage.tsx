@@ -1,15 +1,20 @@
+import { DialectContrastNotice } from './DialectContrastNotice';
+import { getDialectContrastCopy } from '../lib/dialectFeedback';
 import { PairCard } from './PairCard';
-import type { AudioDialect, WordPair } from '../lib/types';
+import type { AudioDialect, Dialect, WordPair } from '../lib/types';
 
 interface LearnStageProps {
   pair: WordPair;
+  dialect: Dialect;
   audioDialect: AudioDialect;
   index: number;
   totalPairs: number;
   progress: number;
 }
 
-export function LearnStage({ pair, audioDialect, index, totalPairs, progress }: LearnStageProps) {
+export function LearnStage({ pair, dialect, audioDialect, index, totalPairs, progress }: LearnStageProps) {
+  const dialectNotice = getDialectContrastCopy(pair, dialect);
+
   return (
     <main
       data-testid="learn-stage"
@@ -33,6 +38,11 @@ export function LearnStage({ pair, audioDialect, index, totalPairs, progress }: 
             </div>
           )}
         </div>
+        {dialectNotice && (
+          <div className="px-6 md:px-12 pb-4">
+            <DialectContrastNotice notice={dialectNotice} testId="learn-dialect-notice" />
+          </div>
+        )}
       </div>
 
       <div

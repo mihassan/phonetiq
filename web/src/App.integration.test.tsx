@@ -57,6 +57,8 @@ describe('App integration: dialect-aware practice', () => {
                 target_sounds: '/e/ vs /eː/',
                 dialect_filter: 'au_only',
                 difficulty_level: 3,
+                contrast_strength: 'supported',
+                contrast_note: 'AU pilot contrast set for /e/ vs /æ/ and /ɪə/ vs /eː/.',
               },
             ],
           });
@@ -112,6 +114,12 @@ describe('App integration: dialect-aware practice', () => {
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: /ferry/i })).toBeInTheDocument();
     });
+    expect(screen.getByTestId('learn-dialect-notice')).toHaveTextContent(
+      /supported in australian english/i,
+    );
+    expect(screen.getByTestId('learn-dialect-notice')).toHaveTextContent(
+      /au pilot contrast set/i,
+    );
 
     await user.click(screen.getAllByRole('button', { name: /play pronunciation/i })[0]);
     expect(createdAudio.at(-1)?.src).toContain('/api/audio/ferry');
@@ -120,6 +128,9 @@ describe('App integration: dialect-aware practice', () => {
 
     await user.click(screen.getAllByRole('button', { name: /^practice$/i })[0]);
     await screen.findByTestId('practice-stage');
+    expect(screen.getByTestId('practice-dialect-notice')).toHaveTextContent(
+      /supported in australian english/i,
+    );
     await user.click(screen.getByTestId('practice-listen-button'));
 
     expect(createdAudio.at(-1)?.src).toContain('/api/audio/ferry');

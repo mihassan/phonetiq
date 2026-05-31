@@ -9,6 +9,7 @@ import { LearnStage } from './components/LearnStage';
 import { CategoriesStage } from './components/CategoriesStage';
 import { ProfileStage } from './components/ProfileStage';
 import { ModeTabBar } from './components/ModeTabBar';
+import { DialectContrastNotice } from './components/DialectContrastNotice';
 import { useAuth } from './hooks/useAuth';
 import { useDevDebugMode } from './hooks/useDevDebugMode';
 import { usePracticeSession } from './hooks/usePracticeSession';
@@ -17,6 +18,7 @@ import {
   importCloudProgress,
   updateCloudProgressAttempt,
 } from './lib/authApi';
+import { getDialectContrastCopy } from './lib/dialectFeedback';
 
 function App() {
   const { user, isAuthenticated, isLoading: isAuthLoading, login, logout } = useAuth();
@@ -57,6 +59,7 @@ function App() {
   const hasHandledCloudSyncRef = useRef(false);
 
   const practicePair = currentPracticePair ?? currentPair;
+  const practiceDialectNotice = getDialectContrastCopy(practicePair, dialect);
 
   useEffect(() => {
     if (!isAuthenticated || hasHandledCloudSyncRef.current) return;
@@ -171,6 +174,7 @@ function App() {
         mode === 'LEARN' ? (
           <LearnStage
             pair={currentPair}
+            dialect={dialect}
             audioDialect={audioDialect}
             index={index}
             totalPairs={pairs.length}
@@ -231,6 +235,14 @@ function App() {
                   </div>
                 )}
               </div>
+             {practiceDialectNotice && (
+               <div className="px-8 md:px-12 pb-5">
+                 <DialectContrastNotice
+                   notice={practiceDialectNotice}
+                   testId="practice-dialect-notice"
+                 />
+               </div>
+             )}
             </div>
 
             <div

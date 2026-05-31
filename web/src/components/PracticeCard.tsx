@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Mic, Check, X, Loader2, Play } from 'lucide-react';
 import { audioUrl } from '../lib/api';
 import { playWordAudio } from '../lib/audioPlayback';
+import { getDialectRecognitionRuleCopy } from '../lib/dialectFeedback';
 import { usePracticeAttempt } from '../hooks/usePracticeAttempt';
 import type { AudioDialect, Dialect } from '../lib/types';
 import { getPracticeHeadingSizeClass } from '../lib/wordSizing';
@@ -54,6 +55,10 @@ export function PracticeCard({
     });
   const sizeClass = getPracticeHeadingSizeClass(word, partnerWord);
   const isDevelopment = import.meta.env.DEV;
+  const dialectRuleNote =
+    isDevelopment && debugEnabled && dialect
+      ? getDialectRecognitionRuleCopy(debugInfo?.recognition?.matching ?? null, dialect)
+      : null;
 
   const [showFrameTip, setShowFrameTip] = useState(
     experimentMode === 'frame_sentence' && !localStorage.getItem(FRAME_TIP_KEY),
@@ -319,6 +324,16 @@ export function PracticeCard({
             <span className="ui-muted font-medium leading-snug">
               Try the full sentence: &ldquo;The word is {word}&rdquo;.
             </span>
+          </div>
+        )}
+
+        {dialectRuleNote && (
+          <div
+            data-testid="practice-dialect-rule-note"
+            className="mt-3 px-4 py-3 rounded-2xl border ui-divider-border ui-card text-xs md:text-sm flex items-start gap-2 max-w-md"
+          >
+            <span className="shrink-0 mt-px">🧪</span>
+            <span className="ui-muted font-medium leading-snug">{dialectRuleNote}</span>
           </div>
         )}
       </div>

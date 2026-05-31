@@ -41,6 +41,29 @@ export function audioUrl(
   return url.toString();
 }
 
+export interface RecognizeMatchingDebug {
+  normalizedTranscript?: string;
+  tokens?: string[];
+  candidate1?: string;
+  candidate2?: string;
+  candidate1Aliases?: string[];
+  candidate2Aliases?: string[];
+  hasCandidate1Token?: boolean;
+  hasCandidate2Token?: boolean;
+  hasCandidate1AliasExact?: boolean;
+  hasCandidate2AliasExact?: boolean;
+  hasCandidate1AliasToken?: boolean;
+  hasCandidate2AliasToken?: boolean;
+  availableRuleTags?: string[];
+  distance1?: number;
+  distance2?: number;
+  bestDistance?: number;
+  distanceGap?: number;
+  matchedBy?: string;
+  matchedRuleTag?: string | null;
+  dialect?: Dialect;
+}
+
 export interface RecognizeSpeechResult {
   transcript: string;
   matchedWord: string | null;
@@ -51,7 +74,7 @@ export interface RecognizeSpeechResult {
     audioBytes?: number;
     prompt?: string;
     rawResult?: Record<string, unknown>;
-    matching?: Record<string, unknown>;
+    matching?: RecognizeMatchingDebug;
   } | null;
 }
 

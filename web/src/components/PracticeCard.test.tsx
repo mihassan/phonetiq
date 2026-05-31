@@ -570,6 +570,49 @@ describe('PracticeCard', () => {
     expect(screen.getByText(/raw ai transcript/i)).toBeInTheDocument();
     expect(screen.getByTestId('practice-debug-raw-transcript')).toHaveTextContent('Ship');
     expect(screen.getByTestId('practice-debug-audio')).toHaveAttribute('src', 'blob:debug-recording');
+  });
+
+  it('shows a dev-only dialect rule note when recognition used a pilot alias', async () => {
+    recognizeSpeechMock.mockResolvedValue({
+      transcript: 'Pair',
+      matchType: 'fuzzy',
+      matchedWord: 'pear',
+      debug: {
+        rawTranscript: 'Pair',
+        normalizedTranscript: 'pair',
+        matching: {
+          matchedBy: 'dialect_alias_exact',
+          matchedRuleTag: 'au_only:vowel_long:peer-pear-spelling',
+        },
+      },
+    });
+
+    render(
+      <PracticeCard
+        word="pear"
+        isActive={true}
+        onSuccess={vi.fn()}
+        isFirstWord={true}
+        partnerWord="peer"
+        dialect="au_only"
+        debugEnabled={true}
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /record pronunciation/i }));
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(screen.getByTestId('practice-dialect-rule-note')).toHaveTextContent(
+      /australian english pilot spelling alias/i,
+    );
     expect(screen.getByText(/normalized transcript/i)).toBeInTheDocument();
     expect(screen.getByText(/prompt used/i)).toBeInTheDocument();
     expect(screen.getByText(/raw ai response/i)).toBeInTheDocument();
