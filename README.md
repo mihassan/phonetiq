@@ -4,7 +4,7 @@
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare)](https://workers.cloudflare.com/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)](https://www.typescriptlang.org/)
-[![Tests](https://img.shields.io/badge/Tests-225%20passing-42b883?logo=vitest)](https://vitest.dev/)
+[![Tests](https://img.shields.io/badge/Tests-226%20passing-42b883?logo=vitest)](https://vitest.dev/)
 
 **Live:** [phonetiq.mihassan.com](https://phonetiq.mihassan.com) | **API:** [api.phonetiq.mihassan.com](https://api.phonetiq.mihassan.com)
 
@@ -265,7 +265,7 @@ Open http://localhost:5173 in your browser.
 # Web (158 tests)
 cd web && npm test
 
-# API (67 tests)
+# API (68 tests)
 cd api && npm test
 ```
 
@@ -396,9 +396,9 @@ npx wrangler pages deploy dist --project-name phonetiq
 CI uses a dedicated workflow plus path-scoped deploy workflows:
 
 - `.github/workflows/ci.yml` — runs on pull requests and pushes to `main`; runs only relevant checks via path filters:
-  - API: `npm run typecheck` + `npm test`
+  - API: local D1 migration + schema verification + `npm run typecheck` + `npm test`
   - Web: `npm run lint` + `npm run build` + `npm test`
-- `.github/workflows/deploy-api.yml` — triggers on `api/**` pushes to `main` and runs typecheck + tests before Worker deploy.
+- `.github/workflows/deploy-api.yml` — triggers on `api/**` pushes to `main` and runs typecheck + tests + remote D1 migrations + remote schema verification before Worker deploy.
 - `.github/workflows/deploy-web.yml` — triggers on `web/**` pushes to `main` and runs lint + tests + build before Pages deploy.
 
 **Required GitHub secrets:**
@@ -436,7 +436,7 @@ Before pushing to `main`:
 2. `cd api && npm run typecheck && npm test`
 3. If recognition logic changed, run guardrails (`cd api && npm run eval:fast:guard` and `npm run eval:frame:guard` with `dev:frame` running).
 4. Confirm required GitHub secrets are set: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`.
-5. Verify workflow coverage: API deploy is `.github/workflows/deploy-api.yml` (`api/**`), web deploy is `.github/workflows/deploy-web.yml` (`web/**`).
+5. Verify workflow coverage: API deploy is `.github/workflows/deploy-api.yml` (`api/**`, includes remote D1 migration/schema gate), web deploy is `.github/workflows/deploy-web.yml` (`web/**`).
 
 ## Contributing
 
