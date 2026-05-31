@@ -18,6 +18,11 @@ export type PracticeStatus =
 type MatchType = 'exact' | 'token' | 'fuzzy' | 'no_match' | 'freeform';
 type DebugSkipReason = 'low_signal' | 'possible_noise';
 
+export interface PracticeAttemptFeedback {
+  title: string;
+  detail: string;
+}
+
 export interface PracticeAttemptDebugInfo {
   recording: {
     objectUrl: string | null;
@@ -37,6 +42,7 @@ interface AttemptState {
   isCompleted: boolean;
   debugInfo: PracticeAttemptDebugInfo | null;
   noMatchHint: 'use_frame' | null;
+  feedback: PracticeAttemptFeedback | null;
 }
 
 interface UsePracticeAttemptOptions {
@@ -121,6 +127,93 @@ function buildInitialAttemptState(key: string): AttemptState {
     isCompleted: false,
     debugInfo: null,
     noMatchHint: null,
+    feedback: null,
+  };
+}
+
+function buildSuccessFeedback(matchType: MatchType): PracticeAttemptFeedback {
+  switch (matchType) {
+    case 'exact':
+      return {
+        title: 'Nice.',
+        detail: 'That was a clean match.',
+      };
+    case 'token':
+      return {
+        title: 'Nice.',
+        detail: 'We found the word inside your sentence.',
+      };
+    case 'fuzzy':
+      return {
+        title: 'Nice.',
+        detail: 'That was close enough to count.',
+      };
+    default:
+      return {
+        title: 'Nice.',
+        detail: 'We matched the target word.',
+      };
+  }
+}
+
+function buildAudioIssueFeedback(issue: NonNullable<RecordingMetrics['likelyIssue']>): PracticeAttemptFeedback {
+  switch (issue) {
+    case 'low_signal':
+      return {
+        title: 'We barely heard you.',
+        detail: 'Try speaking a little louder or closer to the mic.',
+      };
+    case 'long_preamble':
+      return {
+        title: 'You waited too long to start.',
+        detail: 'Start saying the word sooner after tapping record.',
+      };
+    case 'long_trailing_silence':
+      return {
+        title: 'The word came too late in the clip.',
+        detail: 'Say the word near the start of your recording.',
+      };
+    case 'possible_noise':
+      return {
+        title: 'Background noise may have masked the word.',
+        detail: 'Try a quieter spot or move the mic away from noise.',
+      };
+    default:
+      return {
+        title: 'Try again.',
+        detail: 'We could not isolate a clear speech window.',
+      };
+  }
+}
+
+function buildNoMatchFeedback(
+  transcript: string,
+  word: string,
+  partnerWord: string | undefined,
+  experimentMode: 'frame_sentence' | undefined,
+  noMatchHint: 'use_frame' | null,
+): PracticeAttemptFeedback {
+  if (noMatchHint === 'use_frame' && experimentMode === 'frame_sentence') {
+    return {
+      title: 'You missed the frame sentence.',
+      detail: `Say “The word is ${word}” so we can extract the target word.`,
+    };
+  }
+
+  if (transcript) {
+    return {
+      title: 'We heard a transcript, but not the target word.',
+      detail: partnerWord
+        ? `Heard “${transcript}”. Try the target pair more clearly.`
+        : `Heard “${transcript}”. Try saying the word more clearly.`,
+    };
+  }
+
+  return {
+    title: 'We could not match that attempt.',
+    detail: partnerWord
+      ? `Try the target word again and keep it distinct from “${partnerWord}”.`
+      : 'Try the target word again.',
   };
 }
 
@@ -183,6 +276,7 @@ export function usePracticeAttempt({
       transcript: '',
       progress: 0,
       noMatchHint: null,
+      feedback: null,
     });
   }, [patchAttemptState, sessionKey]);
 
@@ -235,6 +329,7 @@ export function usePracticeAttempt({
         patchAttemptState(attemptKey, {
           noMatchHint: hint,
           status: 'no_match',
+          feedback: buildNoMatchFeedback(text, word, partnerWord, experimentMode, hint),
         });
         outcomeTimerRef.current = setTimeout(() => {
           if (activeSessionKeyRef.current !== attemptKey) {
@@ -243,6 +338,7 @@ export function usePracticeAttempt({
           patchAttemptState(attemptKey, {
             status: 'idle',
             noMatchHint: null,
+            feedback: null,
             progress: 0,
           });
         }, incorrectDelayMs);
@@ -257,6 +353,7 @@ export function usePracticeAttempt({
         });
         patchAttemptState(attemptKey, {
           status: 'correct',
+          feedback: buildSuccessFeedback(recognition.matchType),
         });
         outcomeTimerRef.current = setTimeout(() => {
           if (activeSessionKeyRef.current !== attemptKey) {
@@ -267,6 +364,7 @@ export function usePracticeAttempt({
             transcript: '',
             isCompleted: true,
             progress: 0,
+            feedback: null,
           });
           onSuccess();
         }, successDelayMs);
@@ -278,6 +376,12 @@ export function usePracticeAttempt({
         });
         patchAttemptState(attemptKey, {
           status: 'incorrect',
+          feedback: {
+            title: matched && matched !== target ? `We heard “${matched}” instead.` : 'That was close, but not the target word.',
+            detail: matched && matched !== target
+              ? `Try saying “${word}” more distinctly${partnerWord ? ` so it stands apart from “${partnerWord}”.` : '.'}`
+              : 'Try the target word again with a clearer start and ending.',
+          },
         });
         outcomeTimerRef.current = setTimeout(() => {
           if (activeSessionKeyRef.current !== attemptKey) {
@@ -286,6 +390,7 @@ export function usePracticeAttempt({
           patchAttemptState(attemptKey, {
             status: 'idle',
             progress: 0,
+            feedback: null,
           });
         }, incorrectDelayMs);
       }
@@ -300,6 +405,10 @@ export function usePracticeAttempt({
         },
         status: 'no_match',
         noMatchHint: null,
+        feedback: {
+          title: 'Recognition failed.',
+          detail: 'Try the attempt again; the server did not return a usable result.',
+        },
       });
     }
   }, [
@@ -359,6 +468,7 @@ export function usePracticeAttempt({
       progress: 0,
       noMatchHint: null,
       isCompleted: false,
+      feedback: null,
     });
     await startRecording();
     if (activeSessionKeyRef.current !== attemptKey) {
@@ -378,6 +488,7 @@ export function usePracticeAttempt({
         patchAttemptState(attemptKey, {
           status: 'idle',
           progress: 0,
+          feedback: null,
         });
         return;
       }
@@ -399,6 +510,7 @@ export function usePracticeAttempt({
       });
 
       if (shouldSkipRecognition(recording.metrics)) {
+        const skipReason = getSkipReason(recording.metrics);
         onAttemptEvaluated?.({
           isCorrect: false,
           transcript: '',
@@ -408,8 +520,9 @@ export function usePracticeAttempt({
           status: 'no_match',
           debugInfo: {
             ...nextDebugInfo,
-            skipReason: getSkipReason(recording.metrics),
+            skipReason,
           },
+          feedback: buildAudioIssueFeedback(skipReason),
         });
         if (!debugEnabled) {
           outcomeTimerRef.current = setTimeout(() => {
@@ -419,6 +532,7 @@ export function usePracticeAttempt({
             patchAttemptState(attemptKey, {
               status: 'idle',
               progress: 0,
+              feedback: null,
             });
           }, incorrectDelayMs);
         }
@@ -455,6 +569,7 @@ export function usePracticeAttempt({
     isCompleted: currentState.isCompleted,
     debugInfo: currentState.debugInfo,
     noMatchHint: currentState.noMatchHint,
+    feedback: currentState.feedback,
     resetAttempt,
     sendDebugRecording,
     handleRecord,

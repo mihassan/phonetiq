@@ -41,7 +41,7 @@ export function PracticeCard({
 }: Props) {
   const recordDuration = RECORD_DURATION_DEFAULT;
 
-  const { transcript, status, progress, isCompleted, debugInfo, resetAttempt, sendDebugRecording, handleRecord, noMatchHint } =
+  const { transcript, status, progress, isCompleted, debugInfo, resetAttempt, sendDebugRecording, handleRecord, noMatchHint, feedback } =
     usePracticeAttempt({
       word,
       partnerWord,
@@ -275,6 +275,22 @@ export function PracticeCard({
 
       {/* Transcript Pill */}
       <div className="ui-practice-zone-feedback">
+        {feedback && (
+          <div
+            data-testid="practice-feedback-message"
+            className={`mb-3 px-4 py-3 rounded-2xl border text-left ${
+              status === 'correct'
+                ? 'ui-card'
+                : status === 'incorrect'
+                  ? 'ui-practice-state-incorrect'
+                  : 'ui-practice-state-nomatch'
+            }`}
+          >
+            <p className="text-sm md:text-base font-black">{feedback.title}</p>
+            <p className="mt-1 text-xs md:text-sm font-medium ui-muted">{feedback.detail}</p>
+          </div>
+        )}
+
         {(status === 'correct' || status === 'incorrect' || status === 'no_match') && transcript && (
           <div className={`px-5 py-2 rounded-full border flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 ${
             status === 'correct'
@@ -289,7 +305,7 @@ export function PracticeCard({
                 : status === 'incorrect'
                   ? 'text-[color:var(--color-state-incorrect)]'
                   : 'text-[color:var(--color-state-nomatch)]'
-            }`}>Heard:</span>
+            }`}>Transcript preview:</span>
             <span className="text-sm font-black capitalize">&ldquo;{transcript}&rdquo;</span>
           </div>
         )}

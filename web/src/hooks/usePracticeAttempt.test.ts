@@ -70,6 +70,10 @@ describe('usePracticeAttempt', () => {
 
     expect(result.current.status).toBe('correct');
     expect(result.current.transcript).toBe('ship');
+    expect(result.current.feedback).toEqual({
+      title: 'Nice.',
+      detail: 'We matched the target word.',
+    });
 
     await act(async () => {
       vi.advanceTimersByTime(1500);
@@ -79,6 +83,7 @@ describe('usePracticeAttempt', () => {
     expect(onSuccess).toHaveBeenCalledTimes(1);
     expect(result.current.status).toBe('idle');
     expect(result.current.isCompleted).toBe(true);
+    expect(result.current.feedback).toBeNull();
   });
 
   it('goes to incorrect then returns to idle for non-matching transcript', async () => {
@@ -357,6 +362,10 @@ describe('usePracticeAttempt', () => {
 
     expect(result.current.status).toBe('no_match');
     expect(result.current.noMatchHint).toBe('use_frame');
+    expect(result.current.feedback).toEqual({
+      title: 'You missed the frame sentence.',
+      detail: 'Say “The word is cat” so we can extract the target word.',
+    });
   });
 
   it('noMatchHint is null when transcript is empty in frame_sentence mode', async () => {
@@ -384,6 +393,10 @@ describe('usePracticeAttempt', () => {
 
     expect(result.current.status).toBe('no_match');
     expect(result.current.noMatchHint).toBeNull();
+    expect(result.current.feedback).toEqual({
+      title: 'We could not match that attempt.',
+      detail: 'Try the target word again.',
+    });
   });
 
   it('noMatchHint is null in standard mode even with a transcript', async () => {
@@ -444,6 +457,10 @@ describe('usePracticeAttempt', () => {
     expect(result.current.status).toBe('no_match');
     expect(result.current.debugInfo?.skipReason).toBe('low_signal');
     expect(result.current.debugInfo?.recording.metrics?.likelyIssue).toBe('low_signal');
+    expect(result.current.feedback).toEqual({
+      title: 'We barely heard you.',
+      detail: 'Try speaking a little louder or closer to the mic.',
+    });
   });
 
   it('skips recognition when the capture looks dominated by environmental noise', async () => {

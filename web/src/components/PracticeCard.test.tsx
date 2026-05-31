@@ -103,6 +103,8 @@ describe('PracticeCard', () => {
     expect(recognizeSpeechMock).toHaveBeenCalledTimes(1);
 
     expect(screen.getByText(/correct!/i)).toBeInTheDocument();
+    expect(screen.getByTestId('practice-feedback-message')).toHaveTextContent(/matched the target word/i);
+    expect(screen.getByText(/transcript preview/i)).toBeInTheDocument();
 
     await act(async () => {
       vi.advanceTimersByTime(1500);
@@ -170,7 +172,8 @@ describe('PracticeCard', () => {
     });
 
     expect(screen.getByTestId('practice-status-label')).toHaveTextContent(/try again/i);
-    const heardLabel = screen.getByText(/heard:/i);
+    expect(screen.getByTestId('practice-feedback-message')).toHaveTextContent(/that was close, but not the target word/i);
+    const heardLabel = screen.getByText(/transcript preview:/i);
     const transcriptPill = heardLabel.closest('div');
     expect(transcriptPill?.className).toContain('ui-practice-state-incorrect');
 
@@ -422,7 +425,8 @@ describe('PracticeCard', () => {
     });
 
     expect(screen.getByText(/didn't catch that/i)).toBeInTheDocument();
-    expect(screen.getByText(/bonjour/i)).toBeInTheDocument();
+    expect(screen.getByText(/transcript preview:/i)).toBeInTheDocument();
+    expect(screen.getByTestId('practice-feedback-message')).toHaveTextContent(/heard “bonjour”/i);
   });
 
   it('shows targeted hint label when frame_sentence no_match has a transcript', async () => {
@@ -456,6 +460,7 @@ describe('PracticeCard', () => {
     });
 
     expect(screen.getByTestId('practice-status-label')).toHaveTextContent('Try: "The word is cat"');
+    expect(screen.getByTestId('practice-feedback-message')).toHaveTextContent(/missed the frame sentence/i);
   });
 
   it('shows generic Didn\'t catch that for no_match with empty transcript in frame_sentence', async () => {
@@ -490,6 +495,7 @@ describe('PracticeCard', () => {
 
     expect(screen.getByTestId('practice-status-label')).toHaveTextContent("Didn't catch that");
     expect(screen.queryByTestId('practice-frame-tip')).not.toBeInTheDocument();
+    expect(screen.getByTestId('practice-feedback-message')).toHaveTextContent(/we could not match that attempt/i);
   });
 
   it('shows a contextual frame tip in the feedback area when the frame phrase is missed', async () => {
@@ -524,6 +530,7 @@ describe('PracticeCard', () => {
 
     expect(screen.getByTestId('practice-frame-tip')).toHaveTextContent('Try the full sentence');
     expect(screen.getByTestId('practice-frame-tip')).toHaveTextContent('The word is cat');
+    expect(screen.getByTestId('practice-feedback-message')).toHaveTextContent(/missed the frame sentence/i);
   });
 
   it('shows a development debug panel with recorded audio and raw ai details', async () => {
