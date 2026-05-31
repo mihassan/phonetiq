@@ -1,14 +1,20 @@
 #!/usr/bin/env npx tsx
+/**
+ * Usage:
+ *   npx tsx scripts/run-eval-experiment.ts [--base-url http://localhost:8791] [--dialect us_only] [--json|--json-pretty]
+ */
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  buildEvalJsonReport,
   DIALECT_EVAL_CORPUS,
   evaluateEvalGuardrails,
   filterEvalCorpus,
   readDialectFilterArg,
   readEvalGuardrailArgs,
+  readEvalOutputModeArgs,
   summarizeEvalResults,
   toContrastFamily,
   type EvalGuardrailThresholds,
@@ -30,6 +36,7 @@ const LABEL = process.argv.includes('--label')
   : 'FRAME SENTENCE (the word is X)';
 const DIALECT_FILTER = readDialectFilterArg(process.argv);
 const EVAL_GUARDRAILS = readEvalGuardrailArgs(process.argv);
+const OUTPUT_MODE = readEvalOutputModeArgs(process.argv);
 const EVAL_CORPUS = filterEvalCorpus(DIALECT_EVAL_CORPUS, DIALECT_FILTER);
 const RATE_LIMIT_BATCH = 8;
 
@@ -199,15 +206,17 @@ async function checkWorkerRunning() {
 }
 
 async function main() {
-  console.log('\nPhonetiq Recognition Eval — Frame sentence');
-  console.log(`Base URL: ${BASE_URL}`);
-  if (DIALECT_FILTER) {
-    console.log(`Target dialect filter: ${DIALECT_FILTER}`);
+  if (!OUTPUT_MODE.json) {
+    console.log('\nPhonetiq Recognition Eval — Frame sentence');
+    console.log(`Base URL: ${BASE_URL}`);
+    if (DIALECT_FILTER) {
+      console.log(`Target dialect filter: ${DIALECT_FILTER}`);
+    }
+    if (EVAL_GUARDRAILS) {
+      printGuardrailSettings(EVAL_GUARDRAILS);
+    }
+    console.log(`Fixtures: ${FIXTURES_DIR}\n`);
   }
-  if (EVAL_GUARDRAILS) {
-    printGuardrailSettings(EVAL_GUARDRAILS);
-  }
-  console.log(`Fixtures: ${FIXTURES_DIR}\n`);
 
   await checkWorkerRunning();
   mkdirSync(FIXTURES_DIR, { recursive: true });
@@ -215,19 +224,25 @@ async function main() {
     throw new Error('No eval corpus rows matched the selected dialect filter.');
   }
 
-  process.stdout.write('Generating WAV fixtures...');
+  if (!OUTPUT_MODE.json) {
+    process.stdout.write('Generating WAV fixtures...');
+  }
   for (const pair of EVAL_CORPUS) {
     for (const word of [pair.word1, pair.word2]) {
       for (const { name: voice } of pair.voices) {
         const path = wavPath(word, voice);
         if (!existsSync(path)) {
-          process.stdout.write(` ${word}(${voice})`);
+          if (!OUTPUT_MODE.json) {
+            process.stdout.write(` ${word}(${voice})`);
+          }
           generateWav(word, voice, path);
         }
       }
     }
   }
-  console.log(' done.\n');
+  if (!OUTPUT_MODE.json) {
+    console.log(' done.\n');
+  }
 
   const results: EvalResult[] = [];
   let requestCount = 0;
@@ -236,11 +251,15 @@ async function main() {
     for (const targetWord of [pair.word1, pair.word2]) {
       for (const { name: voice } of pair.voices) {
         if (requestCount > 0 && requestCount % RATE_LIMIT_BATCH === 0 && DELAY_MS === 0) {
-          process.stdout.write(
-            `\n  (pausing 62s to reset rate limiter after ${requestCount} requests...)`,
-          );
+          if (!OUTPUT_MODE.json) {
+            process.stdout.write(
+              `\n  (pausing 62s to reset rate limiter after ${requestCount} requests...)`,
+            );
+          }
           await new Promise((resolve) => setTimeout(resolve, 62_000));
-          process.stdout.write(' continuing\n');
+          if (!OUTPUT_MODE.json) {
+            process.stdout.write(' continuing\n');
+          }
         }
         if (DELAY_MS > 0) {
           await new Promise((resolve) => setTimeout(resolve, DELAY_MS));
@@ -270,7 +289,9 @@ async function main() {
             correct: matchedWord === targetWord,
           });
         } catch (error) {
-          console.error(`\nERROR recognizing ${targetWord} (${voice}): ${error}`);
+          if (!OUTPUT_MODE.json) {
+            console.error(`\nERROR recognizing ${targetWord} (${voice}): ${error}`);
+          }
           results.push({
             family: toContrastFamily(pair.word1, pair.word2),
             word: targetWord,
@@ -290,12 +311,36 @@ async function main() {
   }
 
   const summary = summarizeEvalResults(results);
+  const guardrailResult = EVAL_GUARDRAILS
+    ? evaluateEvalGuardrails(summary, EVAL_GUARDRAILS)
+    : null;
+
+  if (OUTPUT_MODE.json) {
+    const report = buildEvalJsonReport({
+      generatedAt: new Date().toISOString(),
+      baseUrl: BASE_URL,
+      label: LABEL,
+      fixtureDir: FIXTURES_DIR,
+      delayMs: DELAY_MS,
+      dialectFilter: DIALECT_FILTER,
+      summary,
+      results,
+      guardrails: {
+        thresholds: EVAL_GUARDRAILS,
+        result: guardrailResult,
+      },
+    });
+    console.log(JSON.stringify(report, null, OUTPUT_MODE.pretty ? 2 : undefined));
+    if (guardrailResult && !guardrailResult.passed) {
+      process.exit(1);
+    }
+    return;
+  }
 
   printTable(results, LABEL, summary);
   printDialectSummary(summary);
   printFamilySummary(summary);
-  if (EVAL_GUARDRAILS) {
-    const guardrailResult = evaluateEvalGuardrails(summary, EVAL_GUARDRAILS);
+  if (guardrailResult) {
     if (guardrailResult.passed) {
       console.log('\nGuardrails: PASS');
     } else {

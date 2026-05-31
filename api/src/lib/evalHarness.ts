@@ -68,6 +68,28 @@ export interface EvalGuardrailResult {
   failures: string[];
 }
 
+export interface EvalOutputMode {
+  json: boolean;
+  pretty: boolean;
+}
+
+export interface EvalJsonReport {
+  generatedAt: string;
+  baseUrl: string;
+  label: string;
+  fixtureDir: string;
+  delayMs: number;
+  dialectFilter: TargetDialect | null;
+  summary: EvalSummary;
+  results: EvalResult[];
+  guardrails: {
+    enabled: boolean;
+    thresholds: EvalGuardrailThresholds | null;
+    passed: boolean | null;
+    failures: string[];
+  };
+}
+
 export const DEFAULT_EVAL_GUARDRAILS: Required<EvalGuardrailThresholds> = {
   minOverallAccuracyPct: 70,
   minDialectAccuracyPct: 60,
@@ -282,6 +304,13 @@ export function readEvalGuardrailArgs(argv: string[]): EvalGuardrailThresholds |
   };
 }
 
+export function readEvalOutputModeArgs(argv: string[]): EvalOutputMode {
+  const pretty = argv.includes('--json-pretty');
+  const json = argv.includes('--json') || pretty;
+
+  return { json, pretty };
+}
+
 function accuracyPct(bucket: EvalSummaryBucket) {
   return bucket.total === 0 ? 100 : (bucket.correct / bucket.total) * 100;
 }
@@ -345,5 +374,37 @@ export function evaluateEvalGuardrails(
   return {
     passed: failures.length === 0,
     failures,
+  };
+}
+
+export function buildEvalJsonReport(input: {
+  generatedAt: string;
+  baseUrl: string;
+  label: string;
+  fixtureDir: string;
+  delayMs: number;
+  dialectFilter: TargetDialect | null;
+  summary: EvalSummary;
+  results: EvalResult[];
+  guardrails: {
+    thresholds: EvalGuardrailThresholds | null;
+    result: EvalGuardrailResult | null;
+  };
+}): EvalJsonReport {
+  return {
+    generatedAt: input.generatedAt,
+    baseUrl: input.baseUrl,
+    label: input.label,
+    fixtureDir: input.fixtureDir,
+    delayMs: input.delayMs,
+    dialectFilter: input.dialectFilter,
+    summary: input.summary,
+    results: input.results,
+    guardrails: {
+      enabled: input.guardrails.thresholds !== null,
+      thresholds: input.guardrails.thresholds,
+      passed: input.guardrails.result?.passed ?? null,
+      failures: input.guardrails.result?.failures ?? [],
+    },
   };
 }

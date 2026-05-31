@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildEvalJsonReport,
   DEFAULT_EVAL_GUARDRAILS,
   DIALECT_EVAL_CORPUS,
   evaluateEvalGuardrails,
   filterEvalCorpus,
   readDialectFilterArg,
   readEvalGuardrailArgs,
+  readEvalOutputModeArgs,
   summarizeEvalResults,
   toContrastFamily,
   type EvalResult,
@@ -81,6 +83,18 @@ describe('evalHarness', () => {
     expect(() =>
       readEvalGuardrailArgs(['node', 'script.ts', '--max-dialect-no-match', '101']),
     ).toThrow('Invalid --max-dialect-no-match');
+  });
+
+  it('parses eval output mode flags', () => {
+    expect(readEvalOutputModeArgs(['node', 'script.ts'])).toEqual({ json: false, pretty: false });
+    expect(readEvalOutputModeArgs(['node', 'script.ts', '--json'])).toEqual({
+      json: true,
+      pretty: false,
+    });
+    expect(readEvalOutputModeArgs(['node', 'script.ts', '--json-pretty'])).toEqual({
+      json: true,
+      pretty: true,
+    });
   });
 
   it('filters the corpus by target dialect', () => {
@@ -311,5 +325,56 @@ describe('evalHarness', () => {
       'American English accuracy 50.0% is below minimum 60.0%.',
       'American English no-match rate 50.0% is above maximum 40.0%.',
     ]);
+  });
+
+  it('builds a machine-readable eval JSON report', () => {
+    const results: EvalResult[] = [
+      {
+        family: toContrastFamily('bar', 'bore'),
+        word: 'bore',
+        expectedWord: 'bore',
+        candidate1: 'bar',
+        candidate2: 'bore',
+        dialect: 'us_only',
+        voice: 'Samantha',
+        matchType: 'fuzzy',
+        matchedWord: 'bore',
+        matchedBy: 'dialect_alias_exact',
+        correct: true,
+      },
+    ];
+    const summary = summarizeEvalResults(results);
+    const guardrailResult = evaluateEvalGuardrails(summary, DEFAULT_EVAL_GUARDRAILS);
+    const report = buildEvalJsonReport({
+      generatedAt: '2026-01-01T00:00:00.000Z',
+      baseUrl: 'http://localhost:8787',
+      label: 'FRAME SENTENCE',
+      fixtureDir: '/tmp/fixtures',
+      delayMs: 0,
+      dialectFilter: 'us_only',
+      summary,
+      results,
+      guardrails: {
+        thresholds: DEFAULT_EVAL_GUARDRAILS,
+        result: guardrailResult,
+      },
+    });
+
+    expect(report).toEqual({
+      generatedAt: '2026-01-01T00:00:00.000Z',
+      baseUrl: 'http://localhost:8787',
+      label: 'FRAME SENTENCE',
+      fixtureDir: '/tmp/fixtures',
+      delayMs: 0,
+      dialectFilter: 'us_only',
+      summary,
+      results,
+      guardrails: {
+        enabled: true,
+        thresholds: DEFAULT_EVAL_GUARDRAILS,
+        passed: true,
+        failures: [],
+      },
+    });
   });
 });

@@ -30,10 +30,13 @@
 - `npm test` - Run Vitest tests (64 tests)
 - `npm run eval` - Dialect-tagged frame-sentence recognition eval (7 s delay)
 - `npm run eval:fast` - Dialect-tagged frame-sentence eval (no delay)
+- `npm run eval:json` - Machine-readable JSON output for automation
 - `npm run eval:guard` - Same eval with strict guardrail thresholds (fails on regressions)
 - `npm run eval:frame` - Frame-sentence eval on `dev:frame` (port 8791)
+- `npm run eval:frame:json` - Frame-profile eval JSON output for automation
 - `npm run eval:frame:guard` - Frame-profile eval with strict guardrail thresholds
 - `npm run eval -- --dialect uk_only` - Run only one target dialect's eval rows
+- `npm run eval -- --json-pretty` - Pretty-print JSON output for local inspection
 - `npm run eval:guard -- --min-dialect-accuracy 70` - Override guardrail thresholds
 - Eval output includes both per-dialect and contrast-family rollups for diagnosis
 - Eval corpus now includes wider pilot coverage (`ship/sheep`, `pen/pan`, `cot/caught`, `bar/bore`, `cut/cart`, `peer/pear`, `hut/heart`)
