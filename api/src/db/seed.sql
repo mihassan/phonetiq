@@ -662,3 +662,42 @@ INSERT INTO word_pairs (word1, word2, phoneme_type, target_sounds, dialect_filte
 ('weary', 'wary', 'vowel_long', '/ɪə/ vs /eː/', 'au_only', 4),
 ('seer', 'sayer', 'vowel_long', '/ɪə/ vs /eː/', 'au_only', 4),
 ('hear', 'hair', 'vowel_long', '/ɪə/ vs /eː/', 'au_only', 3);
+
+-- ============================================================
+-- PILOT DIALECT METADATA: vowel_long
+-- Marks pilot contrast strength for dialect-sensitive vowel_long families.
+-- Uses lookup subqueries so metadata stays aligned if seed row ordering changes.
+-- ============================================================
+INSERT INTO word_pair_dialect_metadata (pair_id, target_dialect, contrast_strength, note)
+SELECT id, 'uk_only', 'supported', 'Distinct /ɒ/ vs /ɔː/ contrast for the current UK pilot set.'
+FROM word_pairs
+WHERE phoneme_type = 'vowel_long'
+  AND dialect_filter = 'uk_only'
+  AND target_sounds = '/ɒ/ vs /ɔː/';
+
+INSERT INTO word_pair_dialect_metadata (pair_id, target_dialect, contrast_strength, note)
+SELECT id, 'uk_only', 'supported', 'Distinct /ʌ/ vs /ɑː/ contrast for the current UK pilot set.'
+FROM word_pairs
+WHERE phoneme_type = 'vowel_long'
+  AND dialect_filter = 'uk_only'
+  AND target_sounds = '/ʌ/ vs /ɑː/';
+
+INSERT INTO word_pair_dialect_metadata (pair_id, target_dialect, contrast_strength, note)
+SELECT id, 'us_only', 'weak', 'The /ɔ/ side is weakened for many American speakers by the cot-caught merger, so treat this contrast as a weak pilot family.'
+FROM word_pairs
+WHERE phoneme_type = 'vowel_long'
+  AND dialect_filter = 'us_only'
+  AND target_sounds = '/oʊ/ vs /ɔ/';
+
+INSERT INTO word_pair_dialect_metadata (pair_id, target_dialect, contrast_strength, note)
+SELECT id, 'us_only', 'supported', 'Rhotic /ɑr/ vs /ɔr/ contrast for the current US pilot set.'
+FROM word_pairs
+WHERE phoneme_type = 'vowel_long'
+  AND dialect_filter = 'us_only'
+  AND target_sounds = '/ɑr/ vs /ɔr/';
+
+INSERT INTO word_pair_dialect_metadata (pair_id, target_dialect, contrast_strength, note)
+SELECT id, 'au_only', 'supported', 'AU pilot contrast set for /e/ vs /æ/ and /ɪə/ vs /eː/.'
+FROM word_pairs
+WHERE phoneme_type = 'vowel_long'
+  AND dialect_filter = 'au_only';

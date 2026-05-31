@@ -13,7 +13,7 @@ function jsonResponse(body: unknown, status = 200) {
 describe('app integration', () => {
   it('serves AU-filtered pairs through /api/pairs and en-AU audio through /api/audio', async () => {
     const all = vi.fn(async (...params: unknown[]): Promise<QueryResult> => {
-      const [dialect] = params as [string];
+      const [, dialect] = params as [string, string];
       if (dialect !== 'au_only') {
         return {
           results: [
@@ -25,6 +25,8 @@ describe('app integration', () => {
               target_sounds: '/ɪ/ vs /iː/',
               dialect_filter: 'all',
               difficulty_level: 1,
+              contrast_strength: 'supported',
+              contrast_note: null,
             },
           ],
         };
@@ -40,6 +42,8 @@ describe('app integration', () => {
             target_sounds: '/e/ vs /eː/',
             dialect_filter: 'au_only',
             difficulty_level: 3,
+            contrast_strength: 'supported',
+            contrast_note: 'AU pilot contrast set for /e/ vs /æ/ and /ɪə/ vs /eː/.',
           },
         ],
       };
@@ -87,6 +91,8 @@ describe('app integration', () => {
           target_sounds: '/e/ vs /eː/',
           dialect_filter: 'au_only',
           difficulty_level: 3,
+          contrast_strength: 'supported',
+          contrast_note: 'AU pilot contrast set for /e/ vs /æ/ and /ɪə/ vs /eː/.',
         },
       ],
       count: 1,

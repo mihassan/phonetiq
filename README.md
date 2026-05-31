@@ -41,6 +41,7 @@ Most pronunciation apps use browser-native speech recognition which is flaky acr
 - Choose a target dialect (`US`, `UK`, `AU`)
 - Whisper receives dialect-specific prompts for better recognition
 - Audio available in three dialects: US English, British English, Australian English
+- Pilot `vowel_long` metadata now marks some dialect-specific contrasts as `supported`, `weak`, or unavailable for selection/filtering
 - Dataset now includes 400+ seeded pairs with `all`, `uk_only`, `us_only`, and an initial `au_only` starter set
 
 ### 🔒 Production-Ready

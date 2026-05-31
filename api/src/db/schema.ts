@@ -1,4 +1,4 @@
-import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, integer, text, primaryKey, index } from 'drizzle-orm/sqlite-core';
 
 export const wordPairs = sqliteTable('word_pairs', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -10,6 +10,17 @@ export const wordPairs = sqliteTable('word_pairs', {
   difficultyLevel: integer('difficulty_level').notNull().default(1),
   createdAt: text('created_at').notNull().default('CURRENT_TIMESTAMP'),
 });
+
+export const wordPairDialectMetadata = sqliteTable('word_pair_dialect_metadata', {
+  pairId: integer('pair_id').notNull(),
+  targetDialect: text('target_dialect').notNull(),
+  contrastStrength: text('contrast_strength').notNull().default('supported'),
+  note: text('note'),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.pairId, table.targetDialect] }),
+  pairIdx: index('word_pair_dialect_metadata_pair_idx').on(table.pairId),
+  dialectIdx: index('word_pair_dialect_metadata_dialect_idx').on(table.targetDialect),
+}));
 
 export const users = sqliteTable('users', {
   id: text('id').primaryKey(),

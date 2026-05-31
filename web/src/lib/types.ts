@@ -6,6 +6,8 @@ export interface WordPair {
   target_sounds: string | null;
   dialect_filter: ContentDialect;
   difficulty_level: number;
+  contrast_strength?: ContrastStrength;
+  contrast_note?: string | null;
 }
 
 export interface Category {
@@ -24,6 +26,8 @@ export type Dialect = TargetDialect;
 export type AudioDialect = 'en-US' | 'en-GB' | 'en-AU';
 
 export type AudioVoice = 'default';
+
+export type ContrastStrength = 'supported' | 'weak' | 'unavailable';
 
 export type TargetWord = 1 | 2;
 

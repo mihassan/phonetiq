@@ -22,6 +22,21 @@ function getAttemptsAndCorrect(pairId: number, store: ProgressStore) {
   };
 }
 
+function getContrastStrength(pair: WordPair) {
+  return pair.contrast_strength ?? 'supported';
+}
+
+function isUnavailableContrast(pair: WordPair) {
+  return getContrastStrength(pair) === 'unavailable';
+}
+
+function getSelectionScore(pair: WordPair, store: ProgressStore, now?: string) {
+  const baseScore = scorePairForPractice(pair, store, now);
+  return getContrastStrength(pair) === 'weak'
+    ? Math.max(2, baseScore - 10)
+    : baseScore;
+}
+
 const DECAY_THRESHOLD_MS = 7 * 24 * 60 * 60 * 1000;
 
 export function scorePairForPractice(pair: WordPair, store: ProgressStore, now?: string) {
@@ -53,7 +68,8 @@ export function buildWeakPairQueue(
   limit = 10,
 ): WordPair[] {
   return pairs
-    .map((pair) => ({ pair, score: scorePairForPractice(pair, store) }))
+    .filter((pair) => !isUnavailableContrast(pair))
+    .map((pair) => ({ pair, score: getSelectionScore(pair, store) }))
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
     .map((entry) => entry.pair);
@@ -70,9 +86,10 @@ export function pickAdaptiveNextIndex(
   const weightedCandidates = pairs
     .map((pair, index) => ({
       index,
-      score: scorePairForPractice(pair, store),
+      score: isUnavailableContrast(pair) ? 0 : getSelectionScore(pair, store),
     }))
     .filter((entry) => entry.index !== currentIndex)
+    .filter((entry) => entry.score > 0)
     .sort((a, b) => b.score - a.score);
 
   const totalWeight = weightedCandidates.reduce((sum, entry) => sum + entry.score, 0);
@@ -111,18 +128,20 @@ export function buildPracticeBatch(
   const weakCount = options.weakCount ?? 5;
   const random = options.random ?? Math.random;
 
-  if (pairs.length <= batchSize) {
-    return shuffle(pairs, random);
+  const eligiblePairs = pairs.filter((pair) => !isUnavailableContrast(pair));
+
+  if (eligiblePairs.length <= batchSize) {
+    return shuffle(eligiblePairs, random);
   }
 
-  const scored = pairs
+  const scored = eligiblePairs
     .map((pair) => {
       const pairProgress = store.pairs[String(pair.id)];
       const attempts = pairProgress ? pairProgress.word1Attempts + pairProgress.word2Attempts : 0;
       return {
         pair,
         attempts,
-        score: scorePairForPractice(pair, store),
+        score: getSelectionScore(pair, store),
       };
     })
     .sort((a, b) => b.score - a.score);

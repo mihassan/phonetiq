@@ -35,4 +35,10 @@ describe('seed curriculum dataset', () => {
   it('keeps the schema AU-ready for au_only rows', () => {
     expect(schemaSource).toContain("dialectFilter: text('dialect_filter')");
   });
+
+  it('includes pilot vowel_long metadata support in schema and seed data', () => {
+    expect(schemaSource).toContain("wordPairDialectMetadata = sqliteTable('word_pair_dialect_metadata'");
+    expect(seedSql).toContain('INSERT INTO word_pair_dialect_metadata');
+    expect(seedSql).toContain("'/oʊ/ vs /ɔ/'");
+  });
 });

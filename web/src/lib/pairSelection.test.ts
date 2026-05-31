@@ -49,7 +49,7 @@ const progress: ProgressStore = {
     '1': {
       pairId: 1,
       category: 'vowel_short',
-      dialect: 'all',
+      dialect: 'us_only',
       word1Attempts: 5,
       word1Correct: 4,
       word2Attempts: 5,
@@ -64,7 +64,7 @@ const progress: ProgressStore = {
     '2': {
       pairId: 2,
       category: 'fricative',
-      dialect: 'all',
+      dialect: 'us_only',
       word1Attempts: 3,
       word1Correct: 1,
       word2Attempts: 2,
@@ -101,6 +101,112 @@ describe('pairSelection', () => {
     expect(queue[0].id).toBe(2);
   });
 
+  it('deprioritizes weak pilot contrasts when learning scores are otherwise equal', () => {
+    const pilotPairs: WordPair[] = [
+      {
+        id: 10,
+        word1: 'coat',
+        word2: 'cot',
+        phoneme_type: 'vowel_long',
+        target_sounds: '/oʊ/ vs /ɔ/',
+        dialect_filter: 'us_only',
+        difficulty_level: 2,
+        contrast_strength: 'weak',
+      },
+      {
+        id: 11,
+        word1: 'card',
+        word2: 'cord',
+        phoneme_type: 'vowel_long',
+        target_sounds: '/ɑr/ vs /ɔr/',
+        dialect_filter: 'us_only',
+        difficulty_level: 2,
+        contrast_strength: 'supported',
+      },
+    ];
+
+    const pilotProgress: ProgressStore = {
+      ...progress,
+      pairs: {
+        '10': {
+          pairId: 10,
+          category: 'vowel_long',
+          dialect: 'us_only',
+          word1Attempts: 2,
+          word1Correct: 1,
+          word2Attempts: 2,
+          word2Correct: 1,
+          pairCompletions: 0,
+          exposureCount: 4,
+          recentIncorrectCount: 2,
+          successStreak: 0,
+          lastSeenAt: '2026-04-20T13:00:00.000Z',
+          lastCorrectAt: null,
+        },
+        '11': {
+          pairId: 11,
+          category: 'vowel_long',
+          dialect: 'us_only',
+          word1Attempts: 2,
+          word1Correct: 1,
+          word2Attempts: 2,
+          word2Correct: 1,
+          pairCompletions: 0,
+          exposureCount: 4,
+          recentIncorrectCount: 2,
+          successStreak: 0,
+          lastSeenAt: '2026-04-20T13:00:00.000Z',
+          lastCorrectAt: null,
+        },
+      },
+    };
+
+    const queue = buildWeakPairQueue(pilotPairs, pilotProgress, 2);
+
+    expect(queue.map((pair) => pair.id)).toEqual([11, 10]);
+  });
+
+  it('excludes unavailable pilot contrasts from the batch entirely', () => {
+    const pilotPairs: WordPair[] = [
+      {
+        id: 20,
+        word1: 'cot',
+        word2: 'caught',
+        phoneme_type: 'vowel_long',
+        target_sounds: '/ɒ/ vs /ɔː/',
+        dialect_filter: 'uk_only',
+        difficulty_level: 2,
+        contrast_strength: 'unavailable',
+      },
+      {
+        id: 21,
+        word1: 'card',
+        word2: 'cord',
+        phoneme_type: 'vowel_long',
+        target_sounds: '/ɑr/ vs /ɔr/',
+        dialect_filter: 'us_only',
+        difficulty_level: 2,
+      },
+      {
+        id: 22,
+        word1: 'peer',
+        word2: 'pear',
+        phoneme_type: 'vowel_long',
+        target_sounds: '/ɪə/ vs /eː/',
+        dialect_filter: 'au_only',
+        difficulty_level: 3,
+      },
+    ];
+
+    const batch = buildPracticeBatch(pilotPairs, progress, {
+      batchSize: 3,
+      random: () => 0.5,
+    });
+
+    expect(batch.map((pair) => pair.id)).toEqual(expect.arrayContaining([21, 22]));
+    expect(batch.map((pair) => pair.id)).not.toContain(20);
+  });
+
   it('chooses next practice index using weighted randomness', () => {
     const next = pickAdaptiveNextIndex(pairs, progress, 0, () => 0);
 
@@ -125,7 +231,7 @@ describe('pairSelection', () => {
         '4': {
           pairId: 4,
           category: 'vowel_short',
-          dialect: 'all',
+          dialect: 'us_only',
           word1Attempts: 6,
           word1Correct: 1,
           word2Attempts: 6,
@@ -140,7 +246,7 @@ describe('pairSelection', () => {
         '5': {
           pairId: 5,
           category: 'vowel_short',
-          dialect: 'all',
+          dialect: 'us_only',
           word1Attempts: 5,
           word1Correct: 1,
           word2Attempts: 5,
