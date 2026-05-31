@@ -3,7 +3,7 @@
  * Phonetiq recognition eval harness.
  *
  * Usage:
- *   npx tsx scripts/run-eval.ts [--base-url http://localhost:8787] [--dialect us_only] [--json|--json-pretty|--summary-json|--summary-json-pretty] [--json-out path]
+ *   npx tsx scripts/run-eval.ts [--base-url http://localhost:8787] [--dialect us_only] [--json|--json-pretty|--summary-json|--summary-json-pretty] [--json-out path] [--json-out-overwrite]
  */
 
 import { execSync } from 'node:child_process';
@@ -19,9 +19,11 @@ import {
   readDialectFilterArg,
   readEvalGuardrailArgs,
   readEvalJsonOutArg,
+  readEvalJsonOutOverwriteArg,
   readEvalOutputModeArgs,
   summarizeEvalResults,
   toContrastFamily,
+  validateEvalJsonOutWritable,
   validateEvalOutputArgs,
   type EvalGuardrailThresholds,
   type EvalPair,
@@ -44,8 +46,10 @@ const DIALECT_FILTER = readDialectFilterArg(process.argv);
 const EVAL_GUARDRAILS = readEvalGuardrailArgs(process.argv);
 const OUTPUT_MODE = readEvalOutputModeArgs(process.argv);
 const JSON_OUT_PATH = readEvalJsonOutArg(process.argv);
+const JSON_OUT_OVERWRITE = readEvalJsonOutOverwriteArg(process.argv);
 const IS_JSON_OUTPUT = OUTPUT_MODE.json || OUTPUT_MODE.summaryJson;
-validateEvalOutputArgs(OUTPUT_MODE, JSON_OUT_PATH);
+validateEvalOutputArgs(OUTPUT_MODE, JSON_OUT_PATH, JSON_OUT_OVERWRITE);
+validateEvalJsonOutWritable(JSON_OUT_PATH, JSON_OUT_OVERWRITE, existsSync);
 const EVAL_CORPUS = filterEvalCorpus(DIALECT_EVAL_CORPUS, DIALECT_FILTER);
 const RATE_LIMIT_BATCH = 8;
 

@@ -369,10 +369,38 @@ export function readEvalJsonOutArg(argv: string[]): string | null {
   return value;
 }
 
-export function validateEvalOutputArgs(outputMode: EvalOutputMode, jsonOutPath: string | null) {
+export function readEvalJsonOutOverwriteArg(argv: string[]): boolean {
+  return argv.includes('--json-out-overwrite');
+}
+
+export function validateEvalOutputArgs(
+  outputMode: EvalOutputMode,
+  jsonOutPath: string | null,
+  jsonOutOverwrite = false,
+) {
   if (jsonOutPath && !outputMode.json && !outputMode.summaryJson) {
     throw new Error(
       '--json-out requires --json/--json-pretty or --summary-json/--summary-json-pretty.',
+    );
+  }
+
+  if (jsonOutOverwrite && !jsonOutPath) {
+    throw new Error('--json-out-overwrite requires --json-out <path>.');
+  }
+}
+
+export function validateEvalJsonOutWritable(
+  jsonOutPath: string | null,
+  jsonOutOverwrite: boolean,
+  pathExists: (path: string) => boolean,
+) {
+  if (!jsonOutPath || jsonOutOverwrite) {
+    return;
+  }
+
+  if (pathExists(jsonOutPath)) {
+    throw new Error(
+      `Refusing to overwrite existing --json-out file "${jsonOutPath}". Re-run with --json-out-overwrite to replace it.`,
     );
   }
 }

@@ -41,9 +41,11 @@
 - `npm run eval -- --json-pretty` - Pretty-print JSON output for local inspection
 - `npm run eval -- --summary-json-pretty` - Pretty-print summary-only JSON for local inspection
 - `npm run eval:summary:json -- --json-out ./tmp/eval-summary.json` - Write JSON artifact to file instead of stdout
+- `npm run eval:summary:json -- --json-out ./tmp/eval-summary.json --json-out-overwrite` - Explicitly replace an existing JSON artifact file
 - `npm run eval:guard -- --min-dialect-accuracy 70` - Override guardrail thresholds
 - JSON outputs include `schemaVersion` and `outputMode` (`full` or `summary`) for stable automation parsing
 - JSON outputs include run metadata: `requestCount`, `errorCount`, and `elapsedMs`
+- `--json-out` is overwrite-safe by default and fails if the target file already exists unless `--json-out-overwrite` is set
 - Eval output includes both per-dialect and contrast-family rollups for diagnosis
 - Eval corpus now includes wider pilot coverage (`ship/sheep`, `pen/pan`, `cot/caught`, `bar/bore`, `cut/cart`, `peer/pear`, `hut/heart`)
 - `npm run db:generate` - Generate Drizzle migration SQL

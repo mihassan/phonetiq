@@ -10,9 +10,11 @@ import {
   readDialectFilterArg,
   readEvalGuardrailArgs,
   readEvalJsonOutArg,
+  readEvalJsonOutOverwriteArg,
   readEvalOutputModeArgs,
   summarizeEvalResults,
   toContrastFamily,
+  validateEvalJsonOutWritable,
   validateEvalOutputArgs,
   type EvalResult,
 } from '../src/lib/evalHarness';
@@ -154,6 +156,40 @@ describe('evalHarness', () => {
         { json: false, summaryJson: true, pretty: false },
         'tmp/eval-summary.json',
       ),
+    ).not.toThrow();
+  });
+
+  it('parses the optional json-out overwrite flag', () => {
+    expect(readEvalJsonOutOverwriteArg(['node', 'script.ts'])).toBe(false);
+    expect(readEvalJsonOutOverwriteArg(['node', 'script.ts', '--json-out-overwrite'])).toBe(true);
+  });
+
+  it('requires json-out when json-out-overwrite is used', () => {
+    expect(() =>
+      validateEvalOutputArgs(
+        { json: true, summaryJson: false, pretty: false },
+        null,
+        true,
+      ),
+    ).toThrow('--json-out-overwrite requires --json-out <path>.');
+    expect(() =>
+      validateEvalOutputArgs(
+        { json: true, summaryJson: false, pretty: false },
+        'tmp/eval.json',
+        true,
+      ),
+    ).not.toThrow();
+  });
+
+  it('refuses to overwrite existing json-out files unless explicitly enabled', () => {
+    expect(() =>
+      validateEvalJsonOutWritable('tmp/eval.json', false, (path) => path === 'tmp/eval.json'),
+    ).toThrow('Refusing to overwrite existing --json-out file "tmp/eval.json".');
+    expect(() =>
+      validateEvalJsonOutWritable('tmp/eval.json', false, () => false),
+    ).not.toThrow();
+    expect(() =>
+      validateEvalJsonOutWritable('tmp/eval.json', true, (path) => path === 'tmp/eval.json'),
     ).not.toThrow();
   });
 
