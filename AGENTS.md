@@ -55,7 +55,7 @@ Phonetiq/
 ## CONVENTIONS
 - Two deployable apps; root is coordination/docs only.
 - Frontend keeps business logic in hooks/lib, not in components.
-- Tests sit next to implementation as `*.test.ts(x)`; Vitest runs in both `web/` (145 tests) and `api/` (64 tests).
+- Tests sit next to implementation as `*.test.ts(x)`; Vitest runs in both `web/` (158 tests) and `api/` (59 tests).
 - Tailwind v4 is CSS-import driven: `web/src/index.css` imports `tokens.css`, `components.css`, `screens.css`.
 - Frontend API base is `VITE_API_URL + '/api'`; local dev falls back to Vite proxy.
 - Worker routes are mounted centrally in `api/src/index.ts`; route files export `*Routes` Hono instances.

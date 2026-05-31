@@ -27,7 +27,7 @@
 - `npm run dev` - Start Worker dev server (port 8787)
 - `npm run dev:frame` - Start frame-sentence profile (port 8791)
 - `npm run typecheck` - TypeScript check
-- `npm test` - Run Vitest tests (64 tests)
+- `npm test` - Run Vitest tests (59 tests)
 - `npm run eval` - Dialect-tagged frame-sentence recognition eval (7 s delay)
 - `npm run eval:fast` - Dialect-tagged frame-sentence eval (no delay)
 - `npm run eval:json` - Machine-readable JSON output for automation
@@ -52,15 +52,15 @@
 - `--json-out` is overwrite-safe by default and fails if the target file already exists unless `--json-out-overwrite` is set
 - Eval output includes both per-dialect and contrast-family rollups for diagnosis
 - Eval corpus now includes wider pilot coverage (`ship/sheep`, `pen/pan`, `cot/caught`, `bar/bore`, `cut/cart`, `peer/pear`, `hut/heart`)
-- `npm run db:generate` - Generate Drizzle migration SQL
+- `npx drizzle-kit generate` - Generate Drizzle migration SQL
 - `npm run db:migrate:local` - Apply migrations to local D1
 - `npm run db:seed:local` - Seed word pairs to local D1
-- `npx wrangler deploy` - Deploy Worker to Cloudflare
+- `npm run deploy` - Deploy Worker to Cloudflare
 
 ### Web (`web/`)
 - `npm run dev` - Start Vite dev server (port 5173, proxies /api to 8787)
 - `npm run build` - Typecheck + production build (outputs to `web/dist/`)
-- `npm test` - Run Vitest tests (145 tests)
+- `npm test` - Run Vitest tests (158 tests)
 - `npm run lint` - ESLint check
 - `npm run preview` - Preview production build locally
 

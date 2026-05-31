@@ -4,7 +4,7 @@
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare)](https://workers.cloudflare.com/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)](https://www.typescriptlang.org/)
-[![Tests](https://img.shields.io/badge/Tests-173%20passing-42b883?logo=vitest)](https://vitest.dev/)
+[![Tests](https://img.shields.io/badge/Tests-217%20passing-42b883?logo=vitest)](https://vitest.dev/)
 
 **Live:** [phonetiq.mihassan.com](https://phonetiq.mihassan.com) | **API:** [api.phonetiq.mihassan.com](https://api.phonetiq.mihassan.com)
 
@@ -230,10 +230,10 @@ Open http://localhost:5173 in your browser.
 ### Running tests
 
 ```bash
-# Web (145 tests)
+# Web (158 tests)
 cd web && npm test
 
-# API (64 tests)
+# API (59 tests)
 cd api && npm test
 ```
 
@@ -245,14 +245,14 @@ cd api && npm test
 cd api
 
 # Create production D1 database (copy the database_id into wrangler.toml)
-npx wrangler d1 create phonetiq-db
+npm run wrangler -- d1 create phonetiq-db
 
 # Apply migrations and seed data
-npx wrangler d1 migrations apply phonetiq-db --remote
-npx wrangler d1 execute phonetiq-db --file=src/db/seed.sql --remote
+npm run wrangler -- d1 migrations apply phonetiq-db --remote
+npm run wrangler -- d1 execute phonetiq-db --file=src/db/seed.sql --remote
 
 # Create production R2 bucket
-npx wrangler r2 bucket create phonetiq-audio
+npm run wrangler -- r2 bucket create phonetiq-audio
 
 # Create Pages project
 npx wrangler pages project create phonetiq --production-branch main
