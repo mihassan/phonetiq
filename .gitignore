@@ -12,3 +12,4 @@ dist/
 graphify-out/
 *.log
 docs/plans/
+api/tmp/

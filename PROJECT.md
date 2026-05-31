@@ -32,10 +32,14 @@
 - `npm run eval:fast` - Dialect-tagged frame-sentence eval (no delay)
 - `npm run eval:json` - Machine-readable JSON output for automation
 - `npm run eval:summary:json` - Compact summary-only JSON output for automation
+- `npm run eval:json:artifact` - Baseline full JSON artifact to `api/tmp/eval-report.json` (overwrite enabled)
+- `npm run eval:summary:json:artifact` - Baseline summary JSON artifact to `api/tmp/eval-summary.json` (overwrite enabled)
 - `npm run eval:guard` - Same eval with strict guardrail thresholds (fails on regressions)
 - `npm run eval:frame` - Frame-sentence eval on `dev:frame` (port 8791)
 - `npm run eval:frame:json` - Frame-profile eval JSON output for automation
 - `npm run eval:frame:summary:json` - Frame-profile compact summary-only JSON output
+- `npm run eval:frame:json:artifact` - Frame full JSON artifact to `api/tmp/eval-frame-report.json` (overwrite enabled)
+- `npm run eval:frame:summary:json:artifact` - Frame summary JSON artifact to `api/tmp/eval-frame-summary.json` (overwrite enabled)
 - `npm run eval:frame:guard` - Frame-profile eval with strict guardrail thresholds
 - `npm run eval -- --dialect uk_only` - Run only one target dialect's eval rows
 - `npm run eval -- --json-pretty` - Pretty-print JSON output for local inspection
