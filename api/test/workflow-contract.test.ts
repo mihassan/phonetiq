@@ -39,6 +39,6 @@ describe('deployment workflow contracts', () => {
     expect(workflow).toMatch(/d1 migrations apply phonetiq-db --local/);
     expect(workflow).toMatch(/Verify migrated D1 schema/);
     expect(workflow).toMatch(/sqlite_master/);
-    expect(workflow).toMatch(/target_dialect/);
+    expect(workflow).toMatch(/"name": "dialect"/);
   });
 });

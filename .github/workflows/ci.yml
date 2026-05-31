@@ -71,8 +71,8 @@ jobs:
 
           COLUMNS_OUTPUT="$(npm run wrangler -- d1 execute phonetiq-db --local --command "PRAGMA table_info(user_progress);")"
           echo "$COLUMNS_OUTPUT"
-          if ! printf '%s\n' "$COLUMNS_OUTPUT" | grep -q "target_dialect"; then
-            echo "Missing required column: user_progress.target_dialect"
+          if ! printf '%s\n' "$COLUMNS_OUTPUT" | grep -q '"name": "dialect"'; then
+            echo "Missing required column: user_progress.dialect"
             exit 1
           fi
         working-directory: api
