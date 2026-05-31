@@ -40,6 +40,7 @@
 - `npm run eval -- --dialect uk_only` - Run only one target dialect's eval rows
 - `npm run eval -- --json-pretty` - Pretty-print JSON output for local inspection
 - `npm run eval -- --summary-json-pretty` - Pretty-print summary-only JSON for local inspection
+- `npm run eval:summary:json -- --json-out ./tmp/eval-summary.json` - Write JSON artifact to file instead of stdout
 - `npm run eval:guard -- --min-dialect-accuracy 70` - Override guardrail thresholds
 - JSON outputs include `schemaVersion` and `outputMode` (`full` or `summary`) for stable automation parsing
 - JSON outputs include run metadata: `requestCount`, `errorCount`, and `elapsedMs`

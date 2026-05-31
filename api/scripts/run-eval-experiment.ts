@@ -1,10 +1,10 @@
 #!/usr/bin/env npx tsx
 /**
  * Usage:
- *   npx tsx scripts/run-eval-experiment.ts [--base-url http://localhost:8791] [--dialect us_only] [--json|--json-pretty|--summary-json|--summary-json-pretty]
+ *   npx tsx scripts/run-eval-experiment.ts [--base-url http://localhost:8791] [--dialect us_only] [--json|--json-pretty|--summary-json|--summary-json-pretty] [--json-out path]
  */
 import { execSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -15,9 +15,11 @@ import {
   filterEvalCorpus,
   readDialectFilterArg,
   readEvalGuardrailArgs,
+  readEvalJsonOutArg,
   readEvalOutputModeArgs,
   summarizeEvalResults,
   toContrastFamily,
+  validateEvalOutputArgs,
   type EvalGuardrailThresholds,
   type EvalPair,
   type EvalResult,
@@ -38,7 +40,9 @@ const LABEL = process.argv.includes('--label')
 const DIALECT_FILTER = readDialectFilterArg(process.argv);
 const EVAL_GUARDRAILS = readEvalGuardrailArgs(process.argv);
 const OUTPUT_MODE = readEvalOutputModeArgs(process.argv);
+const JSON_OUT_PATH = readEvalJsonOutArg(process.argv);
 const IS_JSON_OUTPUT = OUTPUT_MODE.json || OUTPUT_MODE.summaryJson;
+validateEvalOutputArgs(OUTPUT_MODE, JSON_OUT_PATH);
 const EVAL_CORPUS = filterEvalCorpus(DIALECT_EVAL_CORPUS, DIALECT_FILTER);
 const RATE_LIMIT_BATCH = 8;
 
@@ -196,6 +200,17 @@ function printGuardrailSettings(settings: EvalGuardrailThresholds) {
   console.log(`Guardrails: ${parts.join(', ')}`);
 }
 
+function emitJsonReport(report: unknown) {
+  const json = JSON.stringify(report, null, OUTPUT_MODE.pretty ? 2 : undefined);
+  if (JSON_OUT_PATH) {
+    mkdirSync(dirname(JSON_OUT_PATH), { recursive: true });
+    writeFileSync(JSON_OUT_PATH, `${json}\n`, 'utf8');
+    return;
+  }
+
+  console.log(json);
+}
+
 async function checkWorkerRunning() {
   try {
     const resp = await fetch(`${BASE_URL}/api/pairs?limit=1`);
@@ -337,7 +352,7 @@ async function main() {
         result: guardrailResult,
       },
     });
-    console.log(JSON.stringify(report, null, OUTPUT_MODE.pretty ? 2 : undefined));
+    emitJsonReport(report);
     if (guardrailResult && !guardrailResult.passed) {
       process.exit(1);
     }
@@ -359,7 +374,7 @@ async function main() {
         result: guardrailResult,
       },
     });
-    console.log(JSON.stringify(report, null, OUTPUT_MODE.pretty ? 2 : undefined));
+    emitJsonReport(report);
     if (guardrailResult && !guardrailResult.passed) {
       process.exit(1);
     }

@@ -355,6 +355,28 @@ export function readEvalOutputModeArgs(argv: string[]): EvalOutputMode {
   };
 }
 
+export function readEvalJsonOutArg(argv: string[]): string | null {
+  const jsonOutIndex = argv.indexOf('--json-out');
+  if (jsonOutIndex === -1) {
+    return null;
+  }
+
+  const value = argv[jsonOutIndex + 1];
+  if (!value || value.startsWith('--')) {
+    throw new Error('Missing value for --json-out. Provide a file path.');
+  }
+
+  return value;
+}
+
+export function validateEvalOutputArgs(outputMode: EvalOutputMode, jsonOutPath: string | null) {
+  if (jsonOutPath && !outputMode.json && !outputMode.summaryJson) {
+    throw new Error(
+      '--json-out requires --json/--json-pretty or --summary-json/--summary-json-pretty.',
+    );
+  }
+}
+
 function accuracyPct(bucket: EvalSummaryBucket) {
   return bucket.total === 0 ? 100 : (bucket.correct / bucket.total) * 100;
 }

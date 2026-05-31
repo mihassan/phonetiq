@@ -9,9 +9,11 @@ import {
   filterEvalCorpus,
   readDialectFilterArg,
   readEvalGuardrailArgs,
+  readEvalJsonOutArg,
   readEvalOutputModeArgs,
   summarizeEvalResults,
   toContrastFamily,
+  validateEvalOutputArgs,
   type EvalResult,
 } from '../src/lib/evalHarness';
 
@@ -119,6 +121,40 @@ describe('evalHarness', () => {
     expect(() =>
       readEvalOutputModeArgs(['node', 'script.ts', '--json', '--summary-json']),
     ).toThrow('Use either --json/--json-pretty or --summary-json/--summary-json-pretty');
+  });
+
+  it('parses the optional json output file flag', () => {
+    expect(readEvalJsonOutArg(['node', 'script.ts'])).toBeNull();
+    expect(readEvalJsonOutArg(['node', 'script.ts', '--json-out', 'tmp/eval.json'])).toBe(
+      'tmp/eval.json',
+    );
+  });
+
+  it('rejects missing json output file values', () => {
+    expect(() => readEvalJsonOutArg(['node', 'script.ts', '--json-out'])).toThrow(
+      'Missing value for --json-out',
+    );
+    expect(() => readEvalJsonOutArg(['node', 'script.ts', '--json-out', '--json'])).toThrow(
+      'Missing value for --json-out',
+    );
+  });
+
+  it('requires json output mode when json-out is used', () => {
+    expect(() =>
+      validateEvalOutputArgs(
+        { json: false, summaryJson: false, pretty: false },
+        'tmp/eval-summary.json',
+      ),
+    ).toThrow('--json-out requires --json/--json-pretty or --summary-json/--summary-json-pretty');
+    expect(() =>
+      validateEvalOutputArgs({ json: true, summaryJson: false, pretty: false }, 'tmp/eval.json'),
+    ).not.toThrow();
+    expect(() =>
+      validateEvalOutputArgs(
+        { json: false, summaryJson: true, pretty: false },
+        'tmp/eval-summary.json',
+      ),
+    ).not.toThrow();
   });
 
   it('filters the corpus by target dialect', () => {
