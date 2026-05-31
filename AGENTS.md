@@ -100,7 +100,15 @@ cd api && npm run deploy
 ```
 
 ## NOTES
-- CI is split: `.github/workflows/deploy-web.yml` triggers on `web/**`, `deploy-api.yml` on `api/**`.
+- CI/CD is now gated: `.github/workflows/ci.yml` runs path-filtered checks for API/Web on PRs and pushes to `main`.
+- Deploy remains split by path: `.github/workflows/deploy-web.yml` for `web/**`, `.github/workflows/deploy-api.yml` for `api/**`.
+- API deploy includes remote D1 migration + schema verification gates before Worker deploy.
+- After every `git push`, monitor GitHub Actions runs to completion and report success/failure with the first actionable error.
+- Cloudflare secrets must be aligned with the target account: `CLOUDFLARE_ACCOUNT_ID` must own `phonetiq-db`, and `CLOUDFLARE_API_TOKEN` requires Workers Scripts Edit + D1 Edit (+ Pages Edit for web deploy token reuse).
+- Standard triage commands:
+  - `gh run list --limit 10`
+  - `gh run view <run_id> --log-failed`
+  - `gh run rerun <run_id>`
 - Local audio generation is macOS-only because `scripts/generate-audio.sh` uses `say`.
 - Worker rate limiting is intentionally asymmetric: AI endpoint 10 req/min/IP, general API 100 req/min/IP.
 - TypeScript LSP is configured but not installed in this environment; use direct reads/grep/AST search when symbol tooling is unavailable.
