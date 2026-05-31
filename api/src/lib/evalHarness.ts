@@ -16,6 +16,7 @@ export interface EvalPair {
 }
 
 export interface EvalResult {
+  family: string;
   word: string;
   expectedWord: string;
   candidate1: string;
@@ -38,9 +39,21 @@ export interface EvalSummaryBucket {
   aliasResolved: number;
 }
 
+export interface EvalFamilySummaryBucket {
+  family: string;
+  label: string;
+  total: number;
+  correct: number;
+  wrong: number;
+  noMatch: number;
+  aliasResolved: number;
+  byDialect: EvalSummaryBucket[];
+}
+
 export interface EvalSummary {
   overall: EvalSummaryBucket;
   byDialect: EvalSummaryBucket[];
+  byFamily: EvalFamilySummaryBucket[];
 }
 
 export interface EvalGuardrailThresholds {
@@ -75,6 +88,15 @@ export const DIALECT_EVAL_CORPUS: EvalPair[] = [
 ];
 
 const DIALECT_ORDER: TargetDialect[] = ['us_only', 'uk_only', 'au_only'];
+
+export function toContrastFamily(word1: string, word2: string): string {
+  return [word1, word2].sort().join('|');
+}
+
+function familyLabel(family: string) {
+  const [wordA, wordB] = family.split('|');
+  return `${wordA} <-> ${wordB}`;
+}
 
 function buildSummaryBucket(
   label: string,
@@ -134,6 +156,17 @@ export function filterEvalCorpus(
 }
 
 export function summarizeEvalResults(results: EvalResult[]) {
+  const byFamily = new Map<string, EvalResult[]>();
+  for (const result of results) {
+    const family = result.family || toContrastFamily(result.candidate1, result.candidate2);
+    const existing = byFamily.get(family);
+    if (existing) {
+      existing.push(result);
+    } else {
+      byFamily.set(family, [result]);
+    }
+  }
+
   return {
     overall: buildSummaryBucket('Overall', results),
     byDialect: DIALECT_ORDER
@@ -146,6 +179,32 @@ export function summarizeEvalResults(results: EvalResult[]) {
         return buildSummaryBucket(getDialectPromptLabel(dialect), dialectResults, dialect);
       })
       .filter((bucket): bucket is EvalSummaryBucket => bucket !== null),
+    byFamily: Array.from(byFamily.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([family, familyResults]) => {
+        const overall = buildSummaryBucket(familyLabel(family), familyResults);
+        const byDialect = DIALECT_ORDER
+          .map((dialect) => {
+            const dialectResults = familyResults.filter((result) => result.dialect === dialect);
+            if (dialectResults.length === 0) {
+              return null;
+            }
+
+            return buildSummaryBucket(getDialectPromptLabel(dialect), dialectResults, dialect);
+          })
+          .filter((bucket): bucket is EvalSummaryBucket => bucket !== null);
+
+        return {
+          family,
+          label: overall.label,
+          total: overall.total,
+          correct: overall.correct,
+          wrong: overall.wrong,
+          noMatch: overall.noMatch,
+          aliasResolved: overall.aliasResolved,
+          byDialect,
+        };
+      }),
   } satisfies EvalSummary;
 }
 

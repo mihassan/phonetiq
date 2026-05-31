@@ -17,6 +17,7 @@ import {
   readDialectFilterArg,
   readEvalGuardrailArgs,
   summarizeEvalResults,
+  toContrastFamily,
   type EvalGuardrailThresholds,
   type EvalPair,
   type EvalResult,
@@ -159,6 +160,20 @@ function printDialectSummary(summary: EvalSummary) {
   }
 }
 
+function printFamilySummary(summary: EvalSummary) {
+  console.log('\nBy contrast family');
+  for (const bucket of summary.byFamily) {
+    console.log(
+      `- ${bucket.label} (N=${bucket.total}): Correct ${bucket.correct} (${pct(bucket.correct, bucket.total)}), Wrong ${bucket.wrong} (${pct(bucket.wrong, bucket.total)}), No-match ${bucket.noMatch} (${pct(bucket.noMatch, bucket.total)}), Alias-resolved ${bucket.aliasResolved}`,
+    );
+    for (const dialectBucket of bucket.byDialect) {
+      console.log(
+        `  ${dialectBucket.label} (${dialectBucket.dialect}, N=${dialectBucket.total}): Correct ${dialectBucket.correct} (${pct(dialectBucket.correct, dialectBucket.total)}), Wrong ${dialectBucket.wrong} (${pct(dialectBucket.wrong, dialectBucket.total)}), No-match ${dialectBucket.noMatch} (${pct(dialectBucket.noMatch, dialectBucket.total)}), Alias-resolved ${dialectBucket.aliasResolved}`,
+      );
+    }
+  }
+}
+
 function printGuardrailSettings(settings: EvalGuardrailThresholds) {
   const parts: string[] = [];
   if (settings.minOverallAccuracyPct !== undefined) {
@@ -246,6 +261,7 @@ async function main() {
             pair.dialect,
           );
           results.push({
+            family: toContrastFamily(pair.word1, pair.word2),
             word: targetWord,
             expectedWord: targetWord,
             candidate1: pair.word1,
@@ -260,6 +276,7 @@ async function main() {
         } catch (error) {
           console.error(`\nERROR recognizing ${targetWord} (${voice}): ${error}`);
           results.push({
+            family: toContrastFamily(pair.word1, pair.word2),
             word: targetWord,
             expectedWord: targetWord,
             candidate1: pair.word1,
@@ -280,6 +297,7 @@ async function main() {
 
   printTable(results, LABEL, summary);
   printDialectSummary(summary);
+  printFamilySummary(summary);
   if (EVAL_GUARDRAILS) {
     const guardrailResult = evaluateEvalGuardrails(summary, EVAL_GUARDRAILS);
     if (guardrailResult.passed) {

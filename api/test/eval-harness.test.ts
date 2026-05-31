@@ -7,6 +7,7 @@ import {
   readDialectFilterArg,
   readEvalGuardrailArgs,
   summarizeEvalResults,
+  toContrastFamily,
   type EvalResult,
 } from '../src/lib/evalHarness';
 
@@ -71,6 +72,7 @@ describe('evalHarness', () => {
   it('summarizes totals overall and by dialect, including alias-resolved runs', () => {
     const results: EvalResult[] = [
       {
+        family: toContrastFamily('bar', 'bore'),
         word: 'bore',
         expectedWord: 'bore',
         candidate1: 'bar',
@@ -83,6 +85,7 @@ describe('evalHarness', () => {
         correct: true,
       },
       {
+        family: toContrastFamily('ship', 'sheep'),
         word: 'sheep',
         expectedWord: 'sheep',
         candidate1: 'ship',
@@ -95,6 +98,7 @@ describe('evalHarness', () => {
         correct: true,
       },
       {
+        family: toContrastFamily('peer', 'pear'),
         word: 'pear',
         expectedWord: 'pear',
         candidate1: 'peer',
@@ -143,11 +147,74 @@ describe('evalHarness', () => {
         aliasResolved: 0,
       },
     ]);
+    expect(summary.byFamily).toEqual([
+      {
+        family: 'bar|bore',
+        label: 'bar <-> bore',
+        total: 1,
+        correct: 1,
+        wrong: 0,
+        noMatch: 0,
+        aliasResolved: 1,
+        byDialect: [
+          {
+            dialect: 'us_only',
+            label: 'American English',
+            total: 1,
+            correct: 1,
+            wrong: 0,
+            noMatch: 0,
+            aliasResolved: 1,
+          },
+        ],
+      },
+      {
+        family: 'pear|peer',
+        label: 'pear <-> peer',
+        total: 1,
+        correct: 0,
+        wrong: 0,
+        noMatch: 1,
+        aliasResolved: 0,
+        byDialect: [
+          {
+            dialect: 'au_only',
+            label: 'Australian English',
+            total: 1,
+            correct: 0,
+            wrong: 0,
+            noMatch: 1,
+            aliasResolved: 0,
+          },
+        ],
+      },
+      {
+        family: 'sheep|ship',
+        label: 'sheep <-> ship',
+        total: 1,
+        correct: 1,
+        wrong: 0,
+        noMatch: 0,
+        aliasResolved: 0,
+        byDialect: [
+          {
+            dialect: 'uk_only',
+            label: 'British English',
+            total: 1,
+            correct: 1,
+            wrong: 0,
+            noMatch: 0,
+            aliasResolved: 0,
+          },
+        ],
+      },
+    ]);
   });
 
   it('evaluates guardrail pass/fail thresholds', () => {
     const results: EvalResult[] = [
       {
+        family: toContrastFamily('ship', 'sheep'),
         word: 'ship',
         expectedWord: 'ship',
         candidate1: 'ship',
@@ -160,6 +227,7 @@ describe('evalHarness', () => {
         correct: true,
       },
       {
+        family: toContrastFamily('ship', 'sheep'),
         word: 'sheep',
         expectedWord: 'sheep',
         candidate1: 'ship',
@@ -172,6 +240,7 @@ describe('evalHarness', () => {
         correct: false,
       },
       {
+        family: toContrastFamily('pen', 'pan'),
         word: 'pen',
         expectedWord: 'pen',
         candidate1: 'pen',
@@ -184,6 +253,7 @@ describe('evalHarness', () => {
         correct: true,
       },
       {
+        family: toContrastFamily('pen', 'pan'),
         word: 'pan',
         expectedWord: 'pan',
         candidate1: 'pen',
