@@ -165,6 +165,38 @@ Phonetiq/
 - Cloudflare account (for Workers AI; D1 and R2 work locally without auth)
 - Google Cloud service account credentials for Text-to-Speech generation
 
+### Quickstart (2 terminals)
+
+From a fresh clone:
+
+```bash
+# Terminal 1
+cd api
+npm install
+npm run db:migrate:local
+npm run db:seed:local
+npm run dev
+
+# Terminal 2
+cd web
+npm install
+npm run dev
+```
+
+Then open http://localhost:5173.
+
+### Environment variables
+
+| App | Variable | Required | Purpose | Example |
+| --- | --- | --- | --- | --- |
+| `web` | `VITE_API_URL` | Optional in local, required in deployed builds | Base origin used to build `API_BASE` (`<origin>/api`) | `https://api.phonetiq.mihassan.com` |
+| `api` | `WEB_ORIGIN` | Yes | Primary allowed frontend origin + OAuth success redirect base | `https://phonetiq.mihassan.com` |
+| `api` | `CORS_ALLOWED_ORIGINS` | Optional | Extra comma-separated CORS allowlist origins | `https://phonetiq.pages.dev` |
+| `api` | `GOOGLE_CLIENT_ID` | Yes for OAuth | Google OAuth client ID | `123...apps.googleusercontent.com` |
+| `api` | `GOOGLE_CLIENT_SECRET` | Yes for OAuth | Google OAuth client secret (set as Wrangler secret) | `(secret)` |
+| `api` | `SESSION_SECRET` | Yes for OAuth sessions | Cookie signing key (set as Wrangler secret) | `(secret)` |
+| `scripts/generate-audio.*` | `GOOGLE_APPLICATION_CREDENTIALS` or `GOOGLE_CREDENTIALS_JSON` | Yes for TTS generation | Auth for Google Text-to-Speech | `/abs/path/service-account.json` |
+
 ### 1. Install dependencies
 
 ```bash
@@ -237,6 +269,86 @@ cd web && npm test
 cd api && npm test
 ```
 
+## API contract examples
+
+### `GET /api/pairs?dialect=uk&category=vowel_long&limit=2`
+
+```json
+{
+  "pairs": [
+    {
+      "id": 101,
+      "word1": "ship",
+      "word2": "sheep",
+      "phoneme_type": "vowel_long",
+      "dialect_filter": "all",
+      "contrast_strength": "supported",
+      "contrast_note": null
+    }
+  ],
+  "count": 1
+}
+```
+
+### `POST /api/recognize` (multipart form)
+
+Form fields:
+- `audio` (required file)
+- `candidate1`, `candidate2` (optional but recommended)
+- `dialect` (`us` \| `uk` \| `au`)
+- `debug=1` (optional, local debug only)
+
+Success response shape:
+
+```json
+{
+  "transcript": "the word is ship",
+  "matchedWord": "ship",
+  "matchType": "exact",
+  "debug": null
+}
+```
+
+### `GET /api/progress` (authenticated)
+
+```json
+{
+  "store": {
+    "totalAttempts": 120,
+    "totalCorrect": 94,
+    "currentStreak": 0,
+    "bestStreak": 8,
+    "sessionsCount": 41,
+    "completedPairIds": [3, 9, 42],
+    "lastPracticedAt": "2026-05-31T22:16:10.000Z",
+    "pairs": {
+      "42:uk": {
+        "pairId": 42,
+        "category": "vowel_long",
+        "dialect": "uk",
+        "word1Attempts": 4,
+        "word1Correct": 3,
+        "word2Attempts": 5,
+        "word2Correct": 4,
+        "pairCompletions": 1,
+        "exposureCount": 9,
+        "recentIncorrectCount": 1,
+        "successStreak": 2,
+        "lastSeenAt": "2026-05-31T22:16:10.000Z",
+        "lastCorrectAt": "2026-05-31T22:16:10.000Z"
+      }
+    }
+  }
+}
+```
+
+## Dialect data model notes
+
+- **Target dialect** is always explicit in the app (`us`, `uk`, `au`); there is no UI mode for `all`.
+- Dataset rows still use `dialect_filter` (`all`, `us_only`, `uk_only`, `au_only`) to model availability.
+- API queries include both shared and target-specific rows via `WHERE word_pairs.dialect_filter IN ('all', <target>)`.
+- Progress keys are dialect-partitioned (`<pairId>:<targetDialect>`) so one pair can have separate mastery per dialect.
+
 ## Deployment
 
 ### 1. Provision Cloudflare infrastructure
@@ -303,6 +415,32 @@ Both the API Worker and frontend are auto-deployed via GitHub Actions on push to
 - [Product Requirements (PRD)](docs/PRD.md)
 - [Design Document](docs/DESIGN.md)
 - [Project Memory](PROJECT.md)
+
+## Troubleshooting
+
+- **Mic permission denied or stuck on "Starting mic..."**: allow microphone access in the browser tab/site settings, then retry recording.
+- **`POST /api/recognize` returns 429**: this is the AI endpoint limiter (10 req/min/IP). Wait one minute before retrying.
+- **`POST /api/recognize` returns 413**: upload is over 1 MB; keep recordings short and speech-focused.
+- **No audio playback for words**: verify assets exist in R2 under `<dialect>/default/<word>.m4a` and that `AUDIO_BUCKET` binding is configured.
+- **Frontend calls wrong API host**: set `VITE_API_URL` for deployed builds; local dev should use `/api` proxy.
+- **CORS errors**: ensure `WEB_ORIGIN` matches the active frontend origin and add extra domains to `CORS_ALLOWED_ORIGINS`.
+
+## Release checklist
+
+Before pushing to `main`:
+
+1. `cd web && npm run lint && npm run build && npm test`
+2. `cd api && npm run typecheck && npm test`
+3. If recognition logic changed, run guardrails (`cd api && npm run eval:fast:guard` and `npm run eval:frame:guard` with `dev:frame` running).
+4. Confirm required GitHub secrets are set: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`.
+5. Verify workflow coverage: API deploy is `.github/workflows/deploy-api.yml` (`api/**`), web deploy is `.github/workflows/deploy-web.yml` (`web/**`).
+
+## Contributing
+
+- Keep changes scoped to a single feature/fix per commit when possible.
+- Follow existing architecture boundaries: UI components stay presentational; logic belongs in hooks/lib.
+- Use `web/src/lib/types.ts` as the frontend type source of truth when threading new data.
+- Mount new API routes centrally in `api/src/index.ts`.
 
 ## License
 
