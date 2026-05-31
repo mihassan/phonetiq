@@ -2,30 +2,6 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from './App';
 
-function getMobileModeButton(name: RegExp) {
-  const buttons = screen.getAllByRole('button', { name });
-  const mobileButton = buttons.find((button) => button.className.includes('flex-col'));
-
-  if (!mobileButton) {
-    throw new Error(`Missing mobile mode button for ${name.toString()}`);
-  }
-
-  return mobileButton;
-}
-
-function hasHiddenAncestor(element: HTMLElement) {
-  let current: HTMLElement | null = element.parentElement;
-
-  while (current) {
-    if (current.className.split(/\s+/).includes('hidden')) {
-      return true;
-    }
-    current = current.parentElement;
-  }
-
-  return false;
-}
-
 const fetchPairsMock = vi.fn();
 const fetchCategoriesMock = vi.fn();
 
@@ -225,7 +201,7 @@ describe('App', () => {
     expect(screen.getByTestId('practice-stage')).toBeInTheDocument();
   });
 
-  it('uses themed header and mode-toggle styling aligned with the design direction', async () => {
+  it('renders a single responsive mode tab bar across breakpoints', async () => {
     const user = userEvent.setup();
     render(<App />);
 
@@ -236,40 +212,16 @@ describe('App', () => {
     const debugToggle = screen.getByTestId('dev-debug-toggle');
 
     expect(header.className).toContain('ui-topbar');
-    expect(toggle.className).toContain('ui-card-muted');
+    expect(toggle.className).toContain('ui-bottom-nav');
+    expect(toggle.className).toContain('fixed');
+    expect(toggle).toHaveTextContent(/learn/i);
+    expect(toggle).toHaveTextContent(/categories/i);
+    expect(toggle).toHaveTextContent(/practice/i);
+    expect(toggle).toHaveTextContent(/profile/i);
     expect(debugToggle).toHaveTextContent(/debug on/i);
 
     await user.click(debugToggle);
     expect(debugToggle).toHaveTextContent(/debug off/i);
-  });
-
-  it('keeps the mobile mode selector outside hidden ancestors and lets it switch screens', async () => {
-    const user = userEvent.setup();
-    render(<App />);
-
-    await screen.findByText(/pair 1 of 2/i);
-
-    const learnButton = getMobileModeButton(/^learn$/i);
-    const categoriesButton = getMobileModeButton(/^categories$/i);
-    const practiceButton = getMobileModeButton(/^practice$/i);
-    const profileButton = getMobileModeButton(/^profile$/i);
-
-    expect(hasHiddenAncestor(learnButton)).toBe(false);
-    expect(hasHiddenAncestor(categoriesButton)).toBe(false);
-    expect(hasHiddenAncestor(practiceButton)).toBe(false);
-    expect(hasHiddenAncestor(profileButton)).toBe(false);
-
-    await user.click(categoriesButton);
-    expect(screen.getByTestId('categories-stage')).toBeInTheDocument();
-
-    await user.click(practiceButton);
-    expect(screen.getByTestId('practice-stage')).toBeInTheDocument();
-
-    await user.click(profileButton);
-    expect(screen.getByTestId('profile-stage')).toBeInTheDocument();
-
-    await user.click(learnButton);
-    expect(screen.getByTestId('learn-stage')).toBeInTheDocument();
   });
 
   it('uses themed shell root background and text colors', async () => {
