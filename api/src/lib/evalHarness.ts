@@ -74,7 +74,11 @@ export interface EvalOutputMode {
   pretty: boolean;
 }
 
+export type EvalJsonOutputMode = 'full' | 'summary';
+
 export interface EvalJsonReport {
+  schemaVersion: number;
+  outputMode: EvalJsonOutputMode;
   generatedAt: string;
   baseUrl: string;
   label: string;
@@ -92,6 +96,8 @@ export interface EvalJsonReport {
 }
 
 export interface EvalSummaryJsonReport {
+  schemaVersion: number;
+  outputMode: EvalJsonOutputMode;
   generatedAt: string;
   baseUrl: string;
   label: string;
@@ -113,6 +119,7 @@ export const DEFAULT_EVAL_GUARDRAILS: Required<EvalGuardrailThresholds> = {
   maxOverallNoMatchPct: 30,
   maxDialectNoMatchPct: 40,
 };
+export const EVAL_JSON_SCHEMA_VERSION = 1;
 
 const DIALECT_ORDER: TargetDialect[] = ['us_only', 'uk_only', 'au_only'];
 const DIALECT_VOICE_BY_TARGET: Record<TargetDialect, EvalVoice> = {
@@ -421,6 +428,8 @@ export function buildEvalJsonReport(input: {
   };
 }): EvalJsonReport {
   return {
+    schemaVersion: EVAL_JSON_SCHEMA_VERSION,
+    outputMode: 'full',
     generatedAt: input.generatedAt,
     baseUrl: input.baseUrl,
     label: input.label,
@@ -452,6 +461,8 @@ export function buildEvalSummaryJsonReport(input: {
   };
 }): EvalSummaryJsonReport {
   return {
+    schemaVersion: EVAL_JSON_SCHEMA_VERSION,
+    outputMode: 'summary',
     generatedAt: input.generatedAt,
     baseUrl: input.baseUrl,
     label: input.label,

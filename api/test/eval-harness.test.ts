@@ -4,6 +4,7 @@ import {
   buildEvalSummaryJsonReport,
   DEFAULT_EVAL_GUARDRAILS,
   DIALECT_EVAL_CORPUS,
+  EVAL_JSON_SCHEMA_VERSION,
   evaluateEvalGuardrails,
   filterEvalCorpus,
   readDialectFilterArg,
@@ -384,6 +385,8 @@ describe('evalHarness', () => {
     });
 
     expect(report).toEqual({
+      schemaVersion: EVAL_JSON_SCHEMA_VERSION,
+      outputMode: 'full',
       generatedAt: '2026-01-01T00:00:00.000Z',
       baseUrl: 'http://localhost:8787',
       label: 'FRAME SENTENCE',
@@ -433,6 +436,8 @@ describe('evalHarness', () => {
     });
 
     expect(report).toEqual({
+      schemaVersion: EVAL_JSON_SCHEMA_VERSION,
+      outputMode: 'summary',
       generatedAt: '2026-01-01T00:00:00.000Z',
       baseUrl: 'http://localhost:8787',
       label: 'FRAME SENTENCE',
