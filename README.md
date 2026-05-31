@@ -44,6 +44,7 @@ Most pronunciation apps use browser-native speech recognition which is flaky acr
 - Audio available in three dialects: US English, British English, Australian English
 - Pilot `vowel_long` metadata now marks some dialect-specific contrasts as `supported`, `weak`, or unavailable for selection/filtering, including a shared non-rhotic `hut`/`heart` family that is taught for UK/AU but filtered for US
 - Learn and Practice now surface pilot dialect notes so users can see when a contrast is subtle or being treated specially for the selected dialect
+- Local and cloud progress now keep separate mastery records per target dialect for the same pair
 - Dataset now includes 400+ seeded pairs with `all`, `uk_only`, `us_only`, and an initial `au_only` starter set
 
 ### 🔒 Production-Ready
@@ -66,7 +67,7 @@ Most pronunciation apps use browser-native speech recognition which is flaky acr
 - Audio support for three dialects: `en-US`, `en-GB`, `en-AU` with one default voice per dialect
 - **Smart speech recognition** with mic warm-up, noise detection, and silence trimming
 - Adaptive Practice sessions: 15-pair batches with 5 weak-pair quota + unseen/medium-weak filler
-- Local progress tracking (attempts, accuracy, completions, streaks, weak-pair signals)
+- Local-first progress tracking with dialect-partitioned pair mastery and cloud sync
 - Profile stage with key stats + weak-pair practice action
 - Cross-platform speech recognition using `MediaRecorder` + Workers AI (`@cf/openai/whisper-large-v3-turbo`)
 - Candidate-constrained recognition (2 target words) with explicit `no_match` fallback

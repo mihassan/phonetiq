@@ -1,4 +1,5 @@
 import { coerceTargetDialect } from './dialects';
+import { getPairProgressKey } from './progressKeys';
 import type { PairProgress, ProgressAttemptEvent, ProgressStore } from './types';
 
 export const PROGRESS_STORAGE_KEY = 'phonetiq.progress.v1';
@@ -83,13 +84,27 @@ function normalizePairProgress(pair: PairProgress): PairProgress {
 }
 
 export function normalizeProgressStore(store: ProgressStore): ProgressStore {
+  const normalizedPairs = Object.values(store.pairs ?? {}).reduce<Record<string, PairProgress>>(
+    (acc, value) => {
+      const pair = normalizePairProgress(value);
+      acc[getPairProgressKey(pair.pairId, pair.dialect)] = pair;
+      return acc;
+    },
+    {},
+  );
+
   return {
     ...createEmptyProgressStore(),
     ...store,
-    completedPairIds: Array.isArray(store.completedPairIds) ? store.completedPairIds : [],
-    pairs: Object.fromEntries(
-      Object.entries(store.pairs ?? {}).map(([key, value]) => [key, normalizePairProgress(value)]),
+    completedPairIds: Array.from(
+      new Set([
+        ...(Array.isArray(store.completedPairIds) ? store.completedPairIds : []),
+        ...Object.values(normalizedPairs)
+          .filter((pair) => pair.pairCompletions > 0)
+          .map((pair) => pair.pairId),
+      ]),
     ),
+    pairs: normalizedPairs,
   };
 }
 
@@ -123,7 +138,7 @@ export function resetProgressStore() {
 
 export function updateProgressForAttempt(event: ProgressAttemptEvent): ProgressStore {
   const store = loadProgressStore();
-  const key = String(event.pairId);
+  const key = getPairProgressKey(event.pairId, event.dialect);
   const pair = store.pairs[key] ?? createPairProgress(event);
 
   if (pair.exposureCount === 0) {

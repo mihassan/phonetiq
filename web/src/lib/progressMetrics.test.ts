@@ -5,6 +5,7 @@ import {
   getOverallAccuracy,
   getProfileSummary,
 } from './progressMetrics';
+import { getPairProgressKey } from './progressKeys';
 import { scorePairForPractice } from './pairSelection';
 import type { Category, ProgressStore, WordPair } from './types';
 
@@ -43,7 +44,7 @@ const store: ProgressStore = {
   completedPairIds: [1],
   lastPracticedAt: '2026-04-20T12:00:00.000Z',
   pairs: {
-    '1': {
+    [getPairProgressKey(1, 'us_only')]: {
       pairId: 1,
       category: 'vowel_short',
       dialect: 'us_only',
@@ -58,7 +59,7 @@ const store: ProgressStore = {
       lastSeenAt: '2026-04-20T11:59:00.000Z',
       lastCorrectAt: '2026-04-20T11:59:00.000Z',
     },
-    '2': {
+    [getPairProgressKey(2, 'us_only')]: {
       pairId: 2,
       category: 'fricative',
       dialect: 'us_only',
@@ -73,6 +74,21 @@ const store: ProgressStore = {
       lastSeenAt: '2026-04-20T12:00:00.000Z',
       lastCorrectAt: '2026-04-20T11:58:00.000Z',
     },
+    [getPairProgressKey(1, 'uk_only')]: {
+      pairId: 1,
+      category: 'vowel_short',
+      dialect: 'uk_only',
+      word1Attempts: 4,
+      word1Correct: 1,
+      word2Attempts: 4,
+      word2Correct: 1,
+      pairCompletions: 0,
+      exposureCount: 4,
+      recentIncorrectCount: 2,
+      successStreak: 0,
+      lastSeenAt: '2026-04-20T12:01:00.000Z',
+      lastCorrectAt: '2026-04-20T11:57:00.000Z',
+    },
   },
 };
 
@@ -82,7 +98,7 @@ describe('progressMetrics', () => {
   });
 
   it('builds category progress from real pair stats', () => {
-    const progress = buildCategoryProgress(categories, pairs, store);
+    const progress = buildCategoryProgress(categories, pairs, store, 'us_only');
 
     expect(progress.vowel_short.completedPairs).toBe(1);
     expect(progress.vowel_short.accuracy).toBe(80);
@@ -91,14 +107,14 @@ describe('progressMetrics', () => {
   });
 
   it('returns weak pairs sorted by weakness score', () => {
-    const weakPairs = buildWeakPairs(pairs, store, 2);
+    const weakPairs = buildWeakPairs(pairs, store, 'us_only', 2);
 
     expect(weakPairs[0].pair.id).toBe(2);
     expect(weakPairs[1].pair.id).toBe(1);
   });
 
   it('builds profile summary stats', () => {
-    const summary = getProfileSummary(pairs, categories, store);
+    const summary = getProfileSummary(pairs, categories, store, 'us_only');
 
     expect(summary.totalAttempts).toBe(10);
     expect(summary.accuracy).toBe(60);
@@ -110,12 +126,21 @@ describe('progressMetrics', () => {
   });
 
   it('buildWeakPairs ranks pairs in the same order as scorePairForPractice', () => {
-    const weakPairs = buildWeakPairs(pairs, store, 2);
+    const weakPairs = buildWeakPairs(pairs, store, 'us_only', 2);
 
     expect(weakPairs[0].pair.id).toBe(2);
     expect(weakPairs[1].pair.id).toBe(1);
 
-    expect(weakPairs[0].weaknessScore).toBe(scorePairForPractice(pairs[1], store));
-    expect(weakPairs[1].weaknessScore).toBe(scorePairForPractice(pairs[0], store));
+    expect(weakPairs[0].weaknessScore).toBe(scorePairForPractice(pairs[1], store, 'us_only'));
+    expect(weakPairs[1].weaknessScore).toBe(scorePairForPractice(pairs[0], store, 'us_only'));
+  });
+
+  it('keeps profile totals scoped to the selected dialect', () => {
+    const summary = getProfileSummary(pairs, categories, store, 'uk_only');
+
+    expect(summary.totalAttempts).toBe(8);
+    expect(summary.totalCorrect).toBe(2);
+    expect(summary.completedPairs).toBe(0);
+    expect(summary.accuracy).toBe(25);
   });
 });

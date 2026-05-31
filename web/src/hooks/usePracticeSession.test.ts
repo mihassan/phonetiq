@@ -1,5 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { usePracticeSession } from './usePracticeSession';
+import { getPairProgressKey } from '../lib/progressKeys';
 
 const fetchPairsMock = vi.fn();
 const fetchCategoriesMock = vi.fn();
@@ -267,8 +268,8 @@ describe('usePracticeSession', () => {
 
     expect(result.current.progressStore.totalAttempts).toBe(1);
     expect(result.current.progressStore.totalCorrect).toBe(1);
-    expect(result.current.progressStore.pairs['1'].word1Attempts).toBe(1);
-    expect(result.current.progressStore.pairs['1'].word1Correct).toBe(1);
+    expect(result.current.progressStore.pairs[getPairProgressKey(1, 'us_only')].word1Attempts).toBe(1);
+    expect(result.current.progressStore.pairs[getPairProgressKey(1, 'us_only')].word1Correct).toBe(1);
   });
 
   it('uses adaptive next selection in practice mode based on weakness', async () => {

@@ -1,4 +1,5 @@
-import type { ProgressStore, WordPair } from './types';
+import { getPairProgress } from './progressKeys';
+import type { Dialect, ProgressStore, WordPair } from './types';
 
 interface BuildPracticeBatchOptions {
   batchSize?: number;
@@ -6,8 +7,8 @@ interface BuildPracticeBatchOptions {
   random?: () => number;
 }
 
-function getAttemptsAndCorrect(pairId: number, store: ProgressStore) {
-  const progress = store.pairs[String(pairId)];
+function getAttemptsAndCorrect(pairId: number, dialect: Dialect, store: ProgressStore) {
+  const progress = getPairProgress(store, pairId, dialect);
   if (!progress) return { attempts: 0, correct: 0, recentIncorrect: 0, successStreak: 0, lastSeenAt: null };
 
   const attempts = progress.word1Attempts + progress.word2Attempts;
@@ -30,8 +31,8 @@ function isUnavailableContrast(pair: WordPair) {
   return getContrastStrength(pair) === 'unavailable';
 }
 
-function getSelectionScore(pair: WordPair, store: ProgressStore, now?: string) {
-  const baseScore = scorePairForPractice(pair, store, now);
+function getSelectionScore(pair: WordPair, store: ProgressStore, dialect: Dialect, now?: string) {
+  const baseScore = scorePairForPractice(pair, store, dialect, now);
   return getContrastStrength(pair) === 'weak'
     ? Math.max(2, baseScore - 10)
     : baseScore;
@@ -39,9 +40,14 @@ function getSelectionScore(pair: WordPair, store: ProgressStore, now?: string) {
 
 const DECAY_THRESHOLD_MS = 7 * 24 * 60 * 60 * 1000;
 
-export function scorePairForPractice(pair: WordPair, store: ProgressStore, now?: string) {
+export function scorePairForPractice(
+  pair: WordPair,
+  store: ProgressStore,
+  dialect: Dialect,
+  now?: string,
+) {
   const { attempts, correct, recentIncorrect, successStreak, lastSeenAt } =
-    getAttemptsAndCorrect(pair.id, store);
+    getAttemptsAndCorrect(pair.id, dialect, store);
 
   if (attempts === 0) {
     return 48;
@@ -65,11 +71,12 @@ export function scorePairForPractice(pair: WordPair, store: ProgressStore, now?:
 export function buildWeakPairQueue(
   pairs: WordPair[],
   store: ProgressStore,
+  dialect: Dialect,
   limit = 10,
 ): WordPair[] {
   return pairs
     .filter((pair) => !isUnavailableContrast(pair))
-    .map((pair) => ({ pair, score: getSelectionScore(pair, store) }))
+    .map((pair) => ({ pair, score: getSelectionScore(pair, store, dialect) }))
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
     .map((entry) => entry.pair);
@@ -78,6 +85,7 @@ export function buildWeakPairQueue(
 export function pickAdaptiveNextIndex(
   pairs: WordPair[],
   store: ProgressStore,
+  dialect: Dialect,
   currentIndex: number,
   random: () => number = Math.random,
 ) {
@@ -86,7 +94,7 @@ export function pickAdaptiveNextIndex(
   const weightedCandidates = pairs
     .map((pair, index) => ({
       index,
-      score: isUnavailableContrast(pair) ? 0 : getSelectionScore(pair, store),
+      score: isUnavailableContrast(pair) ? 0 : getSelectionScore(pair, store, dialect),
     }))
     .filter((entry) => entry.index !== currentIndex)
     .filter((entry) => entry.score > 0)
@@ -122,6 +130,7 @@ function shuffle<T>(items: T[], random: () => number) {
 export function buildPracticeBatch(
   pairs: WordPair[],
   store: ProgressStore,
+  dialect: Dialect,
   options: BuildPracticeBatchOptions = {},
 ) {
   const batchSize = options.batchSize ?? 15;
@@ -136,12 +145,12 @@ export function buildPracticeBatch(
 
   const scored = eligiblePairs
     .map((pair) => {
-      const pairProgress = store.pairs[String(pair.id)];
+      const pairProgress = getPairProgress(store, pair.id, dialect);
       const attempts = pairProgress ? pairProgress.word1Attempts + pairProgress.word2Attempts : 0;
       return {
         pair,
         attempts,
-        score: getSelectionScore(pair, store),
+        score: getSelectionScore(pair, store, dialect),
       };
     })
     .sort((a, b) => b.score - a.score);

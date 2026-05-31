@@ -74,7 +74,7 @@ function App() {
           return;
         }
 
-        if (profileSummary.totalAttempts > 0) {
+        if (progressStore.totalAttempts > 0) {
           const shouldImport = window.confirm(
             'Import your local progress to your cloud profile?',
           );
@@ -89,7 +89,6 @@ function App() {
   }, [
     isAuthenticated,
     applyProgressStore,
-    profileSummary.totalAttempts,
     progressStore,
   ]);
 

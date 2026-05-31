@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import type { Env } from '../index';
 import { requireSessionUser } from '../lib/auth';
+import { coerceTargetDialect } from '../lib/dialects';
 
 type ProgressPair = {
   pairId: number;
@@ -29,16 +30,37 @@ type ProgressStorePayload = {
   pairs: Record<string, ProgressPair>;
 };
 
+function getProgressPairKey(pairId: number, dialect: string) {
+  return `${pairId}:${coerceTargetDialect(dialect)}`;
+}
+
+function normalizeProgressPair(row: ProgressPair): ProgressPair {
+  return {
+    ...row,
+    dialect: coerceTargetDialect(row.dialect),
+  };
+}
+
 function buildStoreFromRows(rows: ProgressPair[]): ProgressStorePayload {
   const pairs = rows.reduce<Record<string, ProgressPair>>((acc, row) => {
-    acc[String(row.pairId)] = row;
+    const normalizedRow = normalizeProgressPair(row);
+    acc[getProgressPairKey(normalizedRow.pairId, normalizedRow.dialect)] = normalizedRow;
     return acc;
   }, {});
 
-  const totalAttempts = rows.reduce((sum, row) => sum + row.word1Attempts + row.word2Attempts, 0);
-  const totalCorrect = rows.reduce((sum, row) => sum + row.word1Correct + row.word2Correct, 0);
-  const completedPairIds = rows.filter((row) => row.pairCompletions > 0).map((row) => row.pairId);
-  const lastPracticedAt = rows
+  const normalizedRows = Object.values(pairs);
+  const totalAttempts = normalizedRows.reduce(
+    (sum, row) => sum + row.word1Attempts + row.word2Attempts,
+    0,
+  );
+  const totalCorrect = normalizedRows.reduce(
+    (sum, row) => sum + row.word1Correct + row.word2Correct,
+    0,
+  );
+  const completedPairIds = Array.from(
+    new Set(normalizedRows.filter((row) => row.pairCompletions > 0).map((row) => row.pairId)),
+  );
+  const lastPracticedAt = normalizedRows
     .map((row) => row.lastSeenAt)
     .filter(Boolean)
     .sort()
@@ -48,8 +70,8 @@ function buildStoreFromRows(rows: ProgressPair[]): ProgressStorePayload {
     totalAttempts,
     totalCorrect,
     currentStreak: 0,
-    bestStreak: rows.reduce((max, row) => Math.max(max, row.successStreak), 0),
-    sessionsCount: rows.length,
+    bestStreak: normalizedRows.reduce((max, row) => Math.max(max, row.successStreak), 0),
+    sessionsCount: normalizedRows.length,
     completedPairIds,
     lastPracticedAt,
     pairs,
@@ -115,6 +137,7 @@ progressRoutes.post('/update', async (c) => {
   }
 
   const now = attempt.timestamp ?? new Date().toISOString();
+  const dialect = coerceTargetDialect(attempt.dialect);
   const existing = await c.env.DB.prepare(
     `SELECT
       pair_id as pairId,
@@ -131,16 +154,16 @@ progressRoutes.post('/update', async (c) => {
       COALESCE(last_seen_at, '') as lastSeenAt,
       last_correct_at as lastCorrectAt
      FROM user_progress
-     WHERE user_id = ? AND pair_id = ?
+     WHERE user_id = ? AND pair_id = ? AND dialect = ?
      LIMIT 1`,
   )
-    .bind(user.id, attempt.pairId)
+    .bind(user.id, attempt.pairId, dialect)
     .first<ProgressPair>();
 
   const row: ProgressPair = existing ?? {
     pairId: attempt.pairId,
     category: attempt.category,
-    dialect: attempt.dialect,
+    dialect,
     word1Attempts: 0,
     word1Correct: 0,
     word2Attempts: 0,
@@ -154,7 +177,7 @@ progressRoutes.post('/update', async (c) => {
   };
 
   row.category = attempt.category;
-  row.dialect = attempt.dialect;
+  row.dialect = dialect;
   row.exposureCount += 1;
   row.lastSeenAt = now;
 
@@ -186,9 +209,8 @@ progressRoutes.post('/update', async (c) => {
       recent_incorrect_count, success_streak,
       last_seen_at, last_correct_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(user_id, pair_id) DO UPDATE SET
+    ON CONFLICT(user_id, pair_id, dialect) DO UPDATE SET
       category=excluded.category,
-      dialect=excluded.dialect,
       word1_attempts=excluded.word1_attempts,
       word1_correct=excluded.word1_correct,
       word2_attempts=excluded.word2_attempts,
@@ -243,8 +265,11 @@ progressRoutes.post('/import', async (c) => {
   const importedPairs = Object.values(body.store.pairs);
 
   for (const pair of importedPairs) {
+    const dialect = coerceTargetDialect(pair.dialect);
     const existing = await c.env.DB.prepare(
       `SELECT
+        category,
+        dialect,
         word1_attempts as word1Attempts,
         word1_correct as word1Correct,
         word2_attempts as word2Attempts,
@@ -256,30 +281,37 @@ progressRoutes.post('/import', async (c) => {
         last_seen_at as lastSeenAt,
         last_correct_at as lastCorrectAt
       FROM user_progress
-      WHERE user_id = ? AND pair_id = ?
+      WHERE user_id = ? AND pair_id = ? AND dialect = ?
       LIMIT 1`,
     )
-      .bind(user.id, pair.pairId)
+      .bind(user.id, pair.pairId, dialect)
       .first<ProgressPair>();
+
+    const normalizedPair: ProgressPair = {
+      ...pair,
+      dialect,
+    };
 
     const merged = existing && body.mode !== 'replace'
       ? {
-          ...pair,
-          word1Attempts: pair.word1Attempts + existing.word1Attempts,
-          word1Correct: pair.word1Correct + existing.word1Correct,
-          word2Attempts: pair.word2Attempts + existing.word2Attempts,
-          word2Correct: pair.word2Correct + existing.word2Correct,
-          exposureCount: pair.exposureCount + existing.exposureCount,
-          recentIncorrectCount: pair.recentIncorrectCount + existing.recentIncorrectCount,
-          successStreak: Math.max(pair.successStreak, existing.successStreak),
-          pairCompletions: Math.max(pair.pairCompletions, existing.pairCompletions),
-          lastSeenAt: [pair.lastSeenAt, existing.lastSeenAt].filter(Boolean).sort().at(-1) ?? pair.lastSeenAt,
-          lastCorrectAt: [pair.lastCorrectAt, existing.lastCorrectAt]
+          ...normalizedPair,
+          word1Attempts: normalizedPair.word1Attempts + existing.word1Attempts,
+          word1Correct: normalizedPair.word1Correct + existing.word1Correct,
+          word2Attempts: normalizedPair.word2Attempts + existing.word2Attempts,
+          word2Correct: normalizedPair.word2Correct + existing.word2Correct,
+          exposureCount: normalizedPair.exposureCount + existing.exposureCount,
+          recentIncorrectCount: normalizedPair.recentIncorrectCount + existing.recentIncorrectCount,
+          successStreak: Math.max(normalizedPair.successStreak, existing.successStreak),
+          pairCompletions: Math.max(normalizedPair.pairCompletions, existing.pairCompletions),
+          lastSeenAt:
+            [normalizedPair.lastSeenAt, existing.lastSeenAt].filter(Boolean).sort().at(-1)
+            ?? normalizedPair.lastSeenAt,
+          lastCorrectAt: [normalizedPair.lastCorrectAt, existing.lastCorrectAt]
             .filter(Boolean)
             .sort()
             .at(-1) ?? null,
         }
-      : pair;
+      : normalizedPair;
 
     await c.env.DB.prepare(
       `INSERT INTO user_progress (
@@ -290,9 +322,8 @@ progressRoutes.post('/import', async (c) => {
         recent_incorrect_count, success_streak,
         last_seen_at, last_correct_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(user_id, pair_id) DO UPDATE SET
+      ON CONFLICT(user_id, pair_id, dialect) DO UPDATE SET
         category=excluded.category,
-        dialect=excluded.dialect,
         word1_attempts=excluded.word1_attempts,
         word1_correct=excluded.word1_correct,
         word2_attempts=excluded.word2_attempts,

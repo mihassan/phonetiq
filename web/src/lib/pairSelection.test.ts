@@ -5,6 +5,7 @@ import {
   pickAdaptiveNextIndex,
   scorePairForPractice,
 } from './pairSelection';
+import { getPairProgressKey } from './progressKeys';
 import type { ProgressStore, WordPair } from './types';
 
 const pairs: WordPair[] = [
@@ -46,7 +47,7 @@ const progress: ProgressStore = {
   completedPairIds: [1],
   lastPracticedAt: '2026-04-20T13:00:00.000Z',
   pairs: {
-    '1': {
+    [getPairProgressKey(1, 'us_only')]: {
       pairId: 1,
       category: 'vowel_short',
       dialect: 'us_only',
@@ -61,7 +62,7 @@ const progress: ProgressStore = {
       lastSeenAt: '2026-04-20T12:00:00.000Z',
       lastCorrectAt: '2026-04-20T12:00:00.000Z',
     },
-    '2': {
+    [getPairProgressKey(2, 'us_only')]: {
       pairId: 2,
       category: 'fricative',
       dialect: 'us_only',
@@ -81,21 +82,21 @@ const progress: ProgressStore = {
 
 describe('pairSelection', () => {
   it('scores weak pairs higher than mastered ones', () => {
-    const weakScore = scorePairForPractice(pairs[1], progress);
-    const masteredScore = scorePairForPractice(pairs[0], progress);
+    const weakScore = scorePairForPractice(pairs[1], progress, 'us_only');
+    const masteredScore = scorePairForPractice(pairs[0], progress, 'us_only');
 
     expect(weakScore).toBeGreaterThan(masteredScore);
   });
 
   it('prioritizes unseen pairs above mastered pairs', () => {
-    const unseenScore = scorePairForPractice(pairs[2], progress);
-    const masteredScore = scorePairForPractice(pairs[0], progress);
+    const unseenScore = scorePairForPractice(pairs[2], progress, 'us_only');
+    const masteredScore = scorePairForPractice(pairs[0], progress, 'us_only');
 
     expect(unseenScore).toBeGreaterThan(masteredScore);
   });
 
   it('builds weak pair queue ordered by weakness', () => {
-    const queue = buildWeakPairQueue(pairs, progress, 2);
+    const queue = buildWeakPairQueue(pairs, progress, 'us_only', 2);
 
     expect(queue).toHaveLength(2);
     expect(queue[0].id).toBe(2);
@@ -128,7 +129,7 @@ describe('pairSelection', () => {
     const pilotProgress: ProgressStore = {
       ...progress,
       pairs: {
-        '10': {
+        [getPairProgressKey(10, 'us_only')]: {
           pairId: 10,
           category: 'vowel_long',
           dialect: 'us_only',
@@ -143,7 +144,7 @@ describe('pairSelection', () => {
           lastSeenAt: '2026-04-20T13:00:00.000Z',
           lastCorrectAt: null,
         },
-        '11': {
+        [getPairProgressKey(11, 'us_only')]: {
           pairId: 11,
           category: 'vowel_long',
           dialect: 'us_only',
@@ -161,7 +162,7 @@ describe('pairSelection', () => {
       },
     };
 
-    const queue = buildWeakPairQueue(pilotPairs, pilotProgress, 2);
+    const queue = buildWeakPairQueue(pilotPairs, pilotProgress, 'us_only', 2);
 
     expect(queue.map((pair) => pair.id)).toEqual([11, 10]);
   });
@@ -198,7 +199,7 @@ describe('pairSelection', () => {
       },
     ];
 
-    const batch = buildPracticeBatch(pilotPairs, progress, {
+    const batch = buildPracticeBatch(pilotPairs, progress, 'us_only', {
       batchSize: 3,
       random: () => 0.5,
     });
@@ -208,7 +209,7 @@ describe('pairSelection', () => {
   });
 
   it('chooses next practice index using weighted randomness', () => {
-    const next = pickAdaptiveNextIndex(pairs, progress, 0, () => 0);
+    const next = pickAdaptiveNextIndex(pairs, progress, 'us_only', 0, () => 0);
 
     expect(next).toBe(1);
   });
@@ -228,7 +229,7 @@ describe('pairSelection', () => {
       ...progress,
       pairs: {
         ...progress.pairs,
-        '4': {
+        [getPairProgressKey(4, 'us_only')]: {
           pairId: 4,
           category: 'vowel_short',
           dialect: 'us_only',
@@ -243,7 +244,7 @@ describe('pairSelection', () => {
           lastSeenAt: '2026-04-20T13:00:00.000Z',
           lastCorrectAt: null,
         },
-        '5': {
+        [getPairProgressKey(5, 'us_only')]: {
           pairId: 5,
           category: 'vowel_short',
           dialect: 'us_only',
@@ -261,7 +262,7 @@ describe('pairSelection', () => {
       },
     };
 
-    const batch = buildPracticeBatch(manyPairs, seededProgress, {
+    const batch = buildPracticeBatch(manyPairs, seededProgress, 'us_only', {
       batchSize: 15,
       weakCount: 5,
       random: () => 0.42,
@@ -284,8 +285,8 @@ describe('time-based decay in scorePairForPractice', () => {
   const staleProgress: ProgressStore = {
     ...progress,
     pairs: {
-      '2': {
-        ...progress.pairs['2'],
+      [getPairProgressKey(2, 'us_only')]: {
+        ...progress.pairs[getPairProgressKey(2, 'us_only')],
         recentIncorrectCount: 4,
         lastSeenAt: staleDate,
       },
@@ -295,8 +296,8 @@ describe('time-based decay in scorePairForPractice', () => {
   const recentProgress: ProgressStore = {
     ...progress,
     pairs: {
-      '2': {
-        ...progress.pairs['2'],
+      [getPairProgressKey(2, 'us_only')]: {
+        ...progress.pairs[getPairProgressKey(2, 'us_only')],
         recentIncorrectCount: 4,
         lastSeenAt: recentDate,
       },
@@ -304,22 +305,22 @@ describe('time-based decay in scorePairForPractice', () => {
   };
 
   it('decays recentIncorrectCount when lastSeenAt is >7 days ago', () => {
-    const staleScore = scorePairForPractice(pairs[1], staleProgress, now);
-    const recentScore = scorePairForPractice(pairs[1], recentProgress, now);
+    const staleScore = scorePairForPractice(pairs[1], staleProgress, 'us_only', now);
+    const recentScore = scorePairForPractice(pairs[1], recentProgress, 'us_only', now);
 
     expect(staleScore).toBeLessThan(recentScore);
   });
 
   it('does not decay when lastSeenAt is within 7 days', () => {
-    const score = scorePairForPractice(pairs[1], recentProgress, now);
+    const score = scorePairForPractice(pairs[1], recentProgress, 'us_only', now);
     const expectedScoreWithoutDecay = 72;
 
     expect(score).toBe(expectedScoreWithoutDecay);
   });
 
   it('halves recentIncorrectCount (floor) for stale pairs — difference is exactly mistakeBoost delta', () => {
-    const staleScore = scorePairForPractice(pairs[1], staleProgress, now);
-    const recentScore = scorePairForPractice(pairs[1], recentProgress, now);
+    const staleScore = scorePairForPractice(pairs[1], staleProgress, 'us_only', now);
+    const recentScore = scorePairForPractice(pairs[1], recentProgress, 'us_only', now);
 
     // recentIncorrect=4: mistakeBoost(4)=min(30,32)=30, mistakeBoost(2)=min(30,16)=16 → delta=14
     expect(recentScore - staleScore).toBe(14);

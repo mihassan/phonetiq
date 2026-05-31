@@ -55,4 +55,7 @@ export const userProgress = sqliteTable('user_progress', {
   successStreak: integer('success_streak').notNull().default(0),
   lastSeenAt: text('last_seen_at'),
   lastCorrectAt: text('last_correct_at'),
-});
+}, (table) => ({
+  pk: primaryKey({ columns: [table.userId, table.pairId, table.dialect] }),
+  userIdx: index('user_progress_user_idx').on(table.userId),
+}));

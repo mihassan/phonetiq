@@ -94,18 +94,18 @@ export function usePracticeSession() {
   const currentPair = pairs[index];
   const currentPracticePair = practiceBatch[practiceBatchIndex] ?? pairs[0];
   const weakPairQueue = useMemo(
-    () => buildWeakPairQueue(pairs, progressStore, 12),
-    [pairs, progressStore],
+    () => buildWeakPairQueue(pairs, progressStore, dialect, 12),
+    [dialect, pairs, progressStore],
   );
 
   const categoryProgress = useMemo(
-    () => buildCategoryProgress(categories, pairs, progressStore),
-    [categories, pairs, progressStore],
+    () => buildCategoryProgress(categories, pairs, progressStore, dialect),
+    [categories, dialect, pairs, progressStore],
   );
 
   const profileSummary = useMemo(
-    () => getProfileSummary(pairs, categories, progressStore),
-    [pairs, categories, progressStore],
+    () => getProfileSummary(pairs, categories, progressStore, dialect),
+    [pairs, categories, dialect, progressStore],
   );
 
   const startStandardPracticeSession = useCallback(() => {
@@ -116,14 +116,14 @@ export function usePracticeSession() {
       return;
     }
 
-    const nextBatch = buildPracticeBatch(pairs, progressStore, {
+    const nextBatch = buildPracticeBatch(pairs, progressStore, dialect, {
       batchSize: 15,
       weakCount: 5,
     });
     setPracticeBatch(nextBatch);
     setPracticeBatchIndex(0);
     setTargetNum(1);
-  }, [pairs, progressStore]);
+  }, [dialect, pairs, progressStore]);
 
   const enterPracticeMode = useCallback(() => {
     setIsWeakPracticeMode(false);

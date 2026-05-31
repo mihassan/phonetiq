@@ -1,5 +1,8 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import {
+  getPairProgressKey,
+} from './progressKeys';
+import {
   loadProgressStore,
   resetProgressStore,
   saveProgressStore,
@@ -37,8 +40,8 @@ describe('progressStorage', () => {
 
     expect(afterCorrect.totalAttempts).toBe(1);
     expect(afterCorrect.totalCorrect).toBe(1);
-    expect(afterCorrect.pairs['1'].word1Attempts).toBe(1);
-    expect(afterCorrect.pairs['1'].word1Correct).toBe(1);
+    expect(afterCorrect.pairs[getPairProgressKey(1, 'us_only')].word1Attempts).toBe(1);
+    expect(afterCorrect.pairs[getPairProgressKey(1, 'us_only')].word1Correct).toBe(1);
     expect(afterCorrect.currentStreak).toBe(1);
     expect(afterCorrect.bestStreak).toBe(1);
 
@@ -52,9 +55,9 @@ describe('progressStorage', () => {
 
     expect(afterIncorrect.totalAttempts).toBe(2);
     expect(afterIncorrect.totalCorrect).toBe(1);
-    expect(afterIncorrect.pairs['1'].word2Attempts).toBe(1);
-    expect(afterIncorrect.pairs['1'].word2Correct).toBe(0);
-    expect(afterIncorrect.pairs['1'].recentIncorrectCount).toBe(1);
+    expect(afterIncorrect.pairs[getPairProgressKey(1, 'us_only')].word2Attempts).toBe(1);
+    expect(afterIncorrect.pairs[getPairProgressKey(1, 'us_only')].word2Correct).toBe(0);
+    expect(afterIncorrect.pairs[getPairProgressKey(1, 'us_only')].recentIncorrectCount).toBe(1);
     expect(afterIncorrect.currentStreak).toBe(0);
   });
 
@@ -69,8 +72,8 @@ describe('progressStorage', () => {
       }),
     );
 
-    expect(store.pairs['1'].successStreak).toBe(3);
-    expect(store.pairs['1'].pairCompletions).toBe(1);
+    expect(store.pairs[getPairProgressKey(1, 'us_only')].successStreak).toBe(3);
+    expect(store.pairs[getPairProgressKey(1, 'us_only')].pairCompletions).toBe(1);
     expect(store.completedPairIds).toContain(1);
   });
 
@@ -137,7 +140,21 @@ describe('progressStorage', () => {
 
     const store = loadProgressStore();
 
-    expect(store.pairs['1'].dialect).toBe('us_only');
+    expect(store.pairs[getPairProgressKey(1, 'us_only')].dialect).toBe('us_only');
+  });
+
+  it('stores separate progress entries for the same pair across dialects', () => {
+    updateProgressForAttempt(makeEvent({ dialect: 'us_only' }));
+    const store = updateProgressForAttempt(
+      makeEvent({
+        dialect: 'uk_only',
+        timestamp: '2026-04-20T12:00:05.000Z',
+      }),
+    );
+
+    expect(store.pairs[getPairProgressKey(1, 'us_only')].word1Attempts).toBe(1);
+    expect(store.pairs[getPairProgressKey(1, 'uk_only')].word1Attempts).toBe(1);
+    expect(Object.keys(store.pairs)).toHaveLength(2);
   });
 });
 
@@ -148,7 +165,7 @@ describe('pairCompletions mastery threshold', () => {
 
   it('does NOT mark complete when both words have a correct but successStreak < 3', () => {
     const seedStore = loadProgressStore();
-    seedStore.pairs['99'] = {
+    seedStore.pairs[getPairProgressKey(99, 'us_only')] = {
       pairId: 99,
       category: 'vowel_short',
       dialect: 'us_only',
@@ -167,13 +184,13 @@ describe('pairCompletions mastery threshold', () => {
 
     const result = updateProgressForAttempt(makeEvent({ pairId: 99, targetWord: 2, isCorrect: true }));
 
-    expect(result.pairs['99'].pairCompletions).toBe(0);
+    expect(result.pairs[getPairProgressKey(99, 'us_only')].pairCompletions).toBe(0);
     expect(result.completedPairIds).not.toContain(99);
   });
 
   it('marks complete when both words have a correct and successStreak reaches 3', () => {
     const seedStore = loadProgressStore();
-    seedStore.pairs['99'] = {
+    seedStore.pairs[getPairProgressKey(99, 'us_only')] = {
       pairId: 99,
       category: 'vowel_short',
       dialect: 'us_only',
@@ -192,8 +209,8 @@ describe('pairCompletions mastery threshold', () => {
 
     const result = updateProgressForAttempt(makeEvent({ pairId: 99, targetWord: 2, isCorrect: true }));
 
-    expect(result.pairs['99'].successStreak).toBe(3);
-    expect(result.pairs['99'].pairCompletions).toBe(1);
+    expect(result.pairs[getPairProgressKey(99, 'us_only')].successStreak).toBe(3);
+    expect(result.pairs[getPairProgressKey(99, 'us_only')].pairCompletions).toBe(1);
     expect(result.completedPairIds).toContain(99);
   });
 });

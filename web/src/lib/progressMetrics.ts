@@ -1,5 +1,7 @@
+import { getPairProgress } from './progressKeys';
 import type {
   Category,
+  Dialect,
   CategoryProgressSummary,
   ProfileSummary,
   ProgressStore,
@@ -14,33 +16,76 @@ function safePercent(correct: number, attempts: number) {
   return Math.round((correct / attempts) * 100);
 }
 
-function getPairAttempts(store: ProgressStore, pairId: number) {
-  const pair = store.pairs[String(pairId)];
+function getPairAttempts(store: ProgressStore, pairId: number, dialect: Dialect) {
+  const pair = getPairProgress(store, pairId, dialect);
   if (!pair) return 0;
   return pair.word1Attempts + pair.word2Attempts;
 }
 
-function getPairCorrect(store: ProgressStore, pairId: number) {
-  const pair = store.pairs[String(pairId)];
+function getPairCorrect(store: ProgressStore, pairId: number, dialect: Dialect) {
+  const pair = getPairProgress(store, pairId, dialect);
   if (!pair) return 0;
   return pair.word1Correct + pair.word2Correct;
 }
 
-export function getOverallAccuracy(store: ProgressStore) {
-  return safePercent(store.totalCorrect, store.totalAttempts);
+function getDialectProgressPairs(store: ProgressStore, dialect: Dialect) {
+  return Object.values(store.pairs).filter((pair) => pair.dialect === dialect);
+}
+
+function getDialectAggregateTotals(store: ProgressStore, dialect: Dialect) {
+  const progressPairs = getDialectProgressPairs(store, dialect);
+  const totalAttempts = progressPairs.reduce(
+    (sum, pair) => sum + pair.word1Attempts + pair.word2Attempts,
+    0,
+  );
+  const totalCorrect = progressPairs.reduce(
+    (sum, pair) => sum + pair.word1Correct + pair.word2Correct,
+    0,
+  );
+
+  return {
+    totalAttempts,
+    totalCorrect,
+    completedPairs: progressPairs.filter((pair) => pair.pairCompletions > 0).length,
+    sessionsCount: progressPairs.filter((pair) => pair.exposureCount > 0).length,
+    lastPracticedAt:
+      progressPairs
+        .map((pair) => pair.lastSeenAt)
+        .filter(Boolean)
+        .sort()
+        .at(-1) ?? null,
+  };
+}
+
+export function getOverallAccuracy(store: ProgressStore, dialect?: Dialect) {
+  if (!dialect) {
+    return safePercent(store.totalCorrect, store.totalAttempts);
+  }
+
+  const totals = getDialectAggregateTotals(store, dialect);
+  return safePercent(totals.totalCorrect, totals.totalAttempts);
 }
 
 export function buildCategoryProgress(
   categories: Category[],
   pairs: WordPair[],
   store: ProgressStore,
+  dialect: Dialect,
 ): Record<string, CategoryProgressSummary> {
   return categories.reduce<Record<string, CategoryProgressSummary>>((acc, category) => {
     const categoryPairs = pairs.filter((pair) => pair.phoneme_type === category.phoneme_type);
-    const attemptedPairs = categoryPairs.filter((pair) => getPairAttempts(store, pair.id) > 0).length;
-    const completedPairs = categoryPairs.filter((pair) => store.completedPairIds.includes(pair.id)).length;
-    const totalAttempts = categoryPairs.reduce((sum, pair) => sum + getPairAttempts(store, pair.id), 0);
-    const totalCorrect = categoryPairs.reduce((sum, pair) => sum + getPairCorrect(store, pair.id), 0);
+    const attemptedPairs = categoryPairs.filter((pair) => getPairAttempts(store, pair.id, dialect) > 0).length;
+    const completedPairs = categoryPairs.filter(
+      (pair) => (getPairProgress(store, pair.id, dialect)?.pairCompletions ?? 0) > 0,
+    ).length;
+    const totalAttempts = categoryPairs.reduce(
+      (sum, pair) => sum + getPairAttempts(store, pair.id, dialect),
+      0,
+    );
+    const totalCorrect = categoryPairs.reduce(
+      (sum, pair) => sum + getPairCorrect(store, pair.id, dialect),
+      0,
+    );
 
     acc[category.phoneme_type] = {
       totalPairs: categoryPairs.length,
@@ -58,14 +103,15 @@ export function buildCategoryProgress(
 export function buildWeakPairs(
   pairs: WordPair[],
   store: ProgressStore,
+  dialect: Dialect,
   limit = 5,
 ): WeakPairSummary[] {
   return pairs
     .map((pair) => {
-      const attempts = getPairAttempts(store, pair.id);
-      const correct = getPairCorrect(store, pair.id);
+      const attempts = getPairAttempts(store, pair.id, dialect);
+      const correct = getPairCorrect(store, pair.id, dialect);
       const accuracy = safePercent(correct, attempts);
-      const weaknessScore = scorePairForPractice(pair, store);
+      const weaknessScore = scorePairForPractice(pair, store, dialect);
 
       return {
         pair,
@@ -82,9 +128,10 @@ export function buildWeakCategories(
   categories: Category[],
   pairs: WordPair[],
   store: ProgressStore,
+  dialect: Dialect,
   limit = 5,
 ): WeakCategorySummary[] {
-  const progress = buildCategoryProgress(categories, pairs, store);
+  const progress = buildCategoryProgress(categories, pairs, store, dialect);
 
   return Object.entries(progress)
     .map(([category, value]) => ({
@@ -104,17 +151,20 @@ export function getProfileSummary(
   pairs: WordPair[],
   categories: Category[],
   store: ProgressStore,
+  dialect: Dialect,
 ): ProfileSummary {
+  const totals = getDialectAggregateTotals(store, dialect);
+
   return {
-    totalAttempts: store.totalAttempts,
-    totalCorrect: store.totalCorrect,
-    accuracy: getOverallAccuracy(store),
-    completedPairs: store.completedPairIds.length,
-    currentStreak: store.currentStreak,
-    bestStreak: store.bestStreak,
-    sessionsCount: store.sessionsCount,
-    weakPairs: buildWeakPairs(pairs, store, 5),
-    weakCategories: buildWeakCategories(categories, pairs, store, 5),
-    lastPracticedAt: store.lastPracticedAt,
+    totalAttempts: totals.totalAttempts,
+    totalCorrect: totals.totalCorrect,
+    accuracy: safePercent(totals.totalCorrect, totals.totalAttempts),
+    completedPairs: totals.completedPairs,
+    currentStreak: totals.totalAttempts > 0 ? store.currentStreak : 0,
+    bestStreak: totals.totalAttempts > 0 ? store.bestStreak : 0,
+    sessionsCount: totals.sessionsCount,
+    weakPairs: buildWeakPairs(pairs, store, dialect, 5),
+    weakCategories: buildWeakCategories(categories, pairs, store, dialect, 5),
+    lastPracticedAt: totals.lastPracticedAt,
   };
 }
