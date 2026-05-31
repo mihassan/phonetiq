@@ -393,10 +393,13 @@ npx wrangler pages deploy dist --project-name phonetiq
 
 ### 4. CI/CD (automatic on push)
 
-Both the API Worker and frontend are auto-deployed via GitHub Actions on push to `main`:
+CI uses a dedicated workflow plus path-scoped deploy workflows:
 
-- `.github/workflows/deploy-api.yml` — triggers on changes to `api/`
-- `.github/workflows/deploy-web.yml` — triggers on changes to `web/`
+- `.github/workflows/ci.yml` — runs on pull requests and pushes to `main`; runs only relevant checks via path filters:
+  - API: `npm run typecheck` + `npm test`
+  - Web: `npm run lint` + `npm run build` + `npm test`
+- `.github/workflows/deploy-api.yml` — triggers on `api/**` pushes to `main` and runs typecheck + tests before Worker deploy.
+- `.github/workflows/deploy-web.yml` — triggers on `web/**` pushes to `main` and runs lint + tests + build before Pages deploy.
 
 **Required GitHub secrets:**
 

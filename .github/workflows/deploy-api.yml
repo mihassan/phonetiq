@@ -23,6 +23,14 @@ jobs:
         run: npm ci
         working-directory: api
 
+      - name: Typecheck
+        run: npm run typecheck
+        working-directory: api
+
+      - name: Test
+        run: npm test
+        working-directory: api
+
       - name: Deploy
         uses: cloudflare/wrangler-action@v3
         with:

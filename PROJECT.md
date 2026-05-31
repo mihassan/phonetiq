@@ -6,7 +6,7 @@
 - **Database:** Cloudflare D1 (SQLite) + Drizzle ORM. Schema in `api/src/db/schema.ts`.
 - **Storage:** Cloudflare R2 (pre-generated TTS audio files, `.m4a` format).
 - **AI / Speech:** Cloudflare Workers AI (`@cf/openai/whisper-large-v3-turbo`) for Speech-to-Text (STT).
-- **CI/CD:** GitHub Actions for both frontend (Pages) and API (Workers) — triggers on push to `main`.
+- **CI/CD:** GitHub Actions with a shared CI workflow (`.github/workflows/ci.yml`) plus path-scoped deploy workflows for frontend (Pages) and API (Workers).
 
 ## Live URLs
 - **Frontend:** https://phonetiq.mihassan.com (also https://phonetiq.pages.dev)
@@ -20,7 +20,7 @@
 4.  **Robust Audio Processing:** The frontend includes mic warm-up waiting, noise detection (classifies `possible_noise` at activity ratio > 0.75), and speech window trimming (removes leading/trailing silence) for reliable recognition in real-world conditions.
 5.  **Dialect Awareness:** Word pairs use `dialect_filter` (`all`, `us_only`, `uk_only`, `au_only`). The UI now requires a specific target dialect (`US`, `UK`, `AU`), and the backend includes shared `all` pairs behind the scenes. STT receives the selected target dialect and uses dialect-specific prompt context. A pilot `word_pair_dialect_metadata` layer now annotates selected `vowel_long` contrasts as `supported`, `weak`, or `unavailable` by target dialect, including a shared non-rhotic `hut`/`heart` family that is taught for UK/AU and filtered for US, and Learn/Practice now surface those pilot notes directly in the UI.
 6.  **Progress & Personalization:** Local progress is persisted in browser storage and cloud sync now keeps separate records per target dialect for the same pair. Practice uses refreshable 15-pair batches (5 weak-pair quota + unseen/medium-weak fill). Profile stage shows key stats and weak areas for the active dialect.
-7.  **CI/CD:** GitHub Actions for both deployments (not Cloudflare Pages Git integration, which requires Direct Upload projects to be recreated). Single `CLOUDFLARE_API_TOKEN` secret shared by both workflows.
+7.  **CI/CD:** GitHub Actions uses a dedicated CI workflow for PR/push validation and separate path-scoped deploy workflows (not Cloudflare Pages Git integration, which requires Direct Upload projects to be recreated). Single `CLOUDFLARE_API_TOKEN` secret shared by both deploy workflows.
 
 ## Commands Reference
 ### API (`api/`)
