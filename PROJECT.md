@@ -28,9 +28,10 @@
 - `npm run dev:frame` - Start frame-sentence profile (port 8791)
 - `npm run typecheck` - TypeScript check
 - `npm test` - Run Vitest tests (64 tests)
-- `npm run eval` - Frame-sentence recognition eval (34 WAV fixtures, 7 s delay)
-- `npm run eval:fast` - Frame-sentence eval (no delay)
+- `npm run eval` - Dialect-tagged frame-sentence recognition eval (7 s delay)
+- `npm run eval:fast` - Dialect-tagged frame-sentence eval (no delay)
 - `npm run eval:frame` - Frame-sentence eval on `dev:frame` (port 8791)
+- `npm run eval -- --dialect uk_only` - Run only one target dialect's eval rows
 - `npm run db:generate` - Generate Drizzle migration SQL
 - `npm run db:migrate:local` - Apply migrations to local D1
 - `npm run db:seed:local` - Seed word pairs to local D1
