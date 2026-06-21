@@ -20,11 +20,18 @@ Most pronunciation apps use browser-native speech recognition which is flaky acr
 - **Smart audio processing** — Handles mic startup delay, environmental noise, and trailing silence automatically
 - **Candidate-constrained recognition** — Whisper knows exactly which words to expect, dramatically improving accuracy
 
-**Learn Mode** — hear the correct pronunciation of each word via pre-generated TTS audio.  
-**Practice Mode** — get instant AI feedback with adaptive sessions that focus on your weak pairs.  
+**Learn Mode** — hear the correct pronunciation of each word via pre-generated TTS audio.<br>
+**Practice Mode** — get instant AI feedback with adaptive sessions that focus on your weak pairs.<br>
 **Profile Mode** — track your progress and target areas that need work.
 
-## Cool Features
+## Current Scope
+
+- Listen-first minimal pair practice with pre-generated dialect-aware audio.
+- AI-backed practice mode using server-side speech recognition and candidate matching.
+- Adaptive sessions, category filtering, profile stats, and weak-pair practice.
+- Local-first progress with optional Google OAuth cloud sync.
+
+## Highlights
 
 ### 🎯 Intelligent Speech Recognition
 - **Arming state** — UI shows "Starting mic..." while waiting for microphone to warm up
@@ -49,7 +56,7 @@ Most pronunciation apps use browser-native speech recognition which is flaky acr
 - Local and cloud progress now keep separate mastery records per target dialect for the same pair
 - Dataset now includes 400+ seeded pairs with `all`, `uk_only`, `us_only`, and an initial `au_only` starter set
 
-### 🔒 Production-Ready
+### 🔒 Production Qualities
 - **Two-tier rate limiting** — 10 req/min for AI (protects costs), 100 req/min for general API
 - **Google OAuth** — Optional account sync for cross-device progress
 - **Dark "Glacier" theme** — Beautiful, accessible dark mode UI
@@ -420,6 +427,12 @@ CI uses a dedicated workflow plus path-scoped deploy workflows:
 - [Product Requirements (PRD)](docs/PRD.md)
 - [Design Document](docs/DESIGN.md)
 - [Project Memory](PROJECT.md)
+
+## Limitations
+
+- Recognition quality depends on microphone input quality, dialect selection, and Workers AI behavior.
+- Audio generation requires Google Cloud Text-to-Speech credentials and `ffmpeg`.
+- Cloud sync is optional; local progress remains browser-local unless a user signs in.
 
 ## Troubleshooting
 
